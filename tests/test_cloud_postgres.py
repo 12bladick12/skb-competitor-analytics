@@ -36,6 +36,7 @@ class PostgresImportTests(unittest.TestCase):
 
     def test_import_is_idempotent_and_another_import_cannot_overwrite_data(self):
         catalog=self.catalog()
+        catalog['records'][0]['payload']['untrusted_text']="Quotes ' ; $migration$ $$ and Unicode: Ёж"
         ident=self.repository.activate(catalog,{})
         self.assertEqual(self.repository.activate(catalog,{}),ident)
         self.assertEqual(self.repository.load()['event']['1'],catalog['records'][0]['payload'])

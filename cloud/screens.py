@@ -20,6 +20,13 @@ MONTHS = ("", "Январь", "Февраль", "Март", "Апрель", "М�
 LOCAL = timezone(timedelta(hours=5))
 
 
+@st.cache_data(ttl=60, max_entries=2, show_spinner=False)
+def load_library(database_url):
+    # Called only after authorization; cache data never authorizes a request.
+    # Short shared cache reduces database wakeups and traffic on the free plan.
+    return Repository({"cloud": {"database_url": database_url}}).load()
+
+
 def url(value):
     try:
         parsed = urlsplit(value or "")

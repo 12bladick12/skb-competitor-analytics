@@ -25,6 +25,14 @@ def sample():
 
 
 class LibraryTests(unittest.TestCase):
+    def test_migration_uses_same_neon_endpoint_without_pooler(self):
+        config={'cloud':{'database_url':'postgresql://test:TEST@ep-test-pooler.eu-central-1.aws.neon.tech/db'}}
+        runtime=Repository(config,connect=MagicMock())
+        migration=Repository(config,connect=MagicMock(),migration=True)
+        self.assertEqual(runtime.params['host'],'ep-test-pooler.eu-central-1.aws.neon.tech')
+        self.assertEqual(migration.params['host'],'ep-test.eu-central-1.aws.neon.tech')
+        self.assertNotIn('options',migration.params)
+
     def test_filters_never_promote_rejected_events(self):
         data = sample()
         self.assertEqual([e['id'] for e in period_events(data,'2026-09')], [1,2])
@@ -85,6 +93,8 @@ class LibraryTests(unittest.TestCase):
 class LibraryScreenTests(unittest.TestCase):
     def application(self, page, email='reader@example.com'):
         import test_cloud_streamlit as fixture
+        from cloud.screens import load_library
+        load_library.clear()
         helper=fixture.CloudScreenTests()
         app=helper.application()
         app.secrets['cloud'] = CONFIG['cloud']
@@ -126,3 +136,15 @@ class LibraryScreenTests(unittest.TestCase):
             with patch('streamlit.user',user),patch('cloud.library.Repository.load',return_value=sample()):
                 app.run()
             self.assertFalse(app.exception)
+
+    def test_revoked_viewer_cannot_open_previously_rendered_proof(self):
+        app,user=self.application('Публикации')
+        with patch('streamlit.user',user),patch('cloud.library.Repository.load',return_value=sample()), \
+             patch('cloud.screens.file_bytes') as read:
+            app.run()
+            button=next(b for b in app.button if b.label=='Показать сохранённый HTML')
+            app.secrets['access']['viewer_emails']=[]
+            button.click().run()
+        self.assertFalse(app.exception)
+        read.assert_not_called()
+        self.assertTrue(any('Доступ не предоставлен' in x.value for x in app.warning))

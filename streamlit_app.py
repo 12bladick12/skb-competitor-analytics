@@ -7,8 +7,7 @@ from cloud.public_pages import DESCRIPTION, public_links, render_public_document
 from cloud.readiness import check_drive, check_login_config, check_neon, section
 from cloud.storage_probe import check_drive_write, check_neon_write
 from cloud.drive_store import StorageError
-from cloud.library import Repository
-from cloud.screens import render_library
+from cloud.screens import load_library, render_library
 
 
 TITLE = "Конкурентная аналитика СКБ ИНДУКЦИЯ"
@@ -75,7 +74,7 @@ def main():
     if section(config, "cloud").get("database_url"):
         try:
             with st.spinner("Загружаем общие материалы…"):
-                library = Repository(config).load()
+                library = load_library(section(config, "cloud")["database_url"])
             if library and render_library(library, access, settings, identity):
                 return
         except (StorageError, ValueError):
