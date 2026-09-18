@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from cloud.readiness import (
     check_all, check_drive, check_login_config, check_neon, load_secrets, quota_result,
@@ -39,12 +39,36 @@ class CloudReadinessTests(unittest.TestCase):
         self.assertEqual(check_neon(config, connect=connect).status, "ok")
         params = connect.call_args.kwargs
         self.assertEqual(params["password"], "p@ss")
-        self.assertIn("default_transaction_read_only=on", params["options"])
+        self.assertNotIn("options", params)
+        self.assertTrue(connection.read_only)
         self.assertEqual(params["sslmode"], "require")
-        connection.execute.assert_called_once_with("SELECT 1")
+        connection.transaction.assert_called_once_with()
+        self.assertEqual(connection.execute.call_args_list, [
+            call("SET LOCAL statement_timeout = '10s'"), call("SELECT 1"),
+        ])
         connect.reset_mock()
         self.assertEqual(check_neon(config, offline=True, connect=connect).status, "unchecked")
         connect.assert_not_called()
+
+    def test_pooler_startup_parameters_and_transaction_failure(self):
+        connection = MagicMock()
+        connection.execute.return_value.fetchone.return_value = (1,)
+
+        def pooler(**params):
+            if "options" in params:
+                raise RuntimeError("unsupported startup parameter: options")
+            return connection
+
+        config = {"cloud": {"database_url": "postgresql://user:test@ep-sample-pooler.neon.tech/db"}}
+        session = connection.__enter__.return_value
+        session.execute.return_value.fetchone.return_value = (1,)
+        self.assertEqual(check_neon(config, connect=pooler).status, "ok")
+        session.execute.reset_mock()
+        session.transaction.return_value.__enter__.side_effect = RuntimeError("DO_NOT_PRINT")
+        result = check_neon(config, connect=pooler)
+        self.assertEqual(result.status, "error")
+        session.execute.assert_not_called()
+        self.assertNotIn("DO_NOT_PRINT", json.dumps(result.to_dict()))
 
     def test_driver_error_does_not_echo_connection_secrets(self):
         connect = MagicMock(side_effect=RuntimeError("password=DO_NOT_PRINT"))

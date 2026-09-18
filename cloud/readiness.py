@@ -63,7 +63,6 @@ def neon_parameters(url):
             "sslmode": query.get("sslmode", ["require"])[0],
             "channel_binding": query.get("channel_binding", ["require"])[0],
             "connect_timeout": 10,
-            "options": "-c default_transaction_read_only=on -c statement_timeout=10000",
             "autocommit": True,
         }
     except (ValueError, TypeError):
@@ -88,7 +87,13 @@ def check_neon(config, *, offline=False, connect=None):
         connect = psycopg.connect
     try:
         with connect(**params) as connection:
-            row = connection.execute("SELECT 1").fetchone()
+            # Neon pooled connections reject statement_timeout in startup options.
+            # Apply it inside a read-only transaction so it cannot leak to the
+            # next client borrowing the same pooled server connection.
+            connection.read_only = True
+            with connection.transaction():
+                connection.execute("SET LOCAL statement_timeout = '10s'")
+                row = connection.execute("SELECT 1").fetchone()
             if row is None or row[0] != 1:
                 return Check("neon", "error", "Neon не вернул ожидаемый ответ проверки.")
     except Exception:

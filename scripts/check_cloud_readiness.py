@@ -24,7 +24,7 @@ def main(argv=None):
     results = check_all(config, offline=args.offline)
     print(json.dumps({
         "checks": [item.to_dict() for item in results],
-        "note": "Это проверка подключений. Приложение ещё не опубликовано; запись и миграции не проверялись.",
+        "note": "Это проверка подключений. Запись, перенос данных и работа полного мониторинга здесь не проверяются.",
     }, ensure_ascii=False, indent=2))
     return 1 if any(item.status in {"pending", "error", "warning"} for item in results) else 0
 

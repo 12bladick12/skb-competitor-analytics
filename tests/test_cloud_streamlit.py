@@ -35,6 +35,9 @@ class CloudScreenTests(unittest.TestCase):
     def test_unconfigured_app_starts_without_network_or_sensitive_details(self):
         app = self.application()
         app.secrets.clear()
+        # Keep an explicit empty section: a fully empty AppTest Secrets object
+        # otherwise reloads the developer's real local TOML on first access.
+        app.secrets["auth"] = {}
         with patch("streamlit.user", self.user("", False)), patch("requests.Session") as network:
             app.run()
         self.assertEqual(len(app.exception), 0)
