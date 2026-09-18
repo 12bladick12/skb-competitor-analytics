@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 from math import ceil
+import re
 from urllib.parse import urlsplit
 
 import streamlit as st
@@ -10,9 +11,11 @@ from .access import authorize
 from .drive_store import DriveStore, StorageError
 from .library import Repository, period_events, read_asset
 from .readiness import section
+from .presentation import html, safe, note, section_heading, event_card, coverage_summary, competitor_bars
 
 
 KINDS = {"news": "Новости сайтов", "telegram": "Telegram", "products": "Продукция и предложения"}
+SOURCE_KINDS = {**KINDS, "promotions": "Акции", "website": "Сайт"}
 STATUS = {"success": "Проверен", "partial": "Сбор неполный", "error": "Ошибка",
           "not_configured": "Канал не подтверждён", "running": "Выполнялся при переносе",
           "interrupted": "Прерван", "queued": "Ожидание", "completed": "Завершён"}
@@ -51,17 +54,46 @@ def period_label(value):
     return value.replace("__", " — ")
 
 
+def report_label(report):
+    match = re.fullmatch(r'Аналитическая_записка_конкуренты_(\d{4})_(\d{2})\.docx', report['name'])
+    if match and 1 <= int(match[2]) <= 12:
+        return 'Аналитическая записка · ' + period_label(f'{match[1]}-{match[2]}')
+    return report['name'].removesuffix('.docx').replace('__', ' — ').replace('_', ' ')
+
+
 def coverage_table(checks):
+    if not checks:
+        st.caption("За этот период проверки источников не сохранены.")
+        return
     rows = []
     for check in checks:
         state = STATUS.get(check['status'], check['status'])
         if check['status'] == 'success' and check.get('items') == 0:
             state = "Проверен, публикаций нет"
-        rows.append({"Конкурент": check.get('competitor_name', check['competitor_code']),
-                     "Тип": KINDS.get(check['kind'],check['kind']), "Источник": url(check['url']),
-                     "Состояние": state, "Примечание": check.get('reason', ''),
-                     "Проверен (Екатеринбург)": local_time(check.get('checked_at'))})
-    st.dataframe(rows, hide_index=True, width="stretch")
+        reason = str(check.get('reason') or '')
+        for technical, readable in [('publication_date_missing', 'Дата публикации не указана'),
+                                    ('no_recognized_cards', 'Публикации на странице не распознаны'),
+                                    ('page_not_found', 'Страница не найдена'),
+                                    ('access_block', 'Источник ограничил доступ'),
+                                    ('playwright returned no HTML', 'Не удалось загрузить страницу')]:
+            reason = reason.replace(technical, readable)
+        target = url(check.get('url'))
+        source = (f'<a href="{safe(target)}" target="_blank" rel="noopener noreferrer" title="{safe(target)}">'
+                  f'{safe(urlsplit(target).netloc)} ↗</a>') if target else '—'
+        tone = check['status'] if check['status'] in ('success', 'partial', 'error') else 'muted'
+        rows.append(f'<tr><td>{safe(check.get("competitor_name", check["competitor_code"]))}</td>'
+                    f'<td>{safe(SOURCE_KINDS.get(check["kind"], check["kind"]))}</td><td>{source}</td>'
+                    f'<td><span class="status-pill status-{tone}">{safe(state)}</span></td>'
+                    f'<td>{safe(reason or "—")}</td><td>{safe(local_time(check.get("checked_at")))}</td></tr>')
+    html('<div class="table-scroll" tabindex="0" role="region" aria-label="Проверки источников">'
+         '<table class="source-table"><thead><tr><th scope="col">Конкурент</th><th scope="col">Тип</th>'
+         '<th scope="col">Источник</th><th scope="col">Состояние</th><th scope="col">Примечание</th>'
+         '<th scope="col">Проверен · ЕКБ</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table></div>')
+
+
+def navigate(page):
+    st.session_state['nav_page'] = page
+    st.query_params['section'] = page
 
 
 def file_bytes(settings, identity, library_id, asset_id):
@@ -82,7 +114,7 @@ def render_library(library, access, settings, identity):
     selected = st.query_params.get("section", "Обзор")
     if st.session_state.get('nav_page') not in pages:
         st.session_state['nav_page']=selected if selected in pages else pages[0]
-    page = st.sidebar.radio("Раздел", pages, key='nav_page')
+    page = st.sidebar.radio("РАБОЧЕЕ ПРОСТРАНСТВО", pages, key='nav_page')
     st.query_params["section"] = page
     periods = sorted(library['period'], reverse=True)
     current = datetime.now(LOCAL).strftime('%Y-%m')
@@ -91,7 +123,9 @@ def render_library(library, access, settings, identity):
         st.session_state['nav_period']=initial if initial in periods else periods[0]
     period = st.sidebar.selectbox("Период", periods, key='nav_period', format_func=period_label)
     st.query_params["period"] = period
-    st.caption("Данные перенесены " + local_time(library['manifest']['source_created_at']) + " (Екатеринбург). Новый сбор из облака ещё не подключён.")
+    st.sidebar.caption("Данные на " + local_time(library['manifest']['source_created_at']) + " · Екатеринбург")
+    with st.sidebar.expander("Статус приложения"):
+        st.caption("Доступны перенесённые материалы. Новый сбор из облака и совместное редактирование ещё не подключены.")
     events = period_events(library, period)
     checks = library['period'][period]['checks']
 
@@ -99,28 +133,49 @@ def render_library(library, access, settings, identity):
         return False
     if page == "Обзор":
         st.subheader("Обзор · " + period_label(period))
-        cols = st.columns(4)
-        cols[0].metric("Подтверждённые материалы", len(events))
-        for col, (kind, label) in zip(cols[1:], KINDS.items()):
-            col.metric(label, sum(e['kind'] == kind for e in events))
+        st.caption("Публикации конкурентов и состояние источников за выбранный период")
+        with st.container(key='metrics'):
+            cols = st.columns(4)
+            cols[0].metric("Подтверждённые материалы", len(events))
+            for col, (kind, label) in zip(cols[1:], KINDS.items()):
+                col.metric(label, sum(e['kind'] == kind for e in events))
         if not events:
             st.info("Подтверждённых материалов за этот период нет. Полнота проверки источников показана ниже.")
-        st.subheader("Полнота проверки источников")
-        coverage_table(checks)
+        feed, summary = st.columns([1.35, 1], gap='large')
+        with feed:
+            with st.container(key='overview-feed'):
+                section_heading("Материалы периода", f"Всего {len(events)}")
+                for event in events[:3]:
+                    event_card(event, KINDS.get(event['kind'], event['kind']), compact=True)
+                if not events:
+                    st.caption("Здесь появятся подтверждённые публикации выбранного периода.")
+                st.button("Все публикации →", key='overview_publications', on_click=navigate,
+                          args=('Публикации',), width='stretch')
+        with summary:
+            with st.container(key='overview-coverage'):
+                section_heading("Проверка источников", f"{len(checks)} источников")
+                coverage_summary(checks)
+            with st.container(key='overview-competitors'):
+                section_heading("Публикации по конкурентам", "Топ-5 за период")
+                competitor_bars(events, library['competitor'])
+        with st.expander("Полнота проверки источников · подробная таблица"):
+            coverage_table(checks)
     elif page == "Публикации":
         st.subheader("Публикации")
         competitors = {"": "Все конкуренты", **{c: v['name'] for c,v in library['competitor'].items()}}
         kinds = {"": "Все типы", **KINDS}
-        left, right = st.columns(2)
         for key, parameter, options in [('pub_competitor','competitor',competitors),('pub_kind','kind',kinds)]:
             if st.session_state.get(key) not in options:
                 previous=st.query_params.get(parameter,'')
                 st.session_state[key]=previous if previous in options else ''
         if 'pub_query' not in st.session_state:
             st.session_state['pub_query']=st.query_params.get('q','')
-        code = left.selectbox("Конкурент", list(competitors), key='pub_competitor', format_func=competitors.get)
-        kind = right.selectbox("Тип публикации", list(kinds), key='pub_kind', format_func=kinds.get)
-        query = st.text_input("Поиск по заголовку и тексту", key='pub_query')
+        st.caption(period_label(period) + " · Подтверждённые материалы с сохранёнными первоисточниками")
+        with st.container(key='filters'):
+            search, left, right = st.columns([1.4, 1, 1])
+            query = search.text_input("Поиск по заголовку и тексту", key='pub_query', placeholder='Название, продукт или тема…')
+            code = left.selectbox("Конкурент", list(competitors), key='pub_competitor', format_func=competitors.get)
+            kind = right.selectbox("Тип публикации", list(kinds), key='pub_kind', format_func=kinds.get)
         st.query_params.update(competitor=code, kind=kind, q=query)
         found = period_events(library, period, competitor=code, kind=kind, query=query)
         st.caption(f"Найдено материалов: {len(found)}")
@@ -132,39 +187,44 @@ def render_library(library, access, settings, identity):
             if st.session_state.get('pub_filter_signature') != signature:
                 st.session_state['pub_page']=1
                 st.session_state['pub_filter_signature']=signature
-            number = st.number_input("Страница", min_value=1, max_value=pages_count, step=1, key='pub_page')
+            page_controls, _ = st.columns([1, 4])
+            number = page_controls.number_input("Страница", min_value=1, max_value=pages_count, step=1, key='pub_page')
             for event in found[(number-1)*15:number*15]:
-                with st.expander(event['date_label'] + " · " + event['competitor_name'] + " · " + event['title']):
-                    st.write(event['description'])
-                    st.caption(KINDS.get(event['kind'],event['kind']) + " · Подтверждён")
+                with st.container(key=f"pubcard_{event['id']}"):
+                    event_card(event, KINDS.get(event['kind'],event['kind']))
                     source = url(event['provenance'].get('article_url') or event['url'])
                     if source:
-                        st.link_button("Открыть первоисточник", source)
-                    st.caption("Основание даты: " + str(event['provenance'].get('date_evidence') or '—'))
-                    with st.expander("Исходный текст"):
+                        st.link_button("Открыть первоисточник ↗", source)
+                    with st.expander("Исходный текст и подтверждение"):
+                        st.caption("Основание даты: " + str(event['provenance'].get('date_evidence') or '—'))
                         st.text(event['original_text'])
-                    if event['evidence_ids']:
-                        chosen = st.selectbox("Сохранённый снимок", range(len(event['evidence_ids'])),
-                                              format_func=lambda i: f"Снимок {i+1}", key=f"proof_{event['id']}")
-                        if st.button("Показать сохранённый HTML", key=f"open_proof_{event['id']}"):
-                            try:
-                                with st.spinner("Загружаем снимок…"):
-                                    content = file_bytes(settings, identity, library['id'], event['evidence_ids'][chosen])
-                                st.caption("Сохранённый код страницы; скрипты не выполняются.")
-                                st.code(content.decode('utf-8', errors='replace'), language='html')
-                            except (StorageError, ValueError, PermissionError) as exc:
-                                st.error(str(exc))
+                        if event['evidence_ids']:
+                            chosen = st.selectbox("Сохранённый снимок", range(len(event['evidence_ids'])),
+                                                  format_func=lambda i: f"Снимок {i+1}", key=f"proof_{event['id']}")
+                            if st.button("Показать сохранённый HTML", key=f"open_proof_{event['id']}"):
+                                try:
+                                    with st.spinner("Загружаем снимок…"):
+                                        content = file_bytes(settings, identity, library['id'], event['evidence_ids'][chosen])
+                                    st.caption("Сохранённый код страницы; скрипты не выполняются.")
+                                    st.code(content.decode('utf-8', errors='replace'), language='html')
+                                except (StorageError, ValueError, PermissionError) as exc:
+                                    st.error(str(exc))
     elif page == "Конкуренты":
         st.subheader("Конкуренты")
-        for code, competitor in sorted(library['competitor'].items(), key=lambda pair: pair[1]['name']):
-            with st.expander(competitor['name']):
+        st.caption(f"{len(library['competitor'])} компаний в мониторинге · " + period_label(period))
+        columns = st.columns(2)
+        for index, (code, competitor) in enumerate(sorted(library['competitor'].items(), key=lambda pair: pair[1]['name'])):
+            with columns[index % 2], st.container(key=f'competitorcard_{index}'):
+                number = sum(e['competitor_code'] == code for e in events)
+                html(f'<div class="record-heading"><span class="record-icon" aria-hidden="true">{safe(competitor["name"][:2])}</span>'
+                     f'<div><h3>{safe(competitor["name"])}</h3><p>Подтверждённых материалов: {number}</p></div></div>')
                 if url(competitor['base_url']):
-                    st.link_button("Официальный сайт", url(competitor['base_url']))
-                st.write("Подтверждённых материалов за период: " + str(sum(e['competitor_code'] == code for e in events)))
-                coverage_table([c for c in checks if c['competitor_code'] == code])
+                    st.link_button("Официальный сайт ↗", url(competitor['base_url']))
+                with st.expander("Проверка источников"):
+                    coverage_table([c for c in checks if c['competitor_code'] == code])
     elif page == "Сбор данных":
         st.subheader("История сборов")
-        st.info("Здесь сохранённая история мониторинга. Запуск нового сбора из облака будет подключён следующим этапом.")
+        note("История мониторинга", "Здесь сохранены выполненные проверки. Запуск нового сбора из облака появится на следующем этапе.")
         for run in sorted(library['run'].values(), key=lambda r: r['id'], reverse=True):
             label = f"№ {run['id']} · {local_time(run['started_at'])} · {STATUS.get(run['status'],run['status'])}"
             with st.expander(label):
@@ -173,7 +233,7 @@ def render_library(library, access, settings, identity):
                 coverage_table(run['checks'])
     elif page == "Черновики":
         st.subheader("Перенесённые черновики")
-        st.info("Ручные тексты и состав материалов сохранены. Совместное редактирование и выпуск новых документов ещё подключаются.")
+        note("Режим просмотра", "Ручные тексты и состав материалов сохранены. Совместное редактирование и выпуск новых документов ещё подключаются.")
         drafts = [d for d in library['draft'].values() if d['period'] == period]
         if not drafts:
             st.write("Черновика за выбранный период пока нет.")
@@ -186,11 +246,15 @@ def render_library(library, access, settings, identity):
     elif page == "Архив":
         st.subheader("Архив отчётов")
         reports = sorted(library['report'].values(), key=lambda r: (r.get('created_at') or '', r['name']), reverse=True)
+        st.caption(f"Документов: {len(reports)} · Все периоды · Сохранённые версии записок и подтверждающие материалы")
         if not reports:
             st.info("В архиве пока нет отчётов.")
-        for report in reports:
-            with st.expander(report['name']):
-                st.caption("Прежний документ" if report['legacy'] else f"Редакция {report['revision']} · {local_time(report['created_at'])}")
+        report_columns = st.columns(2)
+        for index, report in enumerate(reports):
+            with report_columns[index % 2], st.container(key=f'reportcard_{index}'):
+                subtitle = "Документ из прежнего архива" if report['legacy'] else f"Редакция {report['revision']} · {local_time(report['created_at'])}"
+                html(f'<div class="record-heading"><span class="record-icon" aria-hidden="true">DOCX</span>'
+                     f'<div><h3>{safe(report_label(report))}</h3><p>{safe(subtitle)}</p></div></div>')
                 for label, field, extension, mime in [("Word", "docx_id", ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
                                                      ("ZIP с доказательствами", "bundle_id", ".zip", "application/zip")]:
                     if not report.get(field):

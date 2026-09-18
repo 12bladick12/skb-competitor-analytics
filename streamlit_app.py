@@ -8,6 +8,7 @@ from cloud.readiness import check_drive, check_login_config, check_neon, section
 from cloud.storage_probe import check_drive_write, check_neon_write
 from cloud.drive_store import StorageError
 from cloud.screens import load_library, render_library
+from cloud.presentation import apply_theme, brand, masthead, account
 
 
 TITLE = "Конкурентная аналитика СКБ ИНДУКЦИЯ"
@@ -32,14 +33,25 @@ def show_check(result):
         st.metric("Свободное место Google Drive", f"{result.details['free_bytes'] / 1e9:.2f} ГБ")
 
 
+def sidebar_account(access):
+    with st.sidebar.container(key='account'):
+        account(access.email, ROLE_LABELS[access.role])
+        if st.button("Выйти", key='logout', width='stretch'):
+            st.session_state.clear()
+            st.logout()
+            st.stop()
+        with st.expander("О сервисе"):
+            public_links()
+
+
 def main():
-    st.set_page_config(page_title=TITLE, page_icon="📊", layout="wide")
-    st.title(TITLE)
-    st.caption("Публикации конкурентов · Аналитические записки · Архив отчётов")
-    public_links()
+    st.set_page_config(page_title=TITLE, page_icon="◈", layout="wide")
+    apply_theme()
+    masthead()
+    st.title("Конкурентная аналитика")
     if render_public_document(st.query_params.get("page", "")):
+        public_links()
         st.stop()
-    st.write(DESCRIPTION)
 
     config = settings()
     login = check_login_config(config)
@@ -49,39 +61,42 @@ def main():
         st.stop()
 
     if not st.user.is_logged_in:
-        st.subheader("Вход для приглашённых сотрудников")
-        st.write("Используйте Google-аккаунт, на который вам предоставили доступ.")
-        if st.button("Войти через Google", type="primary"):
-            try:
-                st.login()
-            except Exception:
-                st.error("Не удалось начать вход. Администратору необходимо проверить настройки Google OAuth.")
+        st.write(DESCRIPTION)
+        with st.container(key='login-panel'):
+            st.subheader("Вход для приглашённых сотрудников")
+            st.write("Используйте Google-аккаунт, на который вам предоставили доступ.")
+            if st.button("Войти через Google", type="primary"):
+                try:
+                    st.login()
+                except Exception:
+                    st.error("Не удалось начать вход. Администратору необходимо проверить настройки Google OAuth.")
+        public_links()
         st.stop()
 
     access = authorize(identity(), section(config, "access"))
-    if st.sidebar.button("Выйти"):
-        # Do not retain administrator diagnostics across identities in the browser.
-        st.session_state.clear()
-        st.logout()
-        st.stop()
     if not access.allowed:
         st.session_state.clear()
         st.warning("Доступ не предоставлен. Обратитесь к администратору или войдите другим Google-аккаунтом.")
+        if st.sidebar.button("Выйти"):
+            st.logout()
         st.stop()
 
-    st.sidebar.write(access.email)
-    st.sidebar.caption(ROLE_LABELS[access.role])
+    with st.sidebar:
+        brand()
     library = None
     if section(config, "cloud").get("database_url"):
         try:
             with st.spinner("Загружаем общие материалы…"):
                 library = load_library(section(config, "cloud")["database_url"])
             if library and render_library(library, access, settings, identity):
+                sidebar_account(access)
                 return
         except (StorageError, ValueError):
             st.error("Не удалось загрузить общие материалы. Повторите открытие страницы; сохранённые данные не сбрасываются.")
             if access.role != 'admin':
+                sidebar_account(access)
                 st.stop()
+    sidebar_account(access)
     if library is None:
         st.subheader("Подготовка общей версии")
         st.write("Вход по приглашениям подключён. Публикации, редактор и архив появятся после переноса данных и завершения облачной версии.")

@@ -25,6 +25,36 @@ def sample():
 
 
 class LibraryTests(unittest.TestCase):
+    def test_external_text_is_escaped_in_visual_cards_and_source_table(self):
+        from cloud.presentation import event_card
+        event = sample()['event']['1']
+        event['title'] = '<img src=x onerror=alert(1)>'
+        event['description'] = '<script>alert(2)</script>'
+        with patch('cloud.presentation.html') as render:
+            event_card(event, 'Новости')
+        markup = render.call_args.args[0]
+        self.assertIn('&lt;img', markup)
+        self.assertIn('&lt;script&gt;', markup)
+        self.assertNotIn('<script>', markup)
+        with patch('cloud.screens.html') as render:
+            coverage_table([{'competitor_code':'<img src=x>', 'kind':'news', 'status':'success',
+                             'items':0, 'url':'javascript:alert(3)', 'reason':'<script>unsafe</script>'}])
+        markup = render.call_args.args[0]
+        self.assertNotIn('href=', markup)
+        self.assertNotIn('<script>', markup)
+        self.assertIn('Проверен, публикаций нет', markup)
+
+    def test_visual_coverage_keeps_partial_failed_and_unconfirmed_separate(self):
+        from cloud.presentation import coverage_summary
+        with patch('cloud.presentation.html') as render:
+            coverage_summary([{'status':'success','items':0},{'status':'partial'},
+                              {'status':'error'},{'status':'not_configured'}])
+        markup = render.call_args.args[0]
+        self.assertIn('Проверено источников: 1 из 4', markup)
+        self.assertIn('Из проверенных: 1 без публикаций', markup)
+        for label in ('Сбор неполный', 'Ошибки', 'Канал не подтверждён'):
+            self.assertIn(label, markup)
+
     def test_import_identifier_survives_json_key_normalization(self):
         self.assertEqual(catalog_id({'links':{2:'two',10:'ten'}}),catalog_id({'links':{'2':'two','10':'ten'}}))
     def test_migration_uses_same_neon_endpoint_without_pooler(self):
