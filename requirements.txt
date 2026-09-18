@@ -1,0 +1,5 @@
+# Bootstrap Streamlit application; the local monitor has separate dependencies.
+-c requirements-cloud-lock.txt
+streamlit[auth]==1.64.0
+requests==2.34.2
+psycopg[binary]==3.3.5
