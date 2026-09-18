@@ -132,6 +132,9 @@ class LibraryScreenTests(unittest.TestCase):
         app.secrets['cloud'] = CONFIG['cloud']
         app.query_params['section']=page
         app.query_params['period']='2026-09'
+        editor = patch('cloud.editor.DraftService.open',return_value={'draft':None,'library':sample(),'issues':[],'role':'viewer'})
+        editor.start()
+        self.addCleanup(editor.stop)
         return app,helper.user(email)
 
     def test_invited_viewer_reads_library_without_admin_controls(self):
@@ -186,7 +189,7 @@ class LibraryScreenTests(unittest.TestCase):
         with patch('streamlit.user',user),patch('cloud.library.Repository.load',return_value=sample()):
             app.run()
             for page,title in [('Публикации','Публикации'),('Конкуренты','Конкуренты'),('Сбор данных','История сборов'),
-                               ('Черновики','Перенесённые черновики'),('Архив','Архив отчётов'),('Публикации','Публикации')]:
+                               ('Черновики','Редактор записки'),('Архив','Архив отчётов'),('Публикации','Публикации')]:
                 app.radio[0].set_value(page).run()
                 self.assertEqual(app.subheader[0].value,title)
             app.selectbox(key='pub_competitor').set_value('b').run()

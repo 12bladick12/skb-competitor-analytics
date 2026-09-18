@@ -12,6 +12,7 @@ from .drive_store import DriveStore, StorageError
 from .library import Repository, period_events, read_asset
 from .readiness import section
 from .presentation import html, safe, note, section_heading, event_card, coverage_summary, competitor_bars
+from .editor import render_editor, navigation_guard
 
 
 KINDS = {"news": "Новости сайтов", "telegram": "Telegram", "products": "Продукция и предложения"}
@@ -125,7 +126,9 @@ def render_library(library, access, settings, identity):
     st.query_params["period"] = period
     st.sidebar.caption("Данные на " + local_time(library['manifest']['source_created_at']) + " · Екатеринбург")
     with st.sidebar.expander("Статус приложения"):
-        st.caption("Доступны перенесённые материалы. Новый сбор из облака и совместное редактирование ещё не подключены.")
+        st.caption("Доступны перенесённые материалы и общий редактор записок. Новый сбор и выпуск новых Word-отчётов ещё не подключены.")
+    if navigation_guard(page, period):
+        return True
     events = period_events(library, period)
     checks = library['period'][period]['checks']
 
@@ -233,17 +236,7 @@ def render_library(library, access, settings, identity):
                 st.caption("Время запуска и проверок показано по Екатеринбургу.")
                 coverage_table(run['checks'])
     elif page == "Черновики":
-        st.subheader("Перенесённые черновики")
-        note("Режим просмотра", "Ручные тексты и состав материалов сохранены. Совместное редактирование и выпуск новых документов ещё подключаются.")
-        drafts = [d for d in library['draft'].values() if d['period'] == period]
-        if not drafts:
-            st.write("Черновика за выбранный период пока нет.")
-        for draft in drafts:
-            st.write(f"Редакция {draft['revision']} · {period_label(draft['period'])}")
-            st.markdown("**Выводы аналитика**")
-            st.text(draft['conclusions'] or 'Выводы не заполнены.')
-            st.dataframe([{"Включён": i['included'], "Заголовок": i['title'], "Описание": i['description'],
-                           "Дата": i['source']['date_label']} for i in draft['items']], hide_index=True, width="stretch")
+        render_editor(library, access, settings, identity, period)
     elif page == "Архив":
         st.subheader("Архив отчётов")
         reports = sorted(library['report'].values(), key=lambda r: (r.get('created_at') or '', r['name']), reverse=True)

@@ -19,7 +19,7 @@ class PostgresImportTests(unittest.TestCase):
             connect=lambda **kw: psycopg.connect(url,autocommit=True))
         self.repository.initialize()
         with self.repository.transaction(write=True) as conn:
-            conn.execute('TRUNCATE skb_analytics.state,skb_analytics.assets,skb_analytics.records,skb_analytics.imports')
+            conn.execute('TRUNCATE skb_analytics.state,skb_analytics.assets,skb_analytics.records,skb_analytics.imports CASCADE')
 
     def catalog(self):
         return {'manifest':{'source_created_at':'2026-09-18'},'assets':{},'records':[

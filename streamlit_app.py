@@ -9,6 +9,7 @@ from cloud.storage_probe import check_drive_write, check_neon_write
 from cloud.drive_store import StorageError
 from cloud.screens import load_library, render_library
 from cloud.presentation import apply_theme, brand, masthead, account
+from cloud.editor import dirty, render_guard
 
 
 TITLE = "Конкурентная аналитика СКБ ИНДУКЦИЯ"
@@ -34,12 +35,22 @@ def show_check(result):
 
 
 def sidebar_account(access):
+    render_guard()
     with st.sidebar.container(key='account'):
         account(access.email, ROLE_LABELS[access.role])
         if st.button("Выйти", key='logout', width='stretch'):
-            st.session_state.clear()
-            st.logout()
-            st.stop()
+            if dirty():
+                st.session_state['confirm_logout'] = True
+            else:
+                st.session_state.clear()
+                st.logout()
+                st.stop()
+        if st.session_state.get('confirm_logout'):
+            st.warning('В записке есть несохранённые правки.')
+            if st.button('Выйти без сохранения'):
+                st.session_state.clear()
+                st.logout()
+                st.stop()
         with st.expander("О сервисе"):
             public_links()
 
