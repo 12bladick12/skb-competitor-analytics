@@ -103,6 +103,23 @@ class CloudReadinessTests(unittest.TestCase):
         self.assertEqual(check_drive(config, session=session).status, "error")
         session.get.assert_not_called()
 
+    def test_drive_missing_settings_identify_only_field_names_without_network(self):
+        cases = [
+            ({}, ["client_id", "client_secret", "refresh_token"]),
+            ({"client_id": "DO_NOT_PRINT", "client_secret": "DO_NOT_PRINT"}, ["refresh_token"]),
+            ({"client_id": "DO_NOT_PRINT", "client_secret": "  ", "refresh_token": 123}, ["client_secret", "refresh_token"]),
+        ]
+        with patch("requests.Session") as network:
+            for values, missing in cases:
+                with self.subTest(missing=missing):
+                    result = check_drive({"drive": values})
+                    self.assertEqual(result.status, "pending")
+                    self.assertEqual(result.details, {"missing_fields": missing})
+                    for key in missing:
+                        self.assertIn(key, result.message)
+                    self.assertNotIn("DO_NOT_PRINT", json.dumps(result.to_dict()))
+            network.assert_not_called()
+
     def test_toml_syntax_failure_never_echoes_secret(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
             path = Path(directory) / "bad.toml"

@@ -125,8 +125,16 @@ def quota_result(payload, *, minimum_free_bytes=2_000_000_000):
 def check_drive(config, *, offline=False, session=None):
     settings = section(config, "drive")
     fields = ("client_id", "client_secret", "refresh_token")
-    if any(not _text(settings.get(key)) for key in fields):
-        return Check("drive", "pending", "Нужно подключить аккаунт владельца Drive через OAuth.")
+    missing = [key for key in fields if not _text(settings.get(key))]
+    if missing:
+        names = ", ".join(missing)
+        return Check(
+            "drive", "pending",
+            f"В разделе [drive] не заполнены поля: {names}. "
+            "Если подключение уже выполнено на компьютере, перенесите обновлённый "
+            "secrets.toml в Streamlit → Settings → Secrets и сохраните изменения.",
+            {"missing_fields": missing},
+        )
     if offline:
         return Check("drive", "unchecked", "Параметры Drive заданы; доступ и свободное место не проверялись.")
     owns_session = session is None
