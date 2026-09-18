@@ -212,8 +212,9 @@ def render_library(library, access, settings, identity):
     elif page == "Конкуренты":
         st.subheader("Конкуренты")
         st.caption(f"{len(library['competitor'])} компаний в мониторинге · " + period_label(period))
-        columns = st.columns(2)
         for index, (code, competitor) in enumerate(sorted(library['competitor'].items(), key=lambda pair: pair[1]['name'])):
+            if index % 2 == 0:
+                columns = st.columns(2)
             with columns[index % 2], st.container(key=f'competitorcard_{index}'):
                 number = sum(e['competitor_code'] == code for e in events)
                 html(f'<div class="record-heading"><span class="record-icon" aria-hidden="true">{safe(competitor["name"][:2])}</span>'
@@ -249,8 +250,9 @@ def render_library(library, access, settings, identity):
         st.caption(f"Документов: {len(reports)} · Все периоды · Сохранённые версии записок и подтверждающие материалы")
         if not reports:
             st.info("В архиве пока нет отчётов.")
-        report_columns = st.columns(2)
         for index, report in enumerate(reports):
+            if index % 2 == 0:
+                report_columns = st.columns(2)
             with report_columns[index % 2], st.container(key=f'reportcard_{index}'):
                 subtitle = "Документ из прежнего архива" if report['legacy'] else f"Редакция {report['revision']} · {local_time(report['created_at'])}"
                 html(f'<div class="record-heading"><span class="record-icon" aria-hidden="true">DOCX</span>'
