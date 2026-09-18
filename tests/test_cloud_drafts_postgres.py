@@ -24,7 +24,7 @@ class DraftPostgresTests(unittest.TestCase):
         self.store=DraftStore({},repository=self.repo)
         self.store.initialize()
         with self.repo.transaction(write=True) as conn:
-            conn.execute('TRUNCATE skb_analytics.draft_revisions,skb_analytics.draft_heads,skb_analytics.state,skb_analytics.assets,skb_analytics.records,skb_analytics.imports')
+            conn.execute('TRUNCATE skb_analytics.draft_revisions,skb_analytics.draft_heads,skb_analytics.state,skb_analytics.assets,skb_analytics.records,skb_analytics.imports CASCADE')
         data=fixture()
         imported=draft_fixture(data)
         imported['items'][0]['title']='Сохранённая ручная правка'
