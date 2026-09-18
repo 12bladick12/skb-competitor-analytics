@@ -1,0 +1,385 @@
+competitors:
+- name: СЕНСОР
+  code: sensor
+  base_url: https://sensor-com.ru/
+  sections:
+    news:
+    - https://sensor-com.ru/news/
+    products: []
+    promotions: []
+    docs: []
+  news_profile:
+    article_selectors:
+    - article
+    - .news-item
+    - .article-item
+    date_selectors:
+    - .news-date
+    - .news-detail-date
+    - .article__date
+    exclude_url_patterns:
+    - /cart
+    - /catalog
+    - /collection
+  discover_sections: false
+  monitor_sources:
+  - kind: news
+    url: https://sensor-com.ru/news/
+    mode: articles
+    crawl_mode: http
+    official_evidence_url: https://sensor-com.ru/
+    body_selectors:
+    - '#news-content'
+    - .article-content
+    - .article-main__subtitle
+- name: ТЕКО
+  code: teko
+  base_url: https://teko-com.ru/
+  sections:
+    news:
+    - https://teko-com.ru/news/
+    products: []
+    promotions: []
+    docs: []
+  news_profile:
+    article_selectors:
+    - article
+    - .news-item
+    - .article-item
+    date_selectors:
+    - .news-date
+    - .news-detail-date
+    - .article__date
+    exclude_url_patterns:
+    - /cart
+    - /catalog
+    - /articles/
+    - /useful-info/
+  telegram:
+    enabled: true
+    url: https://t.me/teko_pro
+    web_url: https://telegram.me/s/teko_pro
+  discover_sections: false
+  monitor_sources:
+  - kind: news
+    url: https://teko-com.ru/news/
+    mode: articles
+    crawl_mode: http
+    official_evidence_url: https://teko-com.ru/
+    body_selectors:
+    - .news-detail
+    - .news-detail-text
+    - .inner_content
+  - kind: products
+    url: https://teko-com.ru/new-products/
+    mode: announcements
+    card_selector: a.news-products-item
+    title_selector: .news-products-title
+    body_selectors:
+    - .news-detail
+    - .inner_content
+    official_evidence_url: https://teko-com.ru/
+  - kind: promotions
+    url: https://teko-com.ru/sales/
+    mode: announcements
+    crawl_mode: http
+    official_evidence_url: https://teko-com.ru/
+    card_selector: a.action-item
+    title_selector: .action-item-title
+    body_selectors:
+    - .action-description
+    - .inner_content
+    curated_offers: true
+- name: МЕГА-К
+  code: mega_k
+  base_url: https://mega-k.ru/
+  discover_sections: false
+  sections:
+    news:
+    - https://mega-k.ru/news/
+    products: []
+    promotions: []
+    docs: []
+  news_profile:
+    article_selectors:
+    - article
+    - .news-item
+    - .news-list-item
+    - .post
+    date_selectors:
+    - .subheader
+    - .news-date
+    - .post-date
+    - .article-date
+    exclude_url_patterns:
+    - /cart
+    - /catalog
+    - /newscategory/
+  monitor_sources:
+  - kind: news
+    url: https://mega-k.ru/news/
+    mode: articles
+    crawl_mode: http
+    official_evidence_url: https://mega-k.ru/
+    body_selectors:
+    - .news-item-content
+  - kind: products
+    url: https://mega-k.ru/productlist/new
+    mode: catalogue
+    card_selector: .products-view-item
+    link_selector: a.products-view-name-link
+    title_selector: .products-view-name
+    total_selector: .products-view-sort-result-number
+    official_evidence_url: https://mega-k.ru/
+- name: BESKONTA
+  code: beskonta
+  base_url: https://beskonta.ru/
+  sections:
+    news:
+    - https://beskonta.ru/text-news/
+    products: []
+    promotions: []
+    docs: []
+  news_profile:
+    article_selectors:
+    - article
+    - .news-item
+    - .article-item
+    date_selectors:
+    - .news-date
+    - .date
+    - .article-date
+    exclude_url_patterns:
+    - /cart
+    - /catalog
+  discover_sections: false
+  monitor_sources:
+  - kind: news
+    url: https://beskonta.ru/text-news/
+    mode: articles
+    crawl_mode: http
+    official_evidence_url: https://beskonta.ru/
+    body_selectors:
+    - .article-item_preview
+    - .article_category-content
+- name: Pepperl+Fuchs
+  code: pepperl_fuchs
+  base_url: https://blog.pepperl-fuchs.com/
+  discover_sections: false
+  sections:
+    news:
+    - https://blog.pepperl-fuchs.com/en/
+    products: []
+    promotions: []
+    docs: []
+  news_profile:
+    article_selectors:
+    - article
+    - .post
+    - .news-card
+    date_selectors:
+    - .post-date
+    - .article-date
+    - .date
+    listing_date_selectors:
+    - .fusion-meta-info .fusion-alignleft > span:not([class])
+    exclude_url_patterns:
+    - /en/category/
+    - /en/tag/
+  monitor_sources:
+  - kind: news
+    url: https://blog.pepperl-fuchs.com/en/
+    mode: articles
+    crawl_mode: http
+    official_evidence_url: https://blog.pepperl-fuchs.com/
+    body_selectors:
+    - .pf_post_content .fusion-content-tb
+- name: ifm
+  code: ifm
+  base_url: https://www.ifm.com/
+  discover_sections: false
+  crawl_mode: playwright
+  sections:
+    news:
+    - https://www.ifm.com/us/en/shared/topic/press-portal/releases
+    products: []
+    promotions: []
+    docs: []
+  news_profile:
+    article_selectors:
+    - article
+    - .news-item
+    - .news-card
+    date_selectors:
+    - .news-date
+    - .date
+    - .article-date
+    exclude_url_patterns:
+    - /products/
+    - /services/
+    - /productComparison
+    - /product-returns
+  monitor_sources:
+  - kind: news
+    url: https://www.ifm.com/us/en/shared/topic/press-portal/releases
+    mode: articles
+    crawl_mode: playwright
+    official_evidence_url: https://www.ifm.com/
+  - kind: products
+    url: https://www.ifm.com/us/en/productnews
+    mode: catalogue
+    crawl_mode: playwright
+    official_evidence_url: https://www.ifm.com/
+    card_selector: a.ifm-product-news-teaser__link
+    title_selector: h3
+    category_selector: a[href*="/us/en/productnews/"]
+- name: Balluff
+  code: balluff
+  base_url: https://www.balluff.com/
+  discover_sections: false
+  crawl_mode: playwright
+  sections:
+    news:
+    - https://www.balluff.com/en-us/product-news
+    products: []
+    promotions: []
+    docs: []
+  news_profile:
+    article_selectors:
+    - a.flex-auto[href*='/news/']
+    - article
+    - .news-item
+    - .news-card
+    - .teaser
+    - .card
+    date_selectors:
+    - .news-date
+    - .date
+    - .article-date
+    listing_date_selectors:
+    - time
+    exclude_url_patterns:
+    - /products/
+    - /en-us/contact
+  monitor_sources:
+  - kind: news
+    url: https://www.balluff.com/en-us/product-news
+    mode: articles
+    crawl_mode: playwright
+    official_evidence_url: https://www.balluff.com/
+- name: SICK
+  code: sick
+  base_url: https://www.sick.com/
+  discover_sections: false
+  sections:
+    news:
+    - https://www.sick.com/us/en/press/pressreleases?page=0&pressType=&year=
+    products: []
+    promotions: []
+    docs: []
+  news_profile:
+    article_selectors:
+    - .teaser_item
+    - article
+    - .news-item
+    - .news-card
+    date_selectors:
+    - .press_date
+    - .news-date
+    - .date
+    - .article-date
+    listing_date_selectors:
+    - .slice_2.date
+    exclude_url_patterns:
+    - /products/
+    - /search/
+  crawl_mode: playwright
+  monitor_sources:
+  - kind: news
+    url: https://www.sick.com/us/en/press/pressreleases?page=0&pressType=&year=
+    mode: articles
+    crawl_mode: playwright
+    official_evidence_url: https://www.sick.com/
+    body_selectors:
+    - .press_content
+    - .press_detail
+    - .content
+- name: Autonics
+  code: autonics
+  base_url: https://www.autonics.com/
+  discover_sections: false
+  sections:
+    news:
+    - https://www.autonics.com/glb/company/ntt/news/list
+    products: []
+    promotions: []
+    docs: []
+  news_profile:
+    article_selectors:
+    - .article-list .article
+    - article
+    - .news-item
+    - .news-card
+    date_selectors:
+    - .news-date
+    - .date
+    - .article-date
+    listing_date_selectors:
+    - .article-reg-date
+    exclude_url_patterns:
+    - /products/
+    - /cart
+    - /prductNews
+  monitor_sources:
+  - kind: news
+    url: https://www.autonics.com/glb/company/ntt/news/list
+    mode: articles
+    crawl_mode: http
+    official_evidence_url: https://www.autonics.com/
+    body_selectors:
+    - .article-view-content
+    - .article-content
+    - .view-cont
+    - .board-view
+  - kind: products
+    url: https://www.autonics.com/glb/prductNews/list
+    mode: inline
+    official_evidence_url: https://www.autonics.com/
+    card_selector: .list-body .product-item
+- name: LANBAO
+  code: lanbao
+  base_url: https://www.cnlanbaosensor.com/
+  discover_sections: false
+  sections:
+    news:
+    - https://www.cnlanbaosensor.com/news/
+    products: []
+    promotions: []
+    docs: []
+  news_profile:
+    article_selectors:
+    - article
+    - .news-item
+    - .news-card
+    - .post
+    date_selectors:
+    - .news-date
+    - .date
+    - .post-date
+    exclude_url_patterns:
+    - /products/
+    - /produce/
+    - /collection
+    - /cart
+  monitor_sources:
+  - kind: news
+    url: https://www.cnlanbaosensor.com/news/
+    mode: articles
+    crawl_mode: http
+    official_evidence_url: https://www.cnlanbaosensor.com/
+    card_selector: figcaption.item-info
+    link_selector: h3 a[href]
+    title_selector: h3.item-title
+    body_selectors:
+    - .fl-rich-text
+    - .entry-content

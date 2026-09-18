@@ -173,8 +173,8 @@ class DraftScreenTests(unittest.TestCase):
         next(b for b in app.button if b.label=='Сохранить правки').click().run()
         self.assertEqual(self.store.draft['revision'],2)
         self.assertEqual(self.store.draft['items'][0]['title'],'Новый заголовок')
-        app.radio[0].set_value('Обзор').run()
-        app.radio[0].set_value('Черновики').run()
+        app.radio(key="nav_page").set_value('Обзор').run()
+        app.radio(key="nav_page").set_value('Черновики').run()
         self.assertEqual(next(x for x in app.text_input if x.label=='Заголовок').value,'Новый заголовок')
         next(b for b in app.button if b.label=='Показать сохранённую записку').click().run()
         self.assertTrue(any('Сохранённая редакция 2' in x.value for x in app.caption))
@@ -185,7 +185,7 @@ class DraftScreenTests(unittest.TestCase):
     def test_unsaved_navigation_and_conflict_preserve_work(self):
         app=self.app.run()
         next(x for x in app.text_input if x.label=='Заголовок').set_value('Несохранённый заголовок').run()
-        app.radio[0].set_value('Обзор').run()
+        app.radio(key="nav_page").set_value('Обзор').run()
         self.assertTrue(any('несохранённые' in x.value for x in app.warning))
         next(b for b in app.button if b.label=='Вернуться к черновику').click().run()
         self.assertEqual(next(x for x in app.text_input if x.label=='Заголовок').value,'Несохранённый заголовок')
@@ -200,5 +200,26 @@ class DraftScreenTests(unittest.TestCase):
         app=self.app.run()
         self.assertNotIn('Сохранить правки',[b.label for b in app.button])
         self.assertTrue(all(x.disabled for x in app.text_input))
+        self.assertFalse(app.exception)
+
+    def test_material_groups_position_and_switching_keep_unsaved_edits(self):
+        for ident,kind in [(4,'news'),(5,'telegram')]:
+            event=deepcopy(self.store.data['event']['1'])
+            event.update(id=ident,kind=kind,title='Заголовок '+str(ident),version=str(ident)*64)
+            self.store.data['event'][str(ident)]=event
+            self.store.data['period']['2026-09']['event_ids'].append(ident)
+        self.store.draft=draft_fixture(self.store.data)
+        app=self.app.run()
+        selector=next(x for x in app.selectbox if x.label=='Материал для редактирования')
+        self.assertEqual(selector.options,['Материал 1','Заголовок 4'])
+        next(x for x in app.text_input if x.label=='Заголовок').set_value('Моя несохранённая правка').run()
+        next(b for b in app.button if b.label=='Следующий →').click().run()
+        self.assertEqual(next(x for x in app.text_input if x.label=='Заголовок').value,'Заголовок 4')
+        self.assertTrue(any('Материал 2 из 2' in x.value for x in app.markdown))
+        next(r for r in app.radio if r.label=='Группа материалов').set_value('telegram').run()
+        self.assertEqual(next(x for x in app.selectbox if x.label=='Материал для редактирования').options,['Заголовок 5'])
+        next(r for r in app.radio if r.label=='Группа материалов').set_value('news').run()
+        next(b for b in app.button if b.label=='← Предыдущий').click().run()
+        self.assertEqual(next(x for x in app.text_input if x.label=='Заголовок').value,'Моя несохранённая правка')
         self.assertFalse(app.exception)
 

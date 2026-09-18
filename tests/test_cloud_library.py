@@ -48,11 +48,11 @@ class LibraryTests(unittest.TestCase):
         from cloud.presentation import coverage_summary
         with patch('cloud.presentation.html') as render:
             coverage_summary([{'status':'success','items':0},{'status':'partial'},
-                              {'status':'error'},{'status':'not_configured'}])
-        markup = render.call_args.args[0]
-        self.assertIn('Проверено источников: 1 из 4', markup)
+                              {'status':'error'},{'status':'not_configured','kind':'telegram','url':''}])
+        markup = ''.join(c.args[0] for c in render.call_args_list)
+        self.assertIn('Проверено источников: 1 из 3', markup)
         self.assertIn('Из проверенных: 1 без публикаций', markup)
-        for label in ('Сбор неполный', 'Ошибки', 'Канал не подтверждён'):
+        for label in ('Сбор неполный', 'Ошибки', 'не входят в число источников'):
             self.assertIn(label, markup)
 
     def test_import_identifier_survives_json_key_normalization(self):
@@ -123,6 +123,10 @@ class LibraryTests(unittest.TestCase):
 
 
 class LibraryScreenTests(unittest.TestCase):
+    def setUp(self):
+        probe=patch('cloud.job_screen.JobService.list',return_value=[])
+        probe.start()
+        self.addCleanup(probe.stop)
     def application(self, page, email='reader@example.com'):
         import test_cloud_streamlit as fixture
         from cloud.screens import load_library
@@ -188,7 +192,7 @@ class LibraryScreenTests(unittest.TestCase):
         app,user=self.application('Обзор')
         with patch('streamlit.user',user),patch('cloud.library.Repository.load',return_value=sample()):
             app.run()
-            for page,title in [('Публикации','Публикации'),('Конкуренты','Конкуренты'),('Сбор данных','История сборов'),
+            for page,title in [('Публикации','Публикации'),('Конкуренты','Конкуренты'),('Сбор данных','Сбор данных'),
                                ('Черновики','Редактор записки'),('Архив','Архив отчётов'),('Публикации','Публикации')]:
                 app.radio[0].set_value(page).run()
                 self.assertEqual(app.subheader[0].value,title)
