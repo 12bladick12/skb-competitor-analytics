@@ -9,13 +9,17 @@ from zipfile import ZipFile, BadZipFile
 
 from .drive_store import DriveStore, StorageError
 from .readiness import neon_parameters, section
+from .neon_http import MigrationConnection, NeonError, NeonHTTP
 
 
 VISIBLE_KINDS = ("event", "period", "competitor", "run", "report", "draft")
 
 
 def canonical(value):
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    # JSON changes numeric mapping keys into strings; normalize before sorting
+    # so preparation and a later reload produce the same import identifier.
+    normalized=json.loads(json.dumps(value,ensure_ascii=False))
+    return json.dumps(normalized, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
 def catalog_id(catalog):
@@ -34,6 +38,8 @@ class Repository:
             self.params['host'] = endpoint.removesuffix('-pooler') + '.' + suffix
         self.params['application_name'] = 'skb-analytics-migration' if migration else 'skb-analytics-library'
         self.connect = connect or psycopg.connect
+        self.http = None if connect else NeonHTTP(config)
+        self.write_connect = connect or (lambda **_: MigrationConnection(self.http))
 
     @contextmanager
     def transaction(self, *, write=False):
@@ -54,15 +60,10 @@ class Repository:
         # Submit the complete DDL transaction in one round trip. A dropped client
         # connection cannot leave a successfully created schema waiting for the
         # next client command/COMMIT. Repeating this transaction is safe.
-        ddl = """
-            BEGIN;
-            SET LOCAL statement_timeout = '30s';
-            SET LOCAL idle_in_transaction_session_timeout = '120s';
-            DO $migration$ BEGIN
+        ddl = """DO $migration$ BEGIN
                 IF NOT pg_try_advisory_xact_lock(847263915) THEN
                     RAISE EXCEPTION 'Another import is in progress';
                 END IF;
-            END $migration$;
             CREATE SCHEMA IF NOT EXISTS skb_analytics;
             CREATE TABLE IF NOT EXISTS skb_analytics.imports (
                 id TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), manifest JSONB NOT NULL);
@@ -74,10 +75,10 @@ class Repository:
                 payload JSONB NOT NULL, PRIMARY KEY(import_id,id));
             CREATE TABLE IF NOT EXISTS skb_analytics.state (
                 key TEXT PRIMARY KEY, import_id TEXT NOT NULL REFERENCES skb_analytics.imports(id));
-            COMMIT;
+            END $migration$;
         """
         try:
-            with self.connect(**self.params) as conn:
+            with self.write_connect(**self.params) as conn:
                 conn.execute(ddl)
         except Exception:
             raise StorageError("Не удалось подтвердить создание облачных таблиц. Повторите перенос.") from None
@@ -121,9 +122,9 @@ class Repository:
                     FROM jsonb_each(catalog_json->'assets') AS a;
                 INSERT INTO skb_analytics.state(key,import_id) VALUES('active',import_key);
             END;
-        """).format(ident=sql.Literal(ident),catalog=sql.Literal(Jsonb(catalog)),packs=sql.Literal(Jsonb(packs)))
+        """).format(ident=sql.Literal(ident),catalog=sql.Literal(Jsonb(catalog,dumps=canonical)),packs=sql.Literal(Jsonb(packs)))
         try:
-            with self.connect(**self.params) as conn:
+            with self.write_connect(**self.params) as conn:
                 statement = sql.SQL("DO {}").format(sql.Literal(body.as_string(conn)))
                 conn.execute(statement)
         except Exception as exc:
@@ -135,6 +136,24 @@ class Repository:
         return ident
 
     def load(self):
+        if self.http is not None:
+            try:
+                rows=self.http.query("""SELECT i.id,i.manifest,r.kind,r.key,r.payload
+                    FROM skb_analytics.state s JOIN skb_analytics.imports i ON i.id=s.import_id
+                    LEFT JOIN skb_analytics.records r ON r.import_id=i.id
+                    AND r.kind IN ('event','period','competitor','run','report','draft')
+                    WHERE s.key='active'""")
+            except NeonError as exc:
+                if exc.sqlstate == '42P01':
+                    return None
+                raise
+            if not rows:
+                return None
+            result={kind:{} for kind in VISIBLE_KINDS}
+            for row in rows:
+                if row['kind'] in result:
+                    result[row['kind']][row['key']]=row['payload']
+            return {'id':rows[0]['id'],'manifest':rows[0]['manifest'],**result}
         with self.transaction() as conn:
             if not conn.execute("SELECT to_regclass('skb_analytics.state')").fetchone()[0]:
                 return None
@@ -152,6 +171,13 @@ class Repository:
     def asset(self, import_id, asset_id):
         if not re.fullmatch(r"[a-f0-9]{64}", str(asset_id)):
             raise StorageError("Файл не найден.")
+        if self.http is not None:
+            rows=self.http.query("""SELECT a.payload FROM skb_analytics.assets a
+                JOIN skb_analytics.state s ON s.import_id=a.import_id AND s.key='active'
+                WHERE a.import_id=$1 AND a.id=$2""",[import_id,asset_id])
+            if not rows:
+                raise StorageError("Файл не найден.")
+            return rows[0]['payload']
         with self.transaction() as conn:
             row = conn.execute("""SELECT a.payload FROM skb_analytics.assets a
                 JOIN skb_analytics.state s ON s.import_id=a.import_id AND s.key='active'

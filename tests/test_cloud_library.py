@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from zipfile import ZipFile
 
 from cloud.drive_store import DriveStore, StorageError
-from cloud.library import Repository, period_events, read_asset
+from cloud.library import Repository, catalog_id, period_events, read_asset
 from cloud.screens import coverage_table, file_bytes, url
 
 
@@ -25,6 +25,8 @@ def sample():
 
 
 class LibraryTests(unittest.TestCase):
+    def test_import_identifier_survives_json_key_normalization(self):
+        self.assertEqual(catalog_id({'links':{2:'two',10:'ten'}}),catalog_id({'links':{'2':'two','10':'ten'}}))
     def test_migration_uses_same_neon_endpoint_without_pooler(self):
         config={'cloud':{'database_url':'postgresql://test:TEST@ep-test-pooler.eu-central-1.aws.neon.tech/db'}}
         runtime=Repository(config,connect=MagicMock())
@@ -148,3 +150,21 @@ class LibraryScreenTests(unittest.TestCase):
         self.assertFalse(app.exception)
         read.assert_not_called()
         self.assertTrue(any('Доступ не предоставлен' in x.value for x in app.warning))
+
+    def test_navigation_and_filters_do_not_reset_on_every_second_rerun(self):
+        app,user=self.application('Обзор')
+        with patch('streamlit.user',user),patch('cloud.library.Repository.load',return_value=sample()):
+            app.run()
+            for page,title in [('Публикации','Публикации'),('Конкуренты','Конкуренты'),('Сбор данных','История сборов'),
+                               ('Черновики','Перенесённые черновики'),('Архив','Архив отчётов'),('Публикации','Публикации')]:
+                app.radio[0].set_value(page).run()
+                self.assertEqual(app.subheader[0].value,title)
+            app.selectbox(key='pub_competitor').set_value('b').run()
+            app.selectbox(key='pub_kind').set_value('products').run()
+            app.text_input(key='pub_query').set_value('датчиках').run()
+            self.assertTrue(any('Найдено материалов: 1' in x.value for x in app.caption))
+            app.radio[0].set_value('Обзор').run()
+            app.radio[0].set_value('Публикации').run()
+            self.assertEqual(app.selectbox(key='pub_competitor').value,'b')
+            self.assertEqual(app.text_input(key='pub_query').value,'датчиках')
+        self.assertFalse(app.exception)

@@ -71,6 +71,7 @@ def main():
 
     st.sidebar.write(access.email)
     st.sidebar.caption(ROLE_LABELS[access.role])
+    library = None
     if section(config, "cloud").get("database_url"):
         try:
             with st.spinner("Загружаем общие материалы…"):
@@ -81,8 +82,9 @@ def main():
             st.error("Не удалось загрузить общие материалы. Повторите открытие страницы; сохранённые данные не сбрасываются.")
             if access.role != 'admin':
                 st.stop()
-    st.subheader("Подготовка общей версии")
-    st.write("Вход по приглашениям подключён. Публикации, редактор и архив появятся после переноса данных и завершения облачной версии.")
+    if library is None:
+        st.subheader("Подготовка общей версии")
+        st.write("Вход по приглашениям подключён. Публикации, редактор и архив появятся после переноса данных и завершения облачной версии.")
 
     if access.role != "admin":
         st.info("Администратор сообщит, когда материалы будут доступны.")

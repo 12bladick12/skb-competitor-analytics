@@ -80,12 +80,16 @@ def render_library(library, access, settings, identity):
     if access.role == "admin":
         pages.append("Подключения")
     selected = st.query_params.get("section", "Обзор")
-    page = st.sidebar.radio("Раздел", pages, index=pages.index(selected) if selected in pages else 0)
+    if st.session_state.get('nav_page') not in pages:
+        st.session_state['nav_page']=selected if selected in pages else pages[0]
+    page = st.sidebar.radio("Раздел", pages, key='nav_page')
     st.query_params["section"] = page
     periods = sorted(library['period'], reverse=True)
     current = datetime.now(LOCAL).strftime('%Y-%m')
     initial = st.query_params.get("period", current)
-    period = st.sidebar.selectbox("Период", periods, index=periods.index(initial) if initial in periods else 0, format_func=period_label)
+    if st.session_state.get('nav_period') not in periods:
+        st.session_state['nav_period']=initial if initial in periods else periods[0]
+    period = st.sidebar.selectbox("Период", periods, key='nav_period', format_func=period_label)
     st.query_params["period"] = period
     st.caption("Данные перенесены " + local_time(library['manifest']['source_created_at']) + " (Екатеринбург). Новый сбор из облака ещё не подключён.")
     events = period_events(library, period)
@@ -108,11 +112,15 @@ def render_library(library, access, settings, identity):
         competitors = {"": "Все конкуренты", **{c: v['name'] for c,v in library['competitor'].items()}}
         kinds = {"": "Все типы", **KINDS}
         left, right = st.columns(2)
-        previous = st.query_params.get('competitor', '')
-        code = left.selectbox("Конкурент", list(competitors), index=list(competitors).index(previous) if previous in competitors else 0, format_func=competitors.get)
-        previous = st.query_params.get('kind', '')
-        kind = right.selectbox("Тип публикации", list(kinds), index=list(kinds).index(previous) if previous in kinds else 0, format_func=kinds.get)
-        query = st.text_input("Поиск по заголовку и тексту", value=st.query_params.get('q', ''))
+        for key, parameter, options in [('pub_competitor','competitor',competitors),('pub_kind','kind',kinds)]:
+            if st.session_state.get(key) not in options:
+                previous=st.query_params.get(parameter,'')
+                st.session_state[key]=previous if previous in options else ''
+        if 'pub_query' not in st.session_state:
+            st.session_state['pub_query']=st.query_params.get('q','')
+        code = left.selectbox("Конкурент", list(competitors), key='pub_competitor', format_func=competitors.get)
+        kind = right.selectbox("Тип публикации", list(kinds), key='pub_kind', format_func=kinds.get)
+        query = st.text_input("Поиск по заголовку и тексту", key='pub_query')
         st.query_params.update(competitor=code, kind=kind, q=query)
         found = period_events(library, period, competitor=code, kind=kind, query=query)
         st.caption(f"Найдено материалов: {len(found)}")
@@ -120,7 +128,11 @@ def render_library(library, access, settings, identity):
             st.info("По выбранным условиям публикаций нет.")
         else:
             pages_count = ceil(len(found) / 15)
-            number = st.number_input("Страница", min_value=1, max_value=pages_count, value=1, step=1)
+            signature=(period,code,kind,query)
+            if st.session_state.get('pub_filter_signature') != signature:
+                st.session_state['pub_page']=1
+                st.session_state['pub_filter_signature']=signature
+            number = st.number_input("Страница", min_value=1, max_value=pages_count, step=1, key='pub_page')
             for event in found[(number-1)*15:number*15]:
                 with st.expander(event['date_label'] + " · " + event['competitor_name'] + " · " + event['title']):
                     st.write(event['description'])
