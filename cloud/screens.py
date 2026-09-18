@@ -13,6 +13,7 @@ from .library import Repository, period_events, read_asset
 from .readiness import section
 from .presentation import html, safe, note, section_heading, event_card, coverage_summary, competitor_bars
 from .editor import render_editor, navigation_guard
+from .coverage import monitored, outside_scope
 
 
 KINDS = {"news": "Новости сайтов", "telegram": "Telegram", "products": "Продукция и предложения"}
@@ -63,6 +64,10 @@ def report_label(report):
 
 
 def coverage_table(checks):
+    excluded = outside_scope(checks)
+    checks = monitored(checks)
+    if excluded:
+        st.caption(f'Без настроенного Telegram-канала: {excluded}. Эти компании не учитываются как непроверенные источники.')
     if not checks:
         st.caption("За этот период проверки источников не сохранены.")
         return
@@ -126,7 +131,7 @@ def render_library(library, access, settings, identity):
     st.query_params["period"] = period
     st.sidebar.caption("Данные на " + local_time(library['manifest']['source_created_at']) + " · Екатеринбург")
     with st.sidebar.expander("Статус приложения"):
-        st.caption("Доступны перенесённые материалы и общий редактор записок. Новый сбор и выпуск новых Word-отчётов ещё не подключены.")
+        st.caption("Общий редактор, выпуск Word/ZIP и сбор по кнопке. Если бесплатный сервер остановится во время работы, задание можно повторить явно.")
     if navigation_guard(page, period):
         return True
     events = period_events(library, period)
@@ -156,7 +161,7 @@ def render_library(library, access, settings, identity):
                           args=('Публикации',), width='stretch')
         with summary:
             with st.container(key='overview-coverage'):
-                section_heading("Проверка источников", f"{len(checks)} источников")
+                section_heading("Проверка источников", f"{len(monitored(checks))} источников")
                 coverage_summary(checks)
             with st.container(key='overview-competitors'):
                 section_heading("Публикации по конкурентам", "Топ-5 за период")
@@ -227,8 +232,20 @@ def render_library(library, access, settings, identity):
                 with st.expander("Проверка источников"):
                     coverage_table([c for c in checks if c['competitor_code'] == code])
     elif page == "Сбор данных":
+        from .jobs import JobService
+        from .job_screen import render_jobs, launch
+        st.subheader('Сбор данных')
+        st.caption('Сайты производителей и Telegram ТЕКО. После сбора добавьте новые публикации в черновик кнопкой «Обновить материалы».')
+        chosen=st.text_input('Месяц сбора',value=period[:7],help='Формат ГГГГ-ММ. По умолчанию выбран период из меню.')
+        if access.role in ('admin','editor') and st.button('Запустить сбор',type='primary'):
+            try:
+                JobService(settings,identity).collect(library['id'],chosen)
+                launch(settings)
+                st.rerun()
+            except (StorageError,PermissionError,ValueError) as exc:
+                st.error(str(exc))
+        render_jobs(library['id'],settings,identity,access.role in ('admin','editor'))
         st.subheader("История сборов")
-        note("История мониторинга", "Здесь сохранены выполненные проверки. Запуск нового сбора из облака появится на следующем этапе.")
         for run in sorted(library['run'].values(), key=lambda r: r['id'], reverse=True):
             label = f"№ {run['id']} · {local_time(run['started_at'])} · {STATUS.get(run['status'],run['status'])}"
             with st.expander(label):
