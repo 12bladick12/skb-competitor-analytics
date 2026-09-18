@@ -1,8 +1,4 @@
-"""First cloud deployment: fail-closed login and owner-only connection checks.
-
-This entrypoint intentionally never opens the local monitoring database/files.
-Collection, editorial work and data migration are the next deployment stage.
-"""
+"""Invited-user cloud library. Persistent data lives in Neon and private Drive."""
 
 import streamlit as st
 
@@ -10,6 +6,9 @@ from cloud.access import ROLE_LABELS, authorize, require_admin
 from cloud.public_pages import DESCRIPTION, public_links, render_public_document
 from cloud.readiness import check_drive, check_login_config, check_neon, section
 from cloud.storage_probe import check_drive_write, check_neon_write
+from cloud.drive_store import StorageError
+from cloud.library import Repository
+from cloud.screens import render_library
 
 
 TITLE = "Конкурентная аналитика СКБ ИНДУКЦИЯ"
@@ -73,6 +72,16 @@ def main():
 
     st.sidebar.write(access.email)
     st.sidebar.caption(ROLE_LABELS[access.role])
+    if section(config, "cloud").get("database_url"):
+        try:
+            with st.spinner("Загружаем общие материалы…"):
+                library = Repository(config).load()
+            if library and render_library(library, access, settings, identity):
+                return
+        except (StorageError, ValueError):
+            st.error("Не удалось загрузить общие материалы. Повторите открытие страницы; сохранённые данные не сбрасываются.")
+            if access.role != 'admin':
+                st.stop()
     st.subheader("Подготовка общей версии")
     st.write("Вход по приглашениям подключён. Публикации, редактор и архив появятся после переноса данных и завершения облачной версии.")
 

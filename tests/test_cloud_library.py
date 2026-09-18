@@ -1,0 +1,128 @@
+import hashlib
+from io import BytesIO
+import unittest
+from unittest.mock import MagicMock, patch
+from zipfile import ZipFile
+
+from cloud.drive_store import DriveStore, StorageError
+from cloud.library import Repository, period_events, read_asset
+from cloud.screens import coverage_table, file_bytes, url
+
+
+CONFIG = {"cloud": {"database_url": "postgresql://test:TEST@ep-test.neon.tech/db"}}
+
+
+def sample():
+    events = {}
+    for ident, kind, state, code in [(1,'news','confirmed','a'), (2,'products','confirmed','b'), (3,'news','rejected','a')]:
+        events[str(ident)] = dict(id=ident,kind=kind,status=state,competitor_code=code,competitor_name=code,
+            title='Материал '+str(ident),original_text='Проверенный материал о датчиках',description='Описание',
+            date_label='01.09.2026',url='https://example.com/news',evidence_ids=['a'*64],provenance={'date_evidence':'01.09.2026'})
+    return {'id':'c'*64, 'manifest':{'source_created_at':'2026-09-18T09:00:00+00:00'}, 'event':events,
+            'period':{'2026-09':{'event_ids':[1,2,3], 'checks':[]}},
+            'competitor':{'a':{'code':'a','name':'Компания A','base_url':'https://example.com'},'b':{'code':'b','name':'Компания B','base_url':'https://example.org'}},
+            'run':{},'draft':{},'report':{}}
+
+
+class LibraryTests(unittest.TestCase):
+    def test_filters_never_promote_rejected_events(self):
+        data = sample()
+        self.assertEqual([e['id'] for e in period_events(data,'2026-09')], [1,2])
+        self.assertEqual([e['id'] for e in period_events(data,'2026-09',competitor='b',kind='products',query='ДАТЧИКАХ')],[2])
+        self.assertEqual(period_events(data,'2026-08'),[])
+        data['event']['1']['evidence_ids']=[]
+        self.assertEqual([e['id'] for e in period_events(data,'2026-09')],[2])
+
+    def test_file_reads_require_current_invitation(self):
+        with patch('cloud.screens.DriveStore') as drive, patch('cloud.screens.Repository') as repository:
+            with self.assertRaises(PermissionError):
+                file_bytes(lambda: {'access':{}},lambda:{},'c'*64,'a'*64)
+            drive.assert_not_called()
+            repository.assert_not_called()
+
+    def test_no_paths_or_arbitrary_ids_reach_storage(self):
+        connect = MagicMock()
+        repository = Repository(CONFIG, connect=connect)
+        for key in ('../secrets.toml', 'drive_id', 'file:///C:/private', 'https://evil.test'):
+            with self.assertRaises(StorageError):
+                repository.asset('c'*64,key)
+        connect.assert_not_called()
+        self.assertEqual(url('javascript:alert(1)'), '')
+        self.assertEqual(url('https://user:pass@example.org'), '')
+
+    def test_asset_bytes_and_integrity_and_bounded_extraction(self):
+        content=b'<script>window.RUN=true</script>'
+        digest=hashlib.sha256(content).hexdigest()
+        stream=BytesIO()
+        with ZipFile(stream,'w') as archive:
+            archive.writestr(digest,content)
+        repository, drive=MagicMock(),MagicMock()
+        repository.asset.return_value={'drive_id':'allocated_file_id','pack':'b'*64,'bytes':len(content)}
+        drive.download.return_value=stream.getvalue()
+        self.assertEqual(read_asset(repository,drive,'c'*64,digest),content)
+        repository.asset.return_value['bytes']=1
+        with self.assertRaises(StorageError):
+            read_asset(repository,drive,'c'*64,digest)
+
+    def test_download_rejects_wrong_hash_oversize_and_redirect(self):
+        session=MagicMock()
+        response=session.request.return_value
+        response.status_code=200
+        response.iter_content.return_value=iter([b'data'])
+        store=DriveStore({},session=session)
+        with patch.object(store,'_headers',return_value={'Authorization':'Bearer SECRET'}):
+            with self.assertRaisesRegex(StorageError,'сумма'):
+                store.download('valid_file_123','0'*64)
+            response.iter_content.return_value=iter([b'data'])
+            with self.assertRaisesRegex(StorageError,'Размер'):
+                store.download('valid_file_123','0'*64,maximum=2)
+            response.status_code=302
+            with self.assertRaises(StorageError):
+                store.download('valid_file_123','0'*64)
+        self.assertFalse(session.request.call_args.kwargs['allow_redirects'])
+
+
+class LibraryScreenTests(unittest.TestCase):
+    def application(self, page, email='reader@example.com'):
+        import test_cloud_streamlit as fixture
+        helper=fixture.CloudScreenTests()
+        app=helper.application()
+        app.secrets['cloud'] = CONFIG['cloud']
+        app.query_params['section']=page
+        app.query_params['period']='2026-09'
+        return app,helper.user(email)
+
+    def test_invited_viewer_reads_library_without_admin_controls(self):
+        app,user=self.application('Обзор')
+        with patch('streamlit.user',user),patch('cloud.library.Repository.load',return_value=sample()) as load:
+            app.run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.metric[0].value,'2')
+        self.assertNotIn('Подключения',app.radio[0].options)
+        load.assert_called_once()
+
+    def test_unauthorized_user_never_reads_database(self):
+        app,user=self.application('Обзор','outsider@example.com')
+        with patch('streamlit.user',user),patch('cloud.library.Repository.load') as load:
+            app.run()
+        self.assertFalse(app.exception)
+        load.assert_not_called()
+
+    def test_proof_is_displayed_as_code_without_executing_html(self):
+        app,user=self.application('Публикации')
+        html=b'<script>window.UNSAFE=true</script><p>proof</p>'
+        with patch('streamlit.user',user),patch('cloud.library.Repository.load',return_value=sample()), \
+             patch('cloud.screens.file_bytes',return_value=html) as read:
+            app.run()
+            next(b for b in app.button if b.label=='Показать сохранённый HTML').click().run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.code[0].value,html.decode())
+        self.assertFalse(any('UNSAFE' in m.value for m in app.markdown))
+        read.assert_called_once()
+
+    def test_empty_archive_and_saved_drafts_are_readable(self):
+        for page in ['Архив','Черновики','Конкуренты','Сбор данных']:
+            app,user=self.application(page)
+            with patch('streamlit.user',user),patch('cloud.library.Repository.load',return_value=sample()):
+                app.run()
+            self.assertFalse(app.exception)
