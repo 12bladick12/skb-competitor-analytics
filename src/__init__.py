@@ -1,0 +1,2 @@
+"""Competitor monitor package."""
+
