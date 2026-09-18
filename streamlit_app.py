@@ -10,7 +10,7 @@ from cloud.access import ROLE_LABELS, authorize, require_admin
 from cloud.readiness import check_drive, check_login_config, check_neon, section
 
 
-TITLE = "Конкрентная аналитика СКБ ИНДУКЦИЯ"
+TITLE = "Конкурентная аналитика СКБ ИНДУКЦИЯ"
 
 
 def settings():
