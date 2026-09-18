@@ -9,6 +9,7 @@ import streamlit as st
 from cloud.access import ROLE_LABELS, authorize, require_admin
 from cloud.public_pages import DESCRIPTION, public_links, render_public_document
 from cloud.readiness import check_drive, check_login_config, check_neon, section
+from cloud.storage_probe import check_drive_write, check_neon_write
 
 
 TITLE = "Конкурентная аналитика СКБ ИНДУКЦИЯ"
@@ -93,6 +94,19 @@ def main():
         with st.spinner("Проверяем подключения…"):
             show_check(check_neon(fresh))
             show_check(check_drive(fresh))
+    st.subheader("Проверка сохранения данных")
+    st.write("Создаёт отдельную тестовую запись в Neon и небольшой тестовый файл в Drive, "
+             "читает их обратно и удаляет. Проверка не переносит материалы мониторинга.")
+    if st.button("Проверить запись и чтение"):
+        fresh = settings()
+        try:
+            require_admin(identity(), section(fresh, "access"))
+        except PermissionError:
+            st.error("Права изменились. Обновите страницу.")
+            st.stop()
+        with st.spinner("Проверяем сохранение, повторное чтение и удаление тестовых данных…"):
+            show_check(check_neon_write(fresh))
+            show_check(check_drive_write(fresh))
     st.caption("Отключённый или отозванный доступ проверяется при каждом действии и обновлении страницы.")
 
 

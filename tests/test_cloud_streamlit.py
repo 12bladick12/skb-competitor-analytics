@@ -3,6 +3,8 @@ from pathlib import Path
 import unittest
 from unittest.mock import MagicMock, patch
 
+from cloud.readiness import Check
+
 
 HAS_STREAMLIT = importlib.util.find_spec("streamlit") is not None
 ROOT = Path(__file__).resolve().parents[1]
@@ -117,6 +119,37 @@ class CloudScreenTests(unittest.TestCase):
         self.assertEqual(len(app.exception), 0)
         self.assertIn("Доступ не предоставлен", app.warning[0].value)
         network.assert_not_called()
+
+    def test_write_probe_requires_admin_and_does_not_run_on_page_load(self):
+        for email, allowed in [("reader@example.com", False), ("admin@example.com", True)]:
+            with self.subTest(email=email):
+                app = self.application()
+                with patch("streamlit.user", self.user(email)), \
+                     patch("cloud.storage_probe.check_neon_write", return_value=Check("neon_write", "ok", "Test Neon OK")) as neon, \
+                     patch("cloud.storage_probe.check_drive_write", return_value=Check("drive_write", "ok", "Test Drive OK")) as drive:
+                    app.run()
+                    neon.assert_not_called()
+                    drive.assert_not_called()
+                    buttons = [b for b in app.button if b.label == "Проверить запись и чтение"]
+                    self.assertEqual(bool(buttons), allowed)
+                    if allowed:
+                        buttons[0].click().run()
+                        neon.assert_called_once()
+                        drive.assert_called_once()
+                    self.assertFalse(app.exception)
+
+    def test_revoked_admin_cannot_run_write_probe(self):
+        app = self.application()
+        with patch("streamlit.user", self.user("admin@example.com")), \
+             patch("cloud.storage_probe.check_neon_write") as neon, \
+             patch("cloud.storage_probe.check_drive_write") as drive:
+            app.run()
+            button = next(b for b in app.button if b.label == "Проверить запись и чтение")
+            app.secrets["access"]["admin_emails"] = []
+            button.click().run()
+            neon.assert_not_called()
+            drive.assert_not_called()
+        self.assertFalse(app.exception)
 
 
 if __name__ == "__main__":
