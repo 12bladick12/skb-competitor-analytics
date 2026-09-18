@@ -7,6 +7,7 @@ Collection, editorial work and data migration are the next deployment stage.
 import streamlit as st
 
 from cloud.access import ROLE_LABELS, authorize, require_admin
+from cloud.public_pages import DESCRIPTION, public_links, render_public_document
 from cloud.readiness import check_drive, check_login_config, check_neon, section
 
 
@@ -36,6 +37,10 @@ def main():
     st.set_page_config(page_title=TITLE, page_icon="📊", layout="wide")
     st.title(TITLE)
     st.caption("Публикации конкурентов · Аналитические записки · Архив отчётов")
+    public_links()
+    if render_public_document(st.query_params.get("page", "")):
+        st.stop()
+    st.write(DESCRIPTION)
 
     config = settings()
     login = check_login_config(config)

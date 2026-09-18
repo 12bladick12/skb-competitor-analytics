@@ -52,6 +52,34 @@ class CloudScreenTests(unittest.TestCase):
         self.assertEqual(len(app.exception), 0)
         self.assertEqual([b.label for b in app.button], ["Войти через Google"])
 
+    def test_public_documents_do_not_read_identity_or_connections(self):
+        for page, title in [("privacy", "Политика конфиденциальности"), ("terms", "Условия использования")]:
+            with self.subTest(page=page):
+                app = self.application()
+                app.secrets.clear()
+                app.secrets["auth"] = {}
+                app.query_params["page"] = page
+                with patch("streamlit.user", None), patch("requests.Session") as network, patch("cloud.readiness.check_login_config") as login:
+                    app.run()
+                self.assertEqual(len(app.exception), 0)
+                self.assertEqual(app.header[0].value, title)
+                self.assertEqual(len(app.button), 0)
+                self.assertEqual(len(app.sidebar), 0)
+                network.assert_not_called()
+                login.assert_not_called()
+                content = " ".join(item.value for item in app.markdown)
+                self.assertIn("Конкурентная аналитика", content)
+                self.assertNotIn("TEST-SECRET", content)
+
+    def test_unknown_public_page_does_not_bypass_login_or_open_files(self):
+        app = self.application()
+        app.query_params["page"] = "../../.streamlit/secrets.toml"
+        with patch("streamlit.user", self.user("", False)):
+            app.run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual([b.label for b in app.button], ["Войти через Google"])
+        self.assertFalse(app.header)
+
     def test_unknown_email_and_unverified_email_cannot_see_diagnostics(self):
         for email, verified in [("outsider@example.com", True), ("admin@example.com", False)]:
             with self.subTest(email=email, verified=verified):

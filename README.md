@@ -33,6 +33,28 @@
 5. В Streamlit **App settings → Secrets** вставить заполненный шаблон из
    `.streamlit/secrets.example.toml`: раздел `[auth]` и список `[access]`.
 
+### Если кнопка Publish app недоступна
+
+В **Branding** заполнить App name, выбрать User support email и указать
+Developer contact information. В App Domain указать публичные страницы приложения:
+
+| Поле | Адрес |
+| --- | --- |
+| Application home page | `https://skb-competitor-analytics.streamlit.app/` |
+| Application privacy policy link | `https://skb-competitor-analytics.streamlit.app/?page=privacy` |
+| Application terms of service link | `https://skb-competitor-analytics.streamlit.app/?page=terms` |
+
+В **Authorized domains** добавить `skb-competitor-analytics.streamlit.app`,
+сохранить Branding и вернуться в **Audience → Publish app → Confirm**.
+Google может отдельно запросить подтверждение домена или бренда; заполнение
+полей само по себе не означает прохождения проверки Google.
+
+Описание сервиса, политика и условия доступны без входа. Их открытие не читает
+настройки аккаунтов, не обращается к Neon/Drive и не предоставляет доступ к рабочим
+материалам. Указанный в Google email поддержки выбирается владельцем проекта.
+
+### Приглашения сотрудников
+
 В `admin_emails` указать собственный email Google, например
 `admin_emails = ["owner@example.com"]`, заменив пример своим адресом.
 Значения cookie_secret, client_id и client_secret хранить только в Secrets.
