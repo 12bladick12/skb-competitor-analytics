@@ -122,6 +122,11 @@ html, body, [data-testid="stApp"] { font-family: "Segoe UI", Arial, sans-serif; 
 .record-heading h3 { margin:0; padding:0; font-size:.97rem!important; line-height:1.5; color:var(--ink); overflow-wrap:anywhere; }
 .record-heading p { margin:5px 0 0; color:var(--muted); font-size:.73rem; }
 .st-key-login-panel { max-width:600px; padding:32px; margin:2rem 0; }
+.st-key-draft-workspace { background:white; border:1px solid var(--line); border-radius:12px; padding:24px; }
+.editor-meta { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:.75rem; }
+.draft-save-status { color:#8d5a19; font-size:.8rem; font-weight:600; padding:10px 14px; border-left:3px solid #dfa553; background:#fff6e9; border-radius:0 6px 6px 0; }
+.draft-save-status.is-clean { color:#267265; border-color:#61a99c; background:#eaf5f1; }
+.st-key-draft-workspace [data-testid="stText"] { white-space:pre-wrap; overflow-wrap:anywhere; }
 @media (max-width:1100px) { [data-testid="stMainBlockContainer"] { padding:4.4rem 1.5rem 2rem; } .coverage-visual { gap:16px; } [data-testid="stMetric"] { padding:15px; } }
 @media (max-width:640px) {
   [data-testid="stMainBlockContainer"] { padding:4rem 1rem 2rem; }
