@@ -13,7 +13,7 @@
     document.addEventListener('input', (event) => {
       const target = event.target;
       if (target instanceof Element && target.closest('.st-key-draft-workspace') &&
-          (target.matches('textarea') || target.matches('input:not([role="combobox"]):not([type="search"])'))) {
+          (target.matches('textarea') || target.matches('input:not([role="combobox"]):not([type="search"]):not([type="radio"])'))) {
         state.dirty = true;
         const label = document.querySelector('.draft-save-status');
         if (label) {

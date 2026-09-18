@@ -4,6 +4,7 @@ from copy import deepcopy
 import re
 
 from .library import period_events
+from .coverage import monitored
 
 
 class DraftConflict(ValueError):
@@ -98,6 +99,6 @@ def snapshot(draft, library, asset_ids=None):
         item['source'] = deepcopy(library['event'][str(item['event_id'])])
     period = library['period'][draft['period']]
     return {'draft_id': draft['id'], 'revision': draft['revision'], 'period': draft['period'],
-            'conclusions': draft['conclusions'], 'items': selected, 'checks': deepcopy(period['checks']),
+            'conclusions': draft['conclusions'], 'items': selected, 'checks': deepcopy(monitored(period['checks'])),
             'counts': dict(Counter(i['source']['kind'] for i in selected)),
             'incomplete': any(c['status'] in ('partial', 'error') for c in period['checks'])}

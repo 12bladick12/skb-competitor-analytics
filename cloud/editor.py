@@ -215,7 +215,7 @@ def render_editor(library, access, settings, identity, period):
     st.caption(f"Включено материалов: {included} из {len(draft['items'])}")
     pending = state['view']['issues']
     if pending:
-        st.warning(f'Требуют проверки: {len(pending)}. Откройте материал с пометкой «Проверить источник» и сравните версии.')
+        st.warning(f'Требуют проверки: {len(pending)}. Различия показаны внутри соответствующих материалов.')
     with st.container(key='draft-workspace'):
         materials, conclusions, preview, history = st.tabs(['Материалы', 'Выводы аналитика', 'Предпросмотр', 'История редакций'])
         with materials:
@@ -223,9 +223,39 @@ def render_editor(library, access, settings, identity, period):
             sources = {i['event_id']: i['source'] for i in draft['items']}
             problem = {i['event_id']: i for i in pending}
             if items:
-                selected = st.selectbox('Материал для редактирования', list(items), key='draft_selected_'+state['epoch'],
-                    format_func=lambda i: ('⚠ Проверить источник · ' if i in problem else '') + sources[i]['competitor_name'] + ' · ' + items[i]['title'])
+                groups = {'news': 'Новости сайтов', 'telegram': 'Telegram', 'products': 'Продукция и предложения'}
+                available = [k for k in groups if any(s['kind'] == k for s in sources.values())]
+                group = st.radio('Группа материалов', available, horizontal=True, key='draft_group_'+state['epoch'],
+                    format_func=lambda k: f'{groups[k]} · {sum(s["kind"] == k for s in sources.values())}')
+                choices = [i for i in items if sources[i]['kind'] == group]
+                selector_key = 'draft_selected_'+state['epoch']+'_'+group
+                if st.session_state.get(selector_key) not in choices:
+                    remembered = state.setdefault('selections', {}).get(group)
+                    st.session_state[selector_key] = remembered if remembered in choices else choices[0]
+                def remember_selection():
+                    state.setdefault('selections', {})[group] = st.session_state[selector_key]
+                selected = st.selectbox('Материал для редактирования', choices, key=selector_key,
+                                       format_func=lambda i: items[i]['title'], on_change=remember_selection)
+                position = choices.index(selected)
+                previous, progress, following = st.columns([1, 2.5, 1])
+                def choose(value):
+                    st.session_state[selector_key] = value
+                    state.setdefault('selections', {})[group] = value
+                previous.button('← Предыдущий', disabled=position == 0, on_click=choose,
+                                args=(choices[max(position-1, 0)],), width='stretch')
+                following.button('Следующий →', disabled=position == len(choices)-1, on_click=choose,
+                                 args=(choices[min(position+1, len(choices)-1)],), width='stretch')
+                progress.markdown(f'**{groups[group]} · Материал {position+1} из {len(choices)}**')
+                with st.expander('Список материалов группы', expanded=False):
+                    for number, event_id in enumerate(choices, 1):
+                        flags = (' · включён' if items[event_id]['included'] else ' · исключён')
+                        flags += ' · требует проверки' if event_id in problem else ''
+                        st.button(f'{number}. {items[event_id]["title"]}{flags}',
+                                  key=f'jump_{state["epoch"]}_{event_id}', on_click=choose, args=(event_id,),
+                                  type='primary' if event_id == selected else 'secondary', width='stretch')
                 item, source = items[selected], sources[selected]
+                html(f'<div class="current-material"><span>{safe(groups[group])} · {position+1} / {len(choices)}</span>'
+                     f'<h3>{safe(item["title"])}</h3></div>')
                 st.caption(source['date_label'] + ' · ' + source['competitor_name'] + ' · Дата и первоисточник не редактируются')
                 for field, label in [('included','Включить в записку'),('title','Заголовок'),('description','Краткое описание')]:
                     key = f'draft_{state["epoch"]}_{selected}_{field}'
@@ -258,7 +288,7 @@ def render_editor(library, access, settings, identity, period):
                          placeholder='Добавьте выводы, риски и рекомендации по итогам периода…',
                          on_change=_change, args=('conclusions',key))
         with preview:
-            st.caption('Просмотр строится только из сохранённой редакции. Выпуск новых Word-отчётов подключается отдельно.')
+            st.caption('Предпросмотр и Word/ZIP используют одну сохранённую редакцию. Каждый выпуск остаётся в архиве.')
             if st.button('Показать сохранённую записку'):
                 if dirty():
                     st.warning('Сначала сохраните правки, чтобы состав записки совпал с сохранённой редакцией.')
@@ -271,6 +301,22 @@ def render_editor(library, access, settings, identity, period):
                         st.error(str(exc))
             if value := state.get('preview'):
                 _preview(value)
+            if can_write and st.button('Выпустить Word и ZIP',type='primary'):
+                if dirty():
+                    st.warning('Сначала сохраните правки, затем выпускайте записку.')
+                else:
+                    from .jobs import JobService
+                    from .job_screen import launch
+                    try:
+                        JobService(settings,identity).export(import_id,period,draft['revision'])
+                        launch(settings)
+                        st.session_state['show_export_jobs']=True
+                        st.rerun()
+                    except (StorageError,PermissionError,ValueError) as exc:
+                        st.error(str(exc))
+            if st.session_state.get('show_export_jobs'):
+                from .job_screen import render_jobs
+                render_jobs(import_id,settings,identity,can_write,period=period)
         with history:
             if st.button('Показать историю редакций'):
                 try:

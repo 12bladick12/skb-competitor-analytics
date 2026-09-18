@@ -5,6 +5,7 @@ from html import escape
 from pathlib import Path
 
 import streamlit as st
+from .coverage import monitored, outside_scope
 
 
 def safe(value):
@@ -20,8 +21,9 @@ def apply_theme():
 
 
 def brand():
-    html('''<div class="brand"><span class="brand-mark" aria-hidden="true">И</span>
-    <div><strong>СКБ ИНДУКЦИЯ</strong><span>Конкурентная аналитика</span></div></div>''')
+    logo = Path(__file__).with_name('logo.base64').read_text(encoding='ascii').strip()
+    html(f'<div class="brand"><img src="data:image/png;base64,{logo}" alt="СКБ Индукция">'
+         '<span class="brand-caption">Конкурентная аналитика</span></div>')
 
 
 def masthead():
@@ -54,12 +56,13 @@ def event_card(event, kind_label, *, compact=False):
 
 
 def coverage_summary(checks):
+    excluded = outside_scope(checks)
+    checks = monitored(checks)
     counts = Counter(c.get('status') for c in checks)
     segments = [
         ('success', 'Проверены', '#238777'),
         ('partial', 'Сбор неполный', '#e48a36'),
         ('error', 'Ошибки', '#cb5260'),
-        ('not_configured', 'Канал не подтверждён', '#abb4c0'),
     ]
     known = {s[0] for s in segments}
     other = sum(v for k, v in counts.items() if k not in known)
@@ -83,6 +86,8 @@ def coverage_summary(checks):
          f'<div class="coverage-legend">{rows}</div></div>'
          f'<p class="coverage-foot">Из проверенных: {no_news} без публикаций. '
          'Неполный сбор и ошибки учитываются отдельно.</p>')
+    if excluded:
+        html(f'<p class="coverage-foot">Telegram отслеживается у ТЕКО. Компании без настроенного канала ({excluded}) не входят в число источников.</p>')
 
 
 def competitor_bars(events, competitors):
