@@ -383,6 +383,19 @@ class VerifiedMonitor:
             progress('Проверка материалов и ссылок', '', completed, run_id)
         self.revalidate_saved_events(period)
         self.check_event_links(run_id, period)
+        # Coverage reports publications in the requested period, not just newly
+        # inserted rows. A repeated successful run must not turn existing news
+        # into the misleading "checked, no publications" state.
+        events=self.store.events(period,[c.code for c in self.competitors])
+        counts={}
+        for event in events:
+            source=json.loads(event['evidence_json']).get('source_url','')
+            key=(event['competitor_code'],canonical_url(source))
+            counts[key]=counts.get(key,0)+1
+        for check in self.store.conn.execute('SELECT id,competitor_code,url FROM source_checks WHERE run_id=?',(run_id,)).fetchall():
+            self.store.conn.execute('UPDATE source_checks SET items=? WHERE id=?',
+                (counts.get((check['competitor_code'],canonical_url(check['url'])),0),check['id']))
+        self.store.conn.commit()
         return dict(run_id=run_id, status=self.store.finish(run_id))
 
     def check_event_links(self, run_id, period):
