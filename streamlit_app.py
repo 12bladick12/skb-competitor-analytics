@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from cloud.access import ROLE_LABELS, authorize, require_admin
+from cloud.access import ROLE_LABELS, current_access, current_admin
 from cloud.public_pages import DESCRIPTION, public_links, render_public_document
 from cloud.readiness import check_drive, check_login_config, check_neon, section
 from cloud.storage_probe import check_drive_write, check_neon_write
@@ -74,8 +74,8 @@ def main():
     if not st.user.is_logged_in:
         st.write(DESCRIPTION)
         with st.container(key='login-panel'):
-            st.subheader("Вход для приглашённых сотрудников")
-            st.write("Используйте Google-аккаунт, на который вам предоставили доступ.")
+            st.subheader("Вход и регистрация")
+            st.write("Войдите через Google. При первом входе будет создана учётная запись с доступом на просмотр.")
             if st.button("Войти через Google", type="primary"):
                 try:
                     st.login()
@@ -84,13 +84,30 @@ def main():
         public_links()
         st.stop()
 
-    access = authorize(identity(), section(config, "access"))
+    try:
+        access = current_access(identity(), config, register=True)
+    except (StorageError,ValueError):
+        st.error('Не удалось проверить доступ. Повторите открытие страницы.')
+        st.stop()
     if not access.allowed:
         st.session_state.clear()
-        st.warning("Доступ не предоставлен. Обратитесь к администратору или войдите другим Google-аккаунтом.")
+        st.warning("Доступ заблокирован администратором." if access.status=='blocked' else "Доступ не предоставлен. Обратитесь к администратору.")
         if st.sidebar.button("Выйти"):
             st.logout()
         st.stop()
+
+    @st.fragment(run_every=30)
+    def check_membership():
+        # An open tab also loses access after blocking/demotion; never trust its
+        # previous role for downloads, drafts, administrative actions or jobs.
+        try:
+            latest=current_access(identity(),settings())
+        except (StorageError,ValueError):
+            st.rerun()
+        if latest.role!=access.role or not latest.allowed:
+            st.session_state.clear()
+            st.rerun()
+    check_membership()
 
     with st.sidebar:
         brand()
@@ -109,8 +126,7 @@ def main():
                 st.stop()
     sidebar_account(access)
     if library is None:
-        st.subheader("Подготовка общей версии")
-        st.write("Вход по приглашениям подключён. Публикации, редактор и архив появятся после переноса данных и завершения облачной версии.")
+        st.info("Материалы пока не добавлены.")
 
     if access.role != "admin":
         st.info("Администратор сообщит, когда материалы будут доступны.")
@@ -123,8 +139,8 @@ def main():
         # Read settings and authorize again at the action boundary, not just in UI.
         fresh = settings()
         try:
-            require_admin(identity(), section(fresh, "access"))
-        except PermissionError:
+            current_admin(identity(), fresh)
+        except (PermissionError,StorageError):
             st.error("Права изменились. Обновите страницу.")
             st.stop()
         with st.spinner("Проверяем подключения…"):
@@ -136,8 +152,8 @@ def main():
     if st.button("Проверить запись и чтение"):
         fresh = settings()
         try:
-            require_admin(identity(), section(fresh, "access"))
-        except PermissionError:
+            current_admin(identity(), fresh)
+        except (PermissionError,StorageError):
             st.error("Права изменились. Обновите страницу.")
             st.stop()
         with st.spinner("Проверяем сохранение, повторное чтение и удаление тестовых данных…"):

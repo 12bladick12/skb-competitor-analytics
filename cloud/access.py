@@ -1,7 +1,7 @@
-"""Authorization for the first deployment. Identity comes ONLY from st.user/OIDC.
+"""Strict Google identity and fresh persistent membership for every action.
 
-Invitations are an explicit email allowlist in server-side Secrets until the
-shared membership store is implemented. Never accept identity from query params.
+The pure allowlist helper remains for setup/offline tests. Deployed access is
+resolved through Neon; identity never comes from query parameters.
 """
 
 from collections.abc import Mapping
@@ -27,6 +27,7 @@ def normalized_email(value):
 class Access:
     role: str = ""
     email: str = ""
+    status: str = ""
 
     @property
     def allowed(self):
@@ -59,4 +60,39 @@ def require_admin(claims, invitations):
     access = authorize(claims, invitations)
     if access.role != "admin":
         raise PermissionError("Это действие доступно администратору.")
+    return access
+
+
+def verified_identity(claims):
+    """Use the same strict OIDC validation for registration and every action."""
+    email=normalized_email(claims.get('email')) if isinstance(claims,Mapping) else ''
+    checked=authorize(claims,{'viewer_emails':[email]})
+    return (email,claims['sub']) if checked.allowed else None
+
+
+def current_access(claims, config, *, register=False, store_factory=None):
+    identity=verified_identity(claims)
+    if not identity:
+        return Access()
+    # Offline/setup mode retains the legacy allowlist. The deployed application
+    # always checks persistent membership; database failure never grants access.
+    if not config.get('cloud',{}).get('database_url'):
+        return authorize(claims,config.get('access',{}))
+    from .members import MemberStore
+    store=(store_factory or MemberStore)(config)
+    email,subject=identity
+    member=store.find(email,subject)
+    if register and (member is None or member.get('subject') is None):
+        member=store.register(email,subject)
+    if not member or member.get('subject')!=subject:
+        return Access(email=email)
+    if member['status']!='active':
+        return Access(email=email,status='blocked')
+    return Access(role=member['role'],email=member['email'],status='active')
+
+
+def current_admin(claims, config):
+    access=current_access(claims,config)
+    if access.role!='admin':
+        raise PermissionError('Это действие доступно администратору.')
     return access
