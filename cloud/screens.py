@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 
 import streamlit as st
 
-from .access import authorize
+from .access import current_access
 from .drive_store import DriveStore, StorageError
 from .library import Repository, period_events, read_asset
 from .readiness import section
@@ -63,7 +63,34 @@ def report_label(report):
     return report['name'].removesuffix('.docx').replace('__', ' — ').replace('_', ' ')
 
 
-def coverage_table(checks):
+def source_reason(check):
+    reason=str(check.get('reason') or '')
+    if not reason:
+        return '—'
+    if reason=='Ещё не проверен':
+        return reason
+    labels={
+        'publication_date_missing':'Дата публикации не указана',
+        'no_recognized_cards':'Публикации на странице не распознаны',
+        'page_not_found':'Страница не найдена',
+        'access_block':'Источник ограничил доступ',
+        'archive_page_limit':'Проверены не все страницы архива',
+        'article_page_limit':'Проверены не все публикации',
+        'article_content_missing':'Не удалось прочитать текст публикации',
+        'incomplete_product_listing':'Каталог продукции загружен не полностью',
+        'baseline_evidence_missing':'Недостаточно данных для сравнения каталога',
+        'product_detail_unavailable':'Карточка продукции недоступна',
+        'conflicting_publication_dates':'Даты публикации противоречат друг другу',
+        'article_listing_date_conflict':'Дата в новости отличается от даты в списке',
+        'future_publication_date':'Указана будущая дата публикации',
+    }
+    found=[text for code,text in labels.items() if code in reason]
+    if found:
+        return '; '.join(found)
+    return 'Источник временно недоступен' if check.get('status')=='error' else 'Проверены не все материалы источника'
+
+
+def coverage_table(checks, diagnostic=False):
     excluded = outside_scope(checks)
     checks = monitored(checks)
     if excluded:
@@ -76,13 +103,7 @@ def coverage_table(checks):
         state = STATUS.get(check['status'], check['status'])
         if check['status'] == 'success' and check.get('items') == 0:
             state = "Проверен, публикаций нет"
-        reason = str(check.get('reason') or '')
-        for technical, readable in [('publication_date_missing', 'Дата публикации не указана'),
-                                    ('no_recognized_cards', 'Публикации на странице не распознаны'),
-                                    ('page_not_found', 'Страница не найдена'),
-                                    ('access_block', 'Источник ограничил доступ'),
-                                    ('playwright returned no HTML', 'Не удалось загрузить страницу')]:
-            reason = reason.replace(technical, readable)
+        reason = source_reason(check)
         target = url(check.get('url'))
         source = (f'<a href="{safe(target)}" target="_blank" rel="noopener noreferrer" title="{safe(target)}">'
                   f'{safe(urlsplit(target).netloc)} ↗</a>') if target else '—'
@@ -95,6 +116,11 @@ def coverage_table(checks):
          '<table class="source-table"><thead><tr><th scope="col">Конкурент</th><th scope="col">Тип</th>'
          '<th scope="col">Источник</th><th scope="col">Состояние</th><th scope="col">Примечание</th>'
          '<th scope="col">Проверен · ЕКБ</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table></div>')
+    if diagnostic:
+        details=[{'Источник':c.get('url',''),'Подробности':c['reason']} for c in checks if c.get('reason')]
+        if details:
+            with st.expander('Диагностика для администратора'):
+                st.dataframe(details,hide_index=True,width='stretch')
 
 
 def navigate(page):
@@ -104,7 +130,7 @@ def navigate(page):
 
 def file_bytes(settings, identity, library_id, asset_id):
     fresh = settings()
-    if not authorize(identity(), section(fresh, "access")).allowed:
+    if not current_access(identity(), fresh).allowed:
         raise PermissionError("Доступ отозван. Обновите страницу.")
     drive = DriveStore(fresh)
     try:
@@ -114,31 +140,42 @@ def file_bytes(settings, identity, library_id, asset_id):
 
 
 def render_library(library, access, settings, identity):
-    pages = ["Обзор", "Публикации", "Конкуренты", "Сбор данных", "Черновики", "Архив"]
+    pages = ["Обзор", "Публикации", "Конкуренты"]
+    if access.role in ('admin','editor'):
+        pages.extend(['Сбор данных','Черновики'])
+    pages.append('Архив')
     if access.role == "admin":
-        pages.append("Подключения")
+        pages.extend(["Пользователи","Подключения"])
+    icons={'Обзор':'▦','Публикации':'≡','Конкуренты':'◈','Сбор данных':'↻',
+           'Черновики':'▤','Архив':'▣','Пользователи':'♙','Подключения':'⚙'}
+    html('<style>'+''.join(f'[data-testid="stSidebar"] [data-testid="stRadioGroup"]>div:nth-child({i}) label::before '
+         +'{content:"'+icons[name]+'";}' for i,name in enumerate(pages,1))+'</style>')
     selected = st.query_params.get("section", "Обзор")
     if st.session_state.get('nav_page') not in pages:
         st.session_state['nav_page']=selected if selected in pages else pages[0]
     page = st.sidebar.radio("РАБОЧЕЕ ПРОСТРАНСТВО", pages, key='nav_page')
     st.query_params["section"] = page
-    periods = sorted(library['period'], reverse=True)
+    if page in ('Пользователи','Подключения'):
+        if navigation_guard(page,st.session_state.get('nav_period','')):
+            return True
+        if page=='Пользователи':
+            from .member_screen import render_members
+            render_members(settings,identity)
+            return True
+        return False
     current = datetime.now(LOCAL).strftime('%Y-%m')
+    periods = sorted(library['period'], reverse=True) or [current]
     initial = st.query_params.get("period", current)
     if st.session_state.get('nav_period') not in periods:
         st.session_state['nav_period']=initial if initial in periods else periods[0]
     period = st.sidebar.selectbox("Период", periods, key='nav_period', format_func=period_label)
     st.query_params["period"] = period
-    st.sidebar.caption("Данные на " + local_time(library['manifest']['source_created_at']) + " · Екатеринбург")
-    with st.sidebar.expander("Статус приложения"):
-        st.caption("Общий редактор, выпуск Word/ZIP и сбор по кнопке. Если бесплатный сервер остановится во время работы, задание можно повторить явно.")
+    st.sidebar.caption("Обновлено " + local_time(library['manifest']['source_created_at']) + " · Екатеринбург")
     if navigation_guard(page, period):
         return True
     events = period_events(library, period)
-    checks = library['period'][period]['checks']
+    checks = library['period'].get(period,{}).get('checks',[])
 
-    if page == "Подключения":
-        return False
     if page == "Обзор":
         st.subheader("Обзор · " + period_label(period))
         st.caption("Публикации конкурентов и состояние источников за выбранный период")
@@ -167,7 +204,7 @@ def render_library(library, access, settings, identity):
                 section_heading("Публикации по конкурентам", "Топ-5 за период")
                 competitor_bars(events, library['competitor'])
         with st.expander("Полнота проверки источников · подробная таблица"):
-            coverage_table(checks)
+            coverage_table(checks,diagnostic=access.role=='admin')
     elif page == "Публикации":
         st.subheader("Публикации")
         competitors = {"": "Все конкуренты", **{c: v['name'] for c,v in library['competitor'].items()}}
@@ -195,6 +232,7 @@ def render_library(library, access, settings, identity):
             if st.session_state.get('pub_filter_signature') != signature:
                 st.session_state['pub_page']=1
                 st.session_state['pub_filter_signature']=signature
+            st.session_state['pub_page']=min(max(int(st.session_state.get('pub_page',1)),1),pages_count)
             page_controls, _ = st.columns([1, 4])
             number = page_controls.number_input("Страница", min_value=1, max_value=pages_count, step=1, key='pub_page')
             for event in found[(number-1)*15:number*15]:
@@ -230,7 +268,7 @@ def render_library(library, access, settings, identity):
                 if url(competitor['base_url']):
                     st.link_button("Официальный сайт ↗", url(competitor['base_url']))
                 with st.expander("Проверка источников"):
-                    coverage_table([c for c in checks if c['competitor_code'] == code])
+                    coverage_table([c for c in checks if c['competitor_code'] == code],diagnostic=access.role=='admin')
     elif page == "Сбор данных":
         from .jobs import JobService
         from .job_screen import render_jobs, launch
@@ -251,9 +289,12 @@ def render_library(library, access, settings, identity):
             with st.expander(label):
                 st.write("Период: " + run['period_start'][:10] + " — " + run['period_end'][:10])
                 st.caption("Время запуска и проверок показано по Екатеринбургу.")
-                coverage_table(run['checks'])
+                coverage_table(run['checks'],diagnostic=access.role=='admin')
     elif page == "Черновики":
-        render_editor(library, access, settings, identity, period)
+        if period in library['period']:
+            render_editor(library, access, settings, identity, period)
+        else:
+            st.info('Сначала запустите сбор за этот период в разделе «Сбор данных».')
     elif page == "Архив":
         st.subheader("Архив отчётов")
         reports = sorted(library['report'].values(), key=lambda r: (r.get('created_at') or '', r['name']), reverse=True)
@@ -264,7 +305,7 @@ def render_library(library, access, settings, identity):
             if index % 2 == 0:
                 report_columns = st.columns(2)
             with report_columns[index % 2], st.container(key=f'reportcard_{index}'):
-                subtitle = "Документ из прежнего архива" if report['legacy'] else f"Редакция {report['revision']} · {local_time(report['created_at'])}"
+                subtitle = "Аналитическая записка" if report['legacy'] else f"Редакция {report['revision']} · {local_time(report['created_at'])}"
                 html(f'<div class="record-heading"><span class="record-icon" aria-hidden="true">DOCX</span>'
                      f'<div><h3>{safe(report_label(report))}</h3><p>{safe(subtitle)}</p></div></div>')
                 for label, field, extension, mime in [("Word", "docx_id", ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
