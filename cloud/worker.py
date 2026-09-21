@@ -15,7 +15,7 @@ from .artifacts import upload_objects
 from .draft_rules import snapshot
 from .drive_store import DriveStore, StorageError
 from .jobs import JobStore, LeaseLost
-from .library import read_asset
+from .library import AssetIndex, read_asset
 
 
 class CachedDrive:
@@ -37,9 +37,10 @@ def execute(store, drive, job, root, alive=lambda: None):
     if not library or library['id']!=job['import_id']:
         raise ValueError('Набор данных изменился.')
     cached=CachedDrive(drive)
+    registry=AssetIndex(store,job['import_id'])
     def read(asset_id):
         alive()
-        return read_asset(store.repository,cached,job['import_id'],asset_id)
+        return read_asset(registry,cached,job['import_id'],asset_id)
     def progress(stage,source='',completed=None,run_id=None):
         alive()
         store.pulse(job,stage,source,completed)

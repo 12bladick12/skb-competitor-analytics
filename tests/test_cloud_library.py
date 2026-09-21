@@ -25,6 +25,16 @@ def sample():
 
 
 class LibraryTests(unittest.TestCase):
+    def test_worker_registry_uses_one_query_and_rejects_foreign_import_or_unknown_id(self):
+        from cloud.library import AssetIndex
+        store=MagicMock()
+        store.query.return_value=[{'id':'a'*64,'payload':{'pack':'b'*64,'bytes':12}}]
+        index=AssetIndex(store,'c'*64)
+        self.assertEqual(index.asset('c'*64,'a'*64)['bytes'],12)
+        self.assertEqual(index.asset('c'*64,'a'*64)['bytes'],12)
+        store.query.assert_called_once()
+        for import_id,asset_id in [('d'*64,'a'*64),('c'*64,'../secrets.toml'),('c'*64,'e'*64)]:
+            with self.assertRaises(StorageError):index.asset(import_id,asset_id)
     def test_external_text_is_escaped_in_visual_cards_and_source_table(self):
         from cloud.presentation import event_card
         event = sample()['event']['1']
@@ -127,6 +137,13 @@ class LibraryScreenTests(unittest.TestCase):
         probe=patch('cloud.job_screen.JobService.list',return_value=[])
         probe.start()
         self.addCleanup(probe.stop)
+        self.members={email:{'email':email,'subject':'test-subject','status':'active','role':role}
+            for email,role in [('reader@example.com','viewer'),('admin@example.com','admin')]}
+        def register(email,subject):
+            return self.members.setdefault(email,{'email':email,'subject':subject,'status':'active','role':'viewer'})
+        for name,callback in [('find',lambda email,subject:self.members.get(email)),('register',register)]:
+            member=patch('cloud.members.MemberStore.'+name,side_effect=callback)
+            member.start();self.addCleanup(member.stop)
     def application(self, page, email='reader@example.com'):
         import test_cloud_streamlit as fixture
         from cloud.screens import load_library
@@ -148,14 +165,18 @@ class LibraryScreenTests(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertEqual(app.metric[0].value,'2')
         self.assertNotIn('Подключения',app.radio[0].options)
+        self.assertEqual(app.radio[0].options,['Обзор','Публикации','Конкуренты','Архив'])
+        self.assertFalse(any(e.label=='Статус приложения' for e in app.expander))
         load.assert_called_once()
 
-    def test_unauthorized_user_never_reads_database(self):
+    def test_new_verified_user_registers_with_read_only_access(self):
         app,user=self.application('Обзор','outsider@example.com')
-        with patch('streamlit.user',user),patch('cloud.library.Repository.load') as load:
+        with patch('streamlit.user',user),patch('cloud.library.Repository.load',return_value=sample()) as load:
             app.run()
         self.assertFalse(app.exception)
-        load.assert_not_called()
+        load.assert_called_once()
+        self.assertEqual(self.members['outsider@example.com']['role'],'viewer')
+        self.assertNotIn('Черновики',app.radio[0].options)
 
     def test_proof_is_displayed_as_code_without_executing_html(self):
         app,user=self.application('Публикации')
@@ -182,14 +203,14 @@ class LibraryScreenTests(unittest.TestCase):
              patch('cloud.screens.file_bytes') as read:
             app.run()
             button=next(b for b in app.button if b.label=='Показать сохранённый HTML')
-            app.secrets['access']['viewer_emails']=[]
+            self.members['reader@example.com']['status']='blocked'
             button.click().run()
         self.assertFalse(app.exception)
         read.assert_not_called()
-        self.assertTrue(any('Доступ не предоставлен' in x.value for x in app.warning))
+        self.assertTrue(any('Доступ заблокирован' in x.value for x in app.warning))
 
     def test_navigation_and_filters_do_not_reset_on_every_second_rerun(self):
-        app,user=self.application('Обзор')
+        app,user=self.application('Обзор','admin@example.com')
         with patch('streamlit.user',user),patch('cloud.library.Repository.load',return_value=sample()):
             app.run()
             for page,title in [('Публикации','Публикации'),('Конкуренты','Конкуренты'),('Сбор данных','Сбор данных'),

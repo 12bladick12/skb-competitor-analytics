@@ -1,6 +1,7 @@
 """Run the existing verified collector in an isolated, disposable SQLite workspace."""
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from src.config_loader import load_competitors
@@ -27,6 +28,8 @@ def collect(library, period, root, read, progress, baselines=(), monitor_factory
     monitor=None
     objects={}
     def materialize(asset_id):
+        if not isinstance(asset_id,str) or not re.fullmatch('[a-f0-9]{64}',asset_id):
+            raise ValueError('Некорректный идентификатор снимка.')
         path=snapshots/(asset_id+'.html')
         if not path.exists():
             content=read(asset_id)
@@ -48,6 +51,33 @@ def collect(library, period, root, read, progress, baselines=(), monitor_factory
         digest=hashlib.sha256(content).hexdigest()
         objects[digest]=content
         return digest
+    def paths(value):
+        # Catalogues keep the complete set of listing pages, not one filename.
+        if isinstance(value,str):
+            value=json.loads(value) if value.lstrip().startswith('[') else [value]
+        if not isinstance(value,list) or not value or any(not isinstance(p,str) or not p for p in value):
+            raise ValueError('Не сохранены подтверждающие страницы каталога.')
+        return value
+    def portable_check(check, restore=False):
+        value=dict(check)
+        if value.get('cursor') and value['kind']!='telegram':
+            cursor=json.loads(value['cursor'])
+            context={}
+            for url,(card,proof) in cursor.get('article_context',{}).items():
+                if restore:
+                    # Legacy cursors may contain paths from another machine/run.
+                    # Re-fetch that listing instead of trusting an old local path.
+                    if not isinstance(proof,dict) or not proof.get('snapshot_id'):
+                        continue
+                    proof=materialize(proof['snapshot_id'])
+                else:
+                    if not proof:
+                        continue
+                    proof={'snapshot_id':asset(proof)}
+                context[url]=[card,proof]
+            cursor['article_context']=context
+            value['cursor']=json.dumps(cursor,ensure_ascii=False)
+        return value
     try:
         storage.init_schema()
         EvidenceStore(storage)
@@ -55,16 +85,17 @@ def collect(library, period, root, read, progress, baselines=(), monitor_factory
             storage.upsert_competitor(c)
         for event in library['event'].values():
             value=dict(event)
-            value['evidence_json']=json.dumps({**{k:v for k,v in event['provenance'].items() if v},
+            value['evidence_json']=json.dumps({**event.get('evidence',{}),**{k:v for k,v in event['provenance'].items() if v},
                 'snapshots':[materialize(i) for i in event['evidence_ids']]})
             insert('verified_events',value)
         for run in library['run'].values():
             insert('collection_runs',run)
             for check in run['checks']:
-                insert('source_checks',check)
+                insert('source_checks',portable_check(check,restore=True))
         for baseline in baselines:
             value=dict(baseline)
-            value['evidence_path']=materialize(value.pop('evidence_id'))
+            ids=value.pop('evidence_ids',None) or [value.pop('evidence_id')]
+            value['evidence_path']=json.dumps([materialize(i) for i in ids])
             insert('product_baselines',value)
         storage.conn.commit()
         monitor=monitor_factory(storage,settings,competitors)
@@ -78,12 +109,13 @@ def collect(library, period, root, read, progress, baselines=(), monitor_factory
             value=facts.public_event(raw)
             value.pop('evidence_url',None)
             evidence=json.loads(raw['evidence_json'])
+            value['evidence']={k:v for k,v in evidence.items() if k!='snapshots'}
             value['provenance']={k:evidence.get(k,'') for k in ('official_url','source_url','article_url','date_evidence')}
             value['evidence_ids']=[asset(p) for p in evidence.get('snapshots',[])]
             add('event',value['id'],value)
         for row in storage.conn.execute('SELECT * FROM product_baselines'):
             value=dict(row)
-            value['evidence_id']=asset(value.pop('evidence_path'))
+            value['evidence_ids']=[asset(p) for p in paths(value.pop('evidence_path'))]
             add('collector_baseline',hashlib.sha256((value['competitor_code']+value['url']).encode()).hexdigest(),value)
         for row in storage.conn.execute('SELECT * FROM event_versions'):
             value=dict(row)
@@ -94,12 +126,12 @@ def collect(library, period, root, read, progress, baselines=(), monitor_factory
             add('event_history',f"cloud-{value['event_id']}-{value['content_hash']}",value)
         for row in storage.conn.execute('SELECT * FROM collection_runs WHERE id=?',(result['run_id'],)):
             value=dict(row)
-            value['checks']=[dict(c) for c in storage.conn.execute('SELECT * FROM source_checks WHERE run_id=?',(row['id'],))]
+            value['checks']=[portable_check(c) for c in storage.conn.execute('SELECT * FROM source_checks WHERE run_id=?',(row['id'],))]
             add('run',value['id'],value)
         periods=set(library['period']) | {period}
         for key in sorted(periods):
             events,checks,links=facts.projection(key)
-            add('period',key,{'key':key,'event_ids':[e['id'] for e in events],'checks':checks,'links':links})
+            add('period',key,{'key':key,'event_ids':[e['id'] for e in events],'checks':[portable_check(c) for c in checks],'links':links})
         return records,objects,result
     finally:
         if monitor:

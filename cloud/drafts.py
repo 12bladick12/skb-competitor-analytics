@@ -3,7 +3,7 @@ import json
 import re
 from uuid import uuid4
 
-from .access import authorize
+from .access import current_access
 from .draft_rules import DraftConflict, create_payload, issues, refresh_payload, save_payload, snapshot
 from .drive_store import StorageError
 from .library import Repository
@@ -127,7 +127,7 @@ class DraftService:
 
     def context(self, import_id, period, *, write=False):
         config = self.settings()
-        access = authorize(self.identity(), section(config, 'access'))
+        access = current_access(self.identity(), config)
         if not access.allowed or (write and access.role not in ('admin', 'editor')):
             raise PermissionError('Изменять записки могут только редактор и администратор.' if write else 'Доступ отозван. Обновите страницу.')
         store = self.store_factory(config)

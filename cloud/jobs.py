@@ -3,7 +3,7 @@ import hashlib
 import json
 from uuid import uuid4
 
-from .access import authorize
+from .access import current_access
 from .drafts import DraftStore, DraftService
 from .drive_store import StorageError
 from .library import canonical
@@ -145,9 +145,9 @@ class JobService:
 
     def context(self, write=False):
         config=self.settings()
-        access=authorize(self.identity(),section(config,'access'))
+        access=current_access(self.identity(),config)
         if not access.allowed or (write and access.role not in ('admin','editor')):
-            raise PermissionError('Запуск доступен только приглашённому редактору или администратору.')
+            raise PermissionError('Запуск доступен редактору или администратору.')
         return self.store_factory(config),access
 
     def export(self, import_id, period, revision):

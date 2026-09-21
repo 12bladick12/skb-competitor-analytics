@@ -33,12 +33,6 @@ html, body, [data-testid="stApp"] { font-family: "Segoe UI", Arial, sans-serif; 
 [data-testid="stSidebar"] [data-testid="stRadioOption"]>div>div:first-child { display:none; }
 [data-testid="stSidebar"] [data-testid="stRadioOption"]>div { margin:0; padding:0; }
 [data-testid="stSidebar"] [data-testid="stRadioOption"]::before { content:"▦"; color:#b3c4d4; width:20px; margin-right:10px; text-align:center; font-size:1.1rem; }
-[data-testid="stSidebar"] [data-testid="stRadioGroup"]>div:nth-child(2) label::before { content:"≡"; }
-[data-testid="stSidebar"] [data-testid="stRadioGroup"]>div:nth-child(3) label::before { content:"◈"; }
-[data-testid="stSidebar"] [data-testid="stRadioGroup"]>div:nth-child(4) label::before { content:"↻"; }
-[data-testid="stSidebar"] [data-testid="stRadioGroup"]>div:nth-child(5) label::before { content:"▤"; }
-[data-testid="stSidebar"] [data-testid="stRadioGroup"]>div:nth-child(6) label::before { content:"▣"; }
-[data-testid="stSidebar"] [data-testid="stRadioGroup"]>div:nth-child(7) label::before { content:"⚙"; }
 [data-testid="stSidebar"] [data-testid="stRadioOption"]:has(input:checked)::before { color:white; }
 [data-testid="stSidebar"] [data-baseweb="select"]>div { background:#572633; color:#f0f4f7; border-color:#3b5165; border-radius:7px; }
 [data-testid="stSidebar"] [data-baseweb="select"] svg { fill:#bdcbd9; }

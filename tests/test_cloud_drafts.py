@@ -158,7 +158,10 @@ class DraftScreenTests(unittest.TestCase):
         self.app.query_params.update(section='Черновики',period='2026-09')
         self.store=MemoryStore(draft=draft_fixture())
         self.user=self.helper.user('editor@example.com')
+        def member(email,subject):
+            return {'email':email,'subject':subject,'status':'active','role':'editor' if email=='editor@example.com' else 'viewer'}
         self.patches=[patch('streamlit.user',self.user),patch('cloud.library.Repository.load',side_effect=lambda:deepcopy(self.store.data)),
+                      patch('cloud.members.MemberStore.find',side_effect=member),
                       patch('cloud.drafts.DraftStore.read',side_effect=self.store.read),patch('cloud.drafts.DraftStore.asset_ids',side_effect=self.store.asset_ids),
                       patch('cloud.drafts.DraftStore.commit',side_effect=self.store.commit),patch('cloud.drafts.DraftStore.create',side_effect=self.store.create),
                       patch('cloud.drafts.DraftStore.history',side_effect=self.store.history),patch('cloud.drafts.DraftStore.version',side_effect=self.store.version)]

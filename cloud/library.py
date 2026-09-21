@@ -187,8 +187,35 @@ class Repository:
         return row[0]
 
 
-def read_asset(repository, drive, import_id, asset_id):
+class AssetIndex:
+    """One immutable registry read per worker, instead of one SQL call per file."""
+    def __init__(self, store, import_id):
+        self.import_id=import_id
+        self.records={row['id']:row['payload'] for row in store.query('''SELECT a.id,a.payload
+            FROM skb_analytics.assets a JOIN skb_analytics.state s ON s.import_id=a.import_id AND s.key='active'
+            WHERE a.import_id=$1''',[import_id])}
+
+    def asset(self, import_id, asset_id):
+        if import_id!=self.import_id or not re.fullmatch('[a-f0-9]{64}',str(asset_id)) or asset_id not in self.records:
+            raise StorageError('Файл не найден.')
+        return self.records[asset_id]
+
+
+def read_asset(repository, drive, import_id, asset_id, *, _part=False):
     record = repository.asset(import_id, asset_id)
+    if 'chunks' in record:
+        chunks=record['chunks']
+        size=record.get('bytes',0)
+        if _part or not isinstance(chunks,list) or not 1<=len(chunks)<=8 or not isinstance(size,int) or not 0<size<=32*1024*1024:
+            raise StorageError('Некорректный состав файла.')
+        content=bytearray()
+        for ident in chunks:
+            content.extend(read_asset(repository,drive,import_id,ident,_part=True))
+            if len(content)>size:
+                raise StorageError('Размер вложения не совпадает с реестром.')
+        if len(content)!=size or hashlib.sha256(content).hexdigest()!=asset_id:
+            raise StorageError('Контрольная сумма вложения не совпадает.')
+        return bytes(content)
     data = drive.download(record["drive_id"], record["pack"])
     try:
         with ZipFile(BytesIO(data)) as archive:
