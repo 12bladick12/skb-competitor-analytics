@@ -1,6 +1,7 @@
 """Shared drafts: atomic compare-and-swap plus append-only revision history."""
 import json
 import re
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from .access import current_access
@@ -16,7 +17,9 @@ DDL = """DO $draft_schema$ BEGIN
         import_id text NOT NULL REFERENCES skb_analytics.imports(id),
         id text NOT NULL, period text NOT NULL, revision integer NOT NULL CHECK (revision > 0),
         payload jsonb NOT NULL, updated_at timestamptz NOT NULL DEFAULT now(), updated_by text NOT NULL,
-        PRIMARY KEY(import_id,id), UNIQUE(import_id,period));
+        PRIMARY KEY(import_id,id));
+    ALTER TABLE skb_analytics.draft_heads DROP CONSTRAINT IF EXISTS draft_heads_import_id_period_key;
+    CREATE INDEX IF NOT EXISTS draft_period_idx ON skb_analytics.draft_heads(import_id,period,updated_at DESC);
     CREATE TABLE IF NOT EXISTS skb_analytics.draft_revisions (
         import_id text NOT NULL, draft_id text NOT NULL, revision integer NOT NULL,
         payload jsonb NOT NULL, updated_at timestamptz NOT NULL, updated_by text NOT NULL,
@@ -65,28 +68,41 @@ class DraftStore:
             cursor = conn.execute(statement, ordered)
             return [dict(zip([c.name for c in cursor.description], row)) for row in cursor.fetchall()]
 
-    def read(self, import_id, period):
+    def read(self, import_id, period, draft_id=None):
         rows = self.query('''SELECT d.* FROM skb_analytics.draft_heads d
             JOIN skb_analytics.state s ON s.import_id=d.import_id AND s.key='active'
-            WHERE d.import_id=$1 AND d.period=$2''', [import_id, period])
+            WHERE d.import_id=$1 AND d.period=$2 AND ($3::text IS NULL OR d.id=$3)
+            ORDER BY d.updated_at DESC,d.id LIMIT 1''', [import_id, period, draft_id])
         return document(rows[0]) if rows else None
+
+    def list(self, import_id, period):
+        return self.query('''SELECT d.id,d.revision,d.updated_at::text,d.updated_by,d.payload->>'name' AS name
+            FROM skb_analytics.draft_heads d
+            JOIN skb_analytics.state s ON s.import_id=d.import_id AND s.key='active'
+            WHERE d.import_id=$1 AND d.period=$2 ORDER BY d.updated_at DESC,d.id''', [import_id, period])
 
     def asset_ids(self, import_id):
         return {r['id'] for r in self.query('SELECT id FROM skb_analytics.assets WHERE import_id=$1', [import_id])}
 
-    def create(self, import_id, period, payload, email):
+    def create(self, import_id, period, payload, email, *, new=False):
+        if not new and (existing := self.read(import_id, period)):
+            return existing
+        # A deterministic initial ID keeps concurrent first-create requests
+        # idempotent; explicitly added drafts get independent identities.
+        from uuid import NAMESPACE_URL, uuid5
+        ident = uuid4().hex if new else uuid5(NAMESPACE_URL, import_id + ':' + period).hex
         rows = self.query('''WITH made AS (
             INSERT INTO skb_analytics.draft_heads(import_id,id,period,revision,payload,updated_by)
             SELECT $1,$2,$3,1,$4::jsonb,$5 WHERE EXISTS (
                 SELECT 1 FROM skb_analytics.state s JOIN skb_analytics.records r ON r.import_id=s.import_id
                 WHERE s.key='active' AND s.import_id=$1 AND r.kind='period' AND r.key=$3)
-            ON CONFLICT(import_id,period) DO NOTHING RETURNING *
+            ON CONFLICT(import_id,id) DO NOTHING RETURNING *
         ), history AS (
             INSERT INTO skb_analytics.draft_revisions
             SELECT import_id,id,revision,payload,updated_at,updated_by FROM made RETURNING draft_id
         ) SELECT made.* FROM made JOIN history ON history.draft_id=made.id''',
-            [import_id, uuid4().hex, period, json.dumps(payload, ensure_ascii=False), email], write=True)
-        result = document(rows[0]) if rows else self.read(import_id, period)
+            [import_id, ident, period, json.dumps(payload, ensure_ascii=False), email], write=True)
+        result = document(rows[0]) if rows else self.read(import_id, period, ident)
         if not result:
             raise DraftConflict('Набор материалов изменился. Обновите страницу.')
         return result
@@ -136,45 +152,53 @@ class DraftService:
             raise DraftConflict('Набор материалов изменился. Обновите страницу.')
         return store, library, access
 
-    def open(self, import_id, period):
+    def open(self, import_id, period, draft_id=None):
         store, library, access = self.context(import_id, period)
-        draft = store.read(import_id, period)
+        draft = store.read(import_id, period, draft_id) if draft_id else store.read(import_id, period)
         return {'draft': draft, 'library': library, 'issues': issues(draft, library, store.asset_ids(import_id)) if draft else [],
                 'role': access.role}
 
-    def create(self, import_id, period):
-        store, library, access = self.context(import_id, period, write=True)
-        return store.create(import_id, period, create_payload(library, period, store.asset_ids(import_id)), access.email)
+    def list(self, import_id, period):
+        store, _, _ = self.context(import_id, period)
+        return store.list(import_id, period)
 
-    def _draft(self, store, import_id, period, revision):
-        draft = store.read(import_id, period)
+    def create(self, import_id, period, *, new=False):
+        store, library, access = self.context(import_id, period, write=True)
+        payload = create_payload(library, period, store.asset_ids(import_id))
+        payload['name'] = ('Черновик ' + datetime.now(timezone(timedelta(hours=5))).strftime('%d.%m.%Y %H-%M-%S')
+                           if new else 'Основной черновик')
+        args = (import_id, period, payload, access.email)
+        return store.create(*args, new=True) if new else store.create(*args)
+
+    def _draft(self, store, import_id, period, revision, draft_id=None):
+        draft = store.read(import_id, period, draft_id) if draft_id else store.read(import_id, period)
         if not draft or type(revision) is not int or draft['revision'] != revision:
             raise DraftConflict('Другой сотрудник уже сохранил новую редакцию. Ваши правки остались в этой вкладке; сначала сравните версии.')
         return draft
 
-    def save(self, import_id, period, revision, conclusions, changes):
+    def save(self, import_id, period, revision, conclusions, changes, draft_id=None):
         store, library, access = self.context(import_id, period, write=True)
-        draft = self._draft(store, import_id, period, revision)
+        draft = self._draft(store, import_id, period, revision, draft_id)
         assets = store.asset_ids(import_id)
         payload = save_payload(draft, library, conclusions, changes, assets)
         saved = store.commit(import_id, draft, revision, payload, access.email)
         self.saved_view = {'draft': saved, 'library': library, 'issues': issues(saved, library, assets), 'role': access.role}
         return saved
 
-    def refresh(self, import_id, period, revision):
+    def refresh(self, import_id, period, revision, draft_id=None):
         store, library, access = self.context(import_id, period, write=True)
-        draft = self._draft(store, import_id, period, revision)
+        draft = self._draft(store, import_id, period, revision, draft_id)
         payload = refresh_payload(draft, library, store.asset_ids(import_id))
         return store.commit(import_id, draft, revision, payload, access.email)
 
-    def preview(self, import_id, period, revision):
+    def preview(self, import_id, period, revision, draft_id=None):
         store, library, _ = self.context(import_id, period)
-        draft = self._draft(store, import_id, period, revision)
+        draft = self._draft(store, import_id, period, revision, draft_id)
         return snapshot(draft, library, store.asset_ids(import_id))
 
-    def history(self, import_id, period, revision=None):
+    def history(self, import_id, period, revision=None, draft_id=None):
         store, _, _ = self.context(import_id, period)
-        draft = store.read(import_id, period)
+        draft = store.read(import_id, period, draft_id) if draft_id else store.read(import_id, period)
         if not draft:
             return [] if revision is None else None
         return (store.history(import_id, draft['id']) if revision is None

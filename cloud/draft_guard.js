@@ -22,6 +22,19 @@
         }
       }
     }, true);
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      // A download can be clicked before the text area's blur reaches Python.
+      // Prevent that race from exporting the preceding saved revision.
+      if (state.dirty && target instanceof Element &&
+          target.closest('.st-key-draft-workspace') &&
+          target.closest('[data-testid="stDownloadButton"]')) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const label = document.querySelector('.draft-save-status');
+        if (label) label.textContent = 'Сначала сохраните правки, затем скачайте документ';
+      }
+    }, true);
   }
   const state = window.__skbDraftGuard;
   if (state.token !== resetToken) state.dirty = serverDirty;

@@ -308,17 +308,13 @@ def render_library(library, access, settings, identity):
                 subtitle = "Аналитическая записка" if report['legacy'] else f"Редакция {report['revision']} · {local_time(report['created_at'])}"
                 html(f'<div class="record-heading"><span class="record-icon" aria-hidden="true">DOCX</span>'
                      f'<div><h3>{safe(report_label(report))}</h3><p>{safe(subtitle)}</p></div></div>')
-                for label, field, extension, mime in [("Word", "docx_id", ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
-                                                     ("ZIP с доказательствами", "bundle_id", ".zip", "application/zip")]:
+                from .downloads import FORMATS, asset_download
+                for label, field, extension, mime in FORMATS:
                     if not report.get(field):
                         continue
                     key = f"report_{report['id']}_{field}"
-                    if st.button("Подготовить " + label, key=key):
-                        try:
-                            with st.spinner("Загружаем документ…"):
-                                content = file_bytes(settings, identity, library['id'], report[field])
-                            name = report['name'] if report['name'].endswith(extension) else report['name'] + extension
-                            st.download_button("Скачать " + label, data=content, file_name=name, mime=mime, key=key+'_download', on_click='ignore')
-                        except (StorageError, ValueError, PermissionError) as exc:
-                            st.error(str(exc))
+                    name = report['name'] if report['name'].endswith(extension) else report['name'] + extension
+                    st.download_button("Скачать " + label,
+                        data=asset_download(settings, identity, library['id'], report[field]),
+                        file_name=name, mime=mime, key=key+'_download', on_click='ignore')
     return True

@@ -48,6 +48,13 @@ class MemoryStore:
 
 
 class DraftRulesTests(unittest.TestCase):
+    def test_draft_name_survives_save_refresh_and_release(self):
+        data, draft = fixture(), draft_fixture()
+        draft['name'] = 'Черновик 21.09.2026 12-00-00'
+        saved = {**draft, **save_payload(draft, data, 'Выводы', [])}
+        refreshed = {**saved, **refresh_payload(saved, data)}
+        self.assertEqual(snapshot(refreshed, data)['name'], draft['name'])
+
     def test_create_and_refresh_only_add_confirmed_and_preserve_manual_work(self):
         data = fixture()
         draft = draft_fixture(data)
@@ -204,6 +211,49 @@ class DraftScreenTests(unittest.TestCase):
         self.assertNotIn('Сохранить правки',[b.label for b in app.button])
         self.assertTrue(all(x.disabled for x in app.text_input))
         self.assertFalse(app.exception)
+
+    def test_bulk_review_across_groups_keeps_manual_text_and_requires_save(self):
+        for event in self.store.data['event'].values():
+            event['version'] = 'f' * 64
+        self.store.draft['items'][0]['title'] = 'Мой заголовок'
+        app = self.app.run()
+        next(b for b in app.button if b.label == 'Материалы проверены').click().run()
+        self.assertEqual(len(app.session_state['draft_editor']['accepted']), 2)
+        self.assertEqual(self.store.draft['revision'], 1)
+        next(b for b in app.button if b.label == 'Сохранить правки').click().run()
+        self.assertEqual(self.store.draft['revision'], 2)
+        self.assertEqual(self.store.draft['items'][0]['title'], 'Мой заголовок')
+        self.assertTrue(all(i['version'] == 'f' * 64 for i in self.store.draft['items']))
+        self.assertFalse(app.exception)
+
+    def test_bulk_review_does_not_accept_revoked_or_excluded_materials(self):
+        self.store.data['event']['1']['status'] = 'rejected'
+        self.store.data['event']['2']['version'] = 'f' * 64
+        self.store.draft['items'][1]['included'] = False
+        app = self.app.run()
+        self.assertTrue(next(b for b in app.button if b.label == 'Материалы проверены').disabled)
+        self.assertFalse(app.session_state['draft_editor']['accepted'])
+        self.assertTrue(all(b.proto.disabled for b in app.get('download_button')))
+
+    def test_new_draft_and_switch_preserve_previous_editorial_content(self):
+        old = deepcopy(self.store.draft)
+        new = draft_fixture(self.store.data)
+        new['id'] = 'e' * 32
+        drafts = {old['id']: old, new['id']: new}
+        def read(import_id, period, draft_id=None):
+            return deepcopy(drafts[draft_id or old['id']])
+        with patch('cloud.drafts.DraftStore.read', side_effect=read), \
+             patch('cloud.drafts.DraftStore.create', return_value=new) as create, \
+             patch('cloud.drafts.DraftStore.list', return_value=list(drafts.values())):
+            app = self.app.run()
+            next(b for b in app.button if b.label == 'Добавить черновик').click().run()
+            self.assertTrue(create.call_args.kwargs['new'])
+            self.assertEqual(app.session_state['draft_editor']['base']['id'], new['id'])
+            next(b for b in app.button if b.label == 'Выбрать черновик').click().run()
+            next(s for s in app.selectbox if s.label == 'Черновики за период').set_value(old['id']).run()
+            next(b for b in app.button if b.label == 'Открыть выбранный черновик').click().run()
+            self.assertEqual(app.session_state['draft_editor']['base'], old)
+            self.assertFalse(app.exception)
 
     def test_material_groups_position_and_switching_keep_unsaved_edits(self):
         for ident,kind in [(4,'news'),(5,'telegram')]:

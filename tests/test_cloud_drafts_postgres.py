@@ -72,3 +72,17 @@ class DraftPostgresTests(unittest.TestCase):
             self.store.commit(self.import_id,draft,1,{'conclusions':'must rollback','items':[]},'editor@example.com')
         self.assertEqual(self.store.read(self.import_id,'2026-09')['revision'],1)
 
+    def test_independent_drafts_same_period_and_repeat_migration_preserve_both(self):
+        first = self.store.read(self.import_id, '2026-09')
+        second = self.store.create(self.import_id, '2026-09', create_payload(self.repo.load(), '2026-09'),
+                                   'editor@example.com', new=True)
+        self.assertNotEqual(first['id'], second['id'])
+        self.store.commit(self.import_id, second, 1,
+                          {'conclusions': 'Отдельные выводы', 'items': second['items']}, 'editor@example.com')
+        self.store.initialize()
+        self.assertEqual(len(self.store.list(self.import_id, '2026-09')), 2)
+        self.assertEqual(self.store.read(self.import_id, '2026-09', first['id']), first)
+        self.assertEqual(self.store.read(self.import_id, '2026-09', second['id'])['conclusions'], 'Отдельные выводы')
+        self.assertEqual(len(self.store.history(self.import_id, first['id'])), 1)
+        self.assertEqual(len(self.store.history(self.import_id, second['id'])), 2)
+

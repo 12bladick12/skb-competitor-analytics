@@ -54,6 +54,8 @@ def _text(value, maximum, name, required=False):
 
 def save_payload(draft, library, conclusions, changes, asset_ids=None):
     result = {'conclusions': _text(conclusions, 30000, 'Выводы аналитика'), 'items': deepcopy(draft['items'])}
+    if 'name' in draft:
+        result['name'] = draft['name']
     if not isinstance(changes, list) or len(changes) > 2000:
         raise ValueError('Некорректный список изменений.')
     items = {i['event_id']: i for i in result['items']}
@@ -84,6 +86,8 @@ def save_payload(draft, library, conclusions, changes, asset_ids=None):
 
 def refresh_payload(draft, library, asset_ids=None):
     result = {'conclusions': draft['conclusions'], 'items': deepcopy(draft['items'])}
+    if 'name' in draft:
+        result['name'] = draft['name']
     existing = {i['event_id'] for i in result['items']}
     result['items'].extend(item_from(e) for e in period_events(library, draft['period'])
                            if e['id'] not in existing and confirmed(e, asset_ids))
@@ -99,6 +103,7 @@ def snapshot(draft, library, asset_ids=None):
         item['source'] = deepcopy(library['event'][str(item['event_id'])])
     period = library['period'][draft['period']]
     return {'draft_id': draft['id'], 'revision': draft['revision'], 'period': draft['period'],
+            'name': draft.get('name') or 'Основной черновик',
             'conclusions': draft['conclusions'], 'items': selected, 'checks': deepcopy(monitored(period['checks'])),
             'counts': dict(Counter(i['source']['kind'] for i in selected)),
             'incomplete': any(c['status'] in ('partial', 'error') for c in period['checks'])}
