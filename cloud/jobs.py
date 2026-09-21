@@ -150,10 +150,10 @@ class JobService:
             raise PermissionError('Запуск доступен редактору или администратору.')
         return self.store_factory(config),access
 
-    def export(self, import_id, period, revision):
+    def export(self, import_id, period, revision, draft_id=None):
         store,access=self.context(write=True)
-        value=DraftService(self.settings,self.identity).preview(import_id,period,revision)
-        key=hashlib.sha256(canonical(value).encode()).hexdigest()
+        value=DraftService(self.settings,self.identity).preview(import_id,period,revision,draft_id=draft_id)
+        key=hashlib.sha256(('documents-v2:' + canonical(value)).encode()).hexdigest()
         return store.enqueue(import_id,'export',period,value,access.email,key)
 
     def collect(self, import_id, period):
@@ -174,8 +174,11 @@ class JobService:
         old=rows[0]
         if old['kind']=='export':
             # Return to the latest saved revision instead of silently using stale facts.
-            view=DraftService(self.settings,self.identity).open(import_id,old['period'])
-            value=DraftService(self.settings,self.identity).preview(import_id,old['period'],view['draft']['revision'])
+            draft_id=old['payload']['draft_id']
+            view=DraftService(self.settings,self.identity).open(import_id,old['period'],draft_id)
+            if not view['draft']:
+                raise ValueError('Черновик не найден.')
+            value=DraftService(self.settings,self.identity).preview(import_id,old['period'],view['draft']['revision'],draft_id)
         else:
             value={}
         return store.enqueue(import_id,old['kind'],old['period'],value,access.email,uuid4().hex)

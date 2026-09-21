@@ -40,7 +40,7 @@ def render_jobs(import_id, settings, identity, can_write, *, period=None):
             st.rerun()
         selected=[r for r in current if not period or r['period']==period]
         for row in selected[:10]:
-            title=('Выпуск Word/ZIP' if row['kind']=='export' else 'Сбор данных')+' · '+row['period']
+            title=('Выпуск Word/PDF/ZIP' if row['kind']=='export' else 'Сбор данных')+' · '+row['period']
             with st.container(border=True):
                 st.markdown('**'+title+' — '+LABELS[row['status']]+'**')
                 st.caption(local_time(str(row['created_at']))+' · '+row['stage'])
@@ -51,7 +51,7 @@ def render_jobs(import_id, settings, identity, can_write, *, period=None):
                 if row['error']:
                     st.error(row['error'])
                 if row['kind']=='export' and row['status']=='success':
-                    st.success('Word и ZIP сохранены. Скачать их можно в разделе «Архив».')
+                    st.success('Word, PDF и ZIP сохранены в архиве.')
                 if can_write and row['status'] in ('error','interrupted') and st.button('Повторить запуск',key='retry_'+row['id']):
                     try:
                         service.retry(import_id,row['id'])

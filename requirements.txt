@@ -1,4 +1,5 @@
 # Bootstrap Streamlit application; the local monitor has separate dependencies.
+# Documents release 2026-09-21: rebuild the app process to load the new editor and PDF worker.
 -c requirements-cloud-lock.txt
 streamlit[auth]==1.64.0
 requests==2.34.2

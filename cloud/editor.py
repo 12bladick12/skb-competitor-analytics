@@ -76,6 +76,17 @@ def _change(field, key, event_id=None):
     state.pop('preview', None)
 
 
+def _accept_all():
+    state = st.session_state['draft_editor']
+    included = {i['event_id'] for i in state['working']['items'] if i['included']}
+    for issue in state['view']['issues']:
+        event_id = issue['event_id']
+        if issue['can_accept'] and event_id in included:
+            state['accepted'][event_id] = issue['current']['version']
+            st.session_state[f'draft_{state["epoch"]}_{event_id}_accept'] = True
+    state.pop('preview', None)
+
+
 def _preview(value):
     from .screens import coverage_table, KINDS, period_label
     st.caption(f"Сохранённая редакция {value['revision']} · {period_label(value['period'])}")
@@ -121,7 +132,7 @@ def render_editor(library, access, settings, identity, period):
     service = DraftService(settings, identity)
     import_id = library['id']
     st.subheader('Редактор записки')
-    st.caption(period_label(period) + ' · Общий черновик для команды')
+    st.caption(period_label(period) + ' · Черновики команды')
     state = st.session_state.get('draft_editor')
     can_write = access.role in ('admin', 'editor')
     if not state or state['import_id'] != import_id or state['period'] != period:
@@ -133,7 +144,7 @@ def render_editor(library, access, settings, identity, period):
             return
         if not view['draft']:
             note('Черновик ещё не создан', 'При создании в него попадут подтверждённые материалы выбранного периода.')
-            if can_write and st.button('Создать черновик', type='primary'):
+            if can_write and st.button('Добавить черновик', type='primary'):
                 try:
                     service.create(import_id, period)
                     st.rerun()
@@ -146,6 +157,42 @@ def render_editor(library, access, settings, identity, period):
         state = st.session_state['draft_editor']
 
     draft = state['base']
+    st.caption(draft.get('name') or 'Основной черновик')
+    add, switch = st.columns(2)
+    if can_write and add.button('Добавить черновик', width='stretch', key='add_another_draft'):
+        if dirty():
+            st.warning('Сначала сохраните правки текущего черновика.')
+        else:
+            try:
+                created = service.create(import_id, period, new=True)
+                reset_editor(service.open(import_id, period, created['id']), import_id, period)
+                st.session_state['draft_notice'] = 'Новый черновик добавлен. Предыдущие записки сохранены.'
+                st.rerun()
+            except (StorageError, ValueError, PermissionError) as exc:
+                st.error(str(exc))
+    if switch.button('Выбрать черновик', width='stretch'):
+        try:
+            state['drafts'] = service.list(import_id, period)
+        except (StorageError, ValueError, PermissionError) as exc:
+            st.error(str(exc))
+    if choices := state.get('drafts'):
+        labels = {d['id']: f"{index}. {d.get('name') or 'Основной черновик'} · редакция {d['revision']} · {local_time(d['updated_at'])}"
+                  for index, d in enumerate(choices, 1)}
+        selected = st.selectbox('Черновики за период', list(labels),
+                                index=list(labels).index(draft['id']) if draft['id'] in labels else 0,
+                                format_func=labels.get, key='draft_choice_'+state['epoch'])
+        if st.button('Открыть выбранный черновик', disabled=selected == draft['id']):
+            if dirty():
+                st.warning('Сначала сохраните правки текущего черновика.')
+            else:
+                try:
+                    view = service.open(import_id, period, selected)
+                    if not view['draft']:
+                        raise ValueError('Черновик не найден.')
+                    reset_editor(view, import_id, period)
+                    st.rerun()
+                except (StorageError, ValueError, PermissionError) as exc:
+                    st.error(str(exc))
     if message := st.session_state.pop('draft_notice', None):
         st.success(message)
     if not can_write:
@@ -161,7 +208,7 @@ def render_editor(library, access, settings, identity, period):
                 change['accept_version'] = version
         try:
             with st.spinner('Сохраняем редакцию…'):
-                saved = service.save(import_id, period, draft['revision'], state['working']['conclusions'], changes)
+                saved = service.save(import_id, period, draft['revision'], state['working']['conclusions'], changes, draft_id=draft['id'])
                 # A lost read-back must not erase the unsaved copy or claim failure of a confirmed save.
             state['base'] = saved
             state['working'] = editable(saved)
@@ -182,9 +229,9 @@ def render_editor(library, access, settings, identity, period):
         else:
             try:
                 with st.spinner('Проверяем новые материалы…'):
-                    updated = service.refresh(import_id, period, draft['revision'])
+                    updated = service.refresh(import_id, period, draft['revision'], draft_id=draft['id'])
                 additions = len(updated['items']) - len(draft['items'])
-                discard_editor()
+                reset_editor(service.open(import_id, period, draft['id']), import_id, period)
                 st.session_state['draft_notice'] = f'Материалы обновлены. Добавлено: {additions}. Ручные тексты сохранены.'
                 st.rerun()
             except (StorageError, ValueError, PermissionError) as exc:
@@ -192,7 +239,7 @@ def render_editor(library, access, settings, identity, period):
     if actions[2].button('Сравнить с общей версией', width='stretch'):
         try:
             with st.spinner('Читаем общую версию…'):
-                state['remote'] = service.open(import_id, period)
+                state['remote'] = service.open(import_id, period, draft['id'])
         except (StorageError, ValueError, PermissionError) as exc:
             st.error(str(exc))
     if remote := state.get('remote'):
@@ -214,8 +261,18 @@ def render_editor(library, access, settings, identity, period):
     included = sum(i['included'] for i in state['working']['items'])
     st.caption(f"Включено материалов: {included} из {len(draft['items'])}")
     pending = state['view']['issues']
-    if pending:
-        st.warning(f'Требуют проверки: {len(pending)}. Различия показаны внутри соответствующих материалов.')
+    included_ids = {i['event_id'] for i in state['working']['items'] if i['included']}
+    unresolved = [i for i in pending if i['event_id'] in included_ids and i['event_id'] not in state['accepted']]
+    if unresolved:
+        st.warning(f'Требуют проверки: {len(unresolved)}. Различия показаны внутри соответствующих материалов.')
+    reviewable = [i for i in unresolved if i['can_accept']]
+    if can_write:
+        st.button('Материалы проверены', on_click=_accept_all, disabled=not reviewable,
+                  help='Подтвердить изменения всех включённых материалов во всех группах. Затем сохраните правки.')
+    if state['accepted']:
+        st.caption(f"Проверено материалов: {len(state['accepted'])}. Нажмите «Сохранить правки».")
+    if any(not i['can_accept'] for i in unresolved):
+        st.caption('Материалы без подтверждения нужно исключить из записки; общая кнопка не меняет их статус.')
     with st.container(key='draft-workspace'):
         materials, conclusions, preview, history = st.tabs(['Материалы', 'Выводы аналитика', 'Предпросмотр', 'История редакций'])
         with materials:
@@ -249,7 +306,7 @@ def render_editor(library, access, settings, identity, period):
                 with st.expander('Список материалов группы', expanded=False):
                     for number, event_id in enumerate(choices, 1):
                         flags = (' · включён' if items[event_id]['included'] else ' · исключён')
-                        flags += ' · требует проверки' if event_id in problem else ''
+                        flags += ' · проверен' if event_id in state['accepted'] else ' · требует проверки' if event_id in problem else ''
                         st.button(f'{number}. {items[event_id]["title"]}{flags}',
                                   key=f'jump_{state["epoch"]}_{event_id}', on_click=choose, args=(event_id,),
                                   type='primary' if event_id == selected else 'secondary', width='stretch')
@@ -259,10 +316,12 @@ def render_editor(library, access, settings, identity, period):
                 st.caption(source['date_label'] + ' · ' + source['competitor_name'] + ' · Дата и первоисточник не редактируются')
                 for field, label in [('included','Включить в записку'),('title','Заголовок'),('description','Краткое описание')]:
                     key = f'draft_{state["epoch"]}_{selected}_{field}'
-                    st.session_state.setdefault(key, item[field])
                     method = st.checkbox if field == 'included' else st.text_input if field == 'title' else st.text_area
                     kwargs = {'height': 170, 'max_chars':10000} if field == 'description' else {'max_chars':500} if field == 'title' else {}
-                    method(label, key=key, disabled=not can_write, on_change=_change, args=(field,key,selected), **kwargs)
+                    # Explicit defaults survive a fast click that interrupts the
+                    # first page render before all widgets reach the browser.
+                    method(label, value=item[field], key=key, disabled=not can_write,
+                           on_change=_change, args=(field,key,selected), **kwargs)
                 target = url(source.get('provenance', {}).get('article_url') or source.get('url'))
                 if target:
                     st.link_button('Открыть первоисточник ↗', target)
@@ -283,44 +342,40 @@ def render_editor(library, access, settings, identity, period):
                 st.info('В черновике пока нет материалов. Их можно добавить командой «Обновить материалы».')
         with conclusions:
             key = 'draft_conclusions_'+state['epoch']
-            st.session_state.setdefault(key, state['working']['conclusions'])
-            st.text_area('Выводы аналитика', key=key, height=300, max_chars=30000, disabled=not can_write,
+            st.text_area('Выводы аналитика', value=state['working']['conclusions'], key=key, height=300, max_chars=30000, disabled=not can_write,
                          placeholder='Добавьте выводы, риски и рекомендации по итогам периода…',
                          on_change=_change, args=('conclusions',key))
         with preview:
-            st.caption('Предпросмотр и Word/ZIP используют одну сохранённую редакцию. Каждый выпуск остаётся в архиве.')
+            st.caption('Word, PDF и ZIP используют одну сохранённую редакцию. Нажмите формат — файл сформируется и сразу скачается. Выпуск также останется в архиве.')
             if st.button('Показать сохранённую записку'):
                 if dirty():
                     st.warning('Сначала сохраните правки, чтобы состав записки совпал с сохранённой редакцией.')
                 else:
                     try:
                         with st.spinner('Проверяем материалы записки…'):
-                            state['preview'] = service.preview(import_id, period, draft['revision'])
+                            state['preview'] = service.preview(import_id, period, draft['revision'], draft_id=draft['id'])
                     except (StorageError, ValueError, PermissionError) as exc:
                         state.pop('preview', None)
                         st.error(str(exc))
             if value := state.get('preview'):
                 _preview(value)
-            if can_write and st.button('Выпустить Word и ZIP',type='primary'):
+            if can_write:
+                from .downloads import FORMATS, release_download
+                from .runtime import manager
+                columns = st.columns(3)
                 if dirty():
-                    st.warning('Сначала сохраните правки, затем выпускайте записку.')
-                else:
-                    from .jobs import JobService
-                    from .job_screen import launch
-                    try:
-                        JobService(settings,identity).export(import_id,period,draft['revision'])
-                        launch(settings)
-                        st.session_state['show_export_jobs']=True
-                        st.rerun()
-                    except (StorageError,PermissionError,ValueError) as exc:
-                        st.error(str(exc))
-            if st.session_state.get('show_export_jobs'):
-                from .job_screen import render_jobs
-                render_jobs(import_id,settings,identity,can_write,period=period)
+                    st.caption('Сохраните правки, чтобы скачать текущую редакцию.')
+                for col, (label, field, extension, mime) in zip(columns, FORMATS):
+                    callback = release_download(settings, identity, import_id, period, draft['revision'], field,
+                                                manager().ensure, draft_id=draft['id'])
+                    col.download_button('Скачать ' + label, data=callback,
+                        file_name=f"{draft.get('name') or 'Записка'} {period} ред-{draft['revision']}{extension}",
+                        mime=mime, on_click='ignore', disabled=dirty() or bool(unresolved), width='stretch',
+                        key=f"release_{draft['id']}_{draft['revision']}_{field}")
         with history:
             if st.button('Показать историю редакций'):
                 try:
-                    state['history'] = service.history(import_id, period)
+                    state['history'] = service.history(import_id, period, draft_id=draft['id'])
                 except (StorageError, ValueError, PermissionError) as exc:
                     st.error(str(exc))
             if revisions := state.get('history'):
@@ -329,7 +384,7 @@ def render_editor(library, access, settings, identity, period):
                 selected_revision = st.selectbox('Сохранённая редакция', [r['revision'] for r in revisions])
                 if st.button('Открыть редакцию для сравнения'):
                     try:
-                        state['historical'] = service.history(import_id, period, selected_revision)
+                        state['historical'] = service.history(import_id, period, selected_revision, draft_id=draft['id'])
                     except (StorageError, ValueError, PermissionError) as exc:
                         st.error(str(exc))
                 if old := state.get('historical'):

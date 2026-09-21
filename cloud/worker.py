@@ -45,7 +45,7 @@ def execute(store, drive, job, root, alive=lambda: None):
         alive()
         store.pulse(job,stage,source,completed)
     if job['kind']=='export':
-        from .exports import render
+        from .exports import render_files
         value=job['payload']
         frozen={'id':value['draft_id'],**value}
         # Recheck the source versions while retaining the saved snapshot and coverage.
@@ -53,14 +53,14 @@ def execute(store, drive, job, root, alive=lambda: None):
         progress('Проверка сохранённых доказательств')
         ids={i for item in value['items'] for i in item['source']['evidence_ids']}
         evidence={i:read(i) for i in ids}
-        progress('Формирование Word и ZIP')
-        word,bundle=render(value,evidence,library['competitor'])
-        word_id,bundle_id=(hashlib.sha256(v).hexdigest() for v in (word,bundle))
-        assets=upload_objects(store,drive,job,{word_id:word,bundle_id:bundle})
+        progress('Формирование Word, PDF и ZIP')
+        files=render_files(value,evidence,library['competitor'])
+        identifiers={field:hashlib.sha256(content).hexdigest() for field,content in files.items()}
+        assets=upload_objects(store,drive,job,{identifiers[field]:content for field,content in files.items()})
         report_id=job['id']
-        report={'id':report_id,'name':'Записка '+job['period']+' · редакция '+str(value['revision']),
+        report={'id':report_id,'name':(value.get('name') or 'Записка')+' · '+job['period']+' · редакция '+str(value['revision']),
             'legacy':False,'period':job['period'],'revision':value['revision'],'draft_id':value['draft_id'],
-            'created_at':datetime.now(timezone.utc).isoformat(),'docx_id':word_id,'bundle_id':bundle_id,'snapshot':value}
+            'created_at':datetime.now(timezone.utc).isoformat(),**identifiers,'snapshot':value}
         alive()
         store.publish(job,[{'kind':'report','key':report_id,'payload':report}],assets,result_id=report_id)
     else:
