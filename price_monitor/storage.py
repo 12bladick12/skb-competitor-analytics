@@ -36,6 +36,10 @@ CREATE TABLE IF NOT EXISTS source_pauses (
  run_id INTEGER NOT NULL REFERENCES runs(id), source TEXT NOT NULL, reason TEXT NOT NULL, PRIMARY KEY(run_id,source)
 );
 CREATE TABLE IF NOT EXISTS worker_lease (id INTEGER PRIMARY KEY CHECK(id=1), owner TEXT NOT NULL, heartbeat REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS external_sources (
+ source TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0,
+ owner TEXT NOT NULL DEFAULT '', heartbeat REAL NOT NULL DEFAULT 0
+);
 PRAGMA user_version=1;
 """
 
@@ -146,6 +150,18 @@ class Store:
                     c.execute(f"INSERT INTO observations(job_id,{','.join(columns)}) VALUES({','.join('?' for _ in range(len(columns)+1))})", [job["id"]]+list(values.values()))
                 c.execute("UPDATE jobs SET state='done' WHERE run_id=?", (run_id,))
                 c.execute("UPDATE runs SET state='cancelled',finished_at=? WHERE id=?", (utcnow(),run_id))
+            elif row and row[0] == "running":
+                # The external collector may be offline. Cancellation must still
+                # finish its jobs, and fence any response already in flight.
+                jobs = c.execute("""SELECT j.id,q.product_url FROM jobs j
+                    JOIN rules q ON q.id=j.rule_id
+                    JOIN external_sources e ON e.source=q.source AND e.enabled=1
+                    WHERE j.run_id=? AND j.state!='done'""", (run_id,)).fetchall()
+                for job in jobs:
+                    values = asdict(Observation("cancelled",job["product_url"],detail="Остановлено пользователем"))
+                    columns = list(values)
+                    c.execute(f"INSERT INTO observations(job_id,{','.join(columns)}) VALUES({','.join('?' for _ in range(len(columns)+1))}) ON CONFLICT(job_id) DO NOTHING", [job["id"]]+list(values.values()))
+                    c.execute("UPDATE jobs SET state='done' WHERE id=?", (job["id"],))
 
     def cancelled(self, run_id):
         with self.connect() as c:
@@ -161,7 +177,10 @@ class Store:
                 return False
             c.execute("INSERT INTO worker_lease VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET owner=excluded.owner,heartbeat=excluded.heartbeat", (owner,now))
             # Only lease acquisition may recover interrupted requests.
-            c.execute("UPDATE jobs SET state='pending' WHERE state='processing' AND id NOT IN (SELECT job_id FROM observations)")
+            c.execute("""UPDATE jobs SET state='pending' WHERE state='processing'
+                AND id NOT IN (SELECT job_id FROM observations)
+                AND rule_id NOT IN (SELECT q.id FROM rules q JOIN external_sources e
+                    ON e.source=q.source AND e.enabled=1)""")
             return True
 
     def heartbeat(self, owner):
@@ -172,6 +191,10 @@ class Store:
         with self.connect() as c:
             r = c.execute("SELECT heartbeat FROM worker_lease WHERE id=1").fetchone()
             return r[0] if r else None
+
+    def external_sources(self):
+        with self.connect() as c:
+            return [dict(r) for r in c.execute("SELECT source,enabled,heartbeat FROM external_sources ORDER BY source")]
 
     def release(self, owner):
         with self.connect() as c:
@@ -190,7 +213,11 @@ class Store:
 
     def pending(self, run_id):
         with self.connect() as c:
-            rows = c.execute("SELECT j.id job_id,q.source,q.manufacturer,q.article,q.product_url,q.url_template FROM jobs j JOIN rules q ON q.id=j.rule_id WHERE j.run_id=? AND j.state!='done' ORDER BY j.id", (run_id,))
+            rows = c.execute("""SELECT j.id job_id,q.source,q.manufacturer,q.article,q.product_url,q.url_template
+                FROM jobs j JOIN rules q ON q.id=j.rule_id
+                WHERE j.run_id=? AND j.state!='done'
+                AND NOT EXISTS(SELECT 1 FROM external_sources e WHERE e.source=q.source AND e.enabled=1)
+                ORDER BY j.id""", (run_id,))
             return [(r["job_id"], Rule(**{k:r[k] for k in ("source","manufacturer","article","product_url","url_template")})) for r in rows]
 
     def pause_source(self, run_id, source, reason):
@@ -204,7 +231,10 @@ class Store:
 
     def processing(self, job_id, owner):
         with self.connect() as c:
-            return c.execute("UPDATE jobs SET state='processing' WHERE id=? AND state='pending' AND EXISTS(SELECT 1 FROM worker_lease WHERE owner=? AND heartbeat>?)", (job_id,owner,time.time()-120)).rowcount == 1
+            return c.execute("""UPDATE jobs SET state='processing' WHERE id=? AND state='pending'
+                AND EXISTS(SELECT 1 FROM worker_lease WHERE owner=? AND heartbeat>?)
+                AND rule_id NOT IN (SELECT q.id FROM rules q JOIN external_sources e
+                    ON e.source=q.source AND e.enabled=1)""", (job_id,owner,time.time()-120)).rowcount == 1
 
     def record(self, job_id, observation: Observation, owner):
         values = asdict(observation)

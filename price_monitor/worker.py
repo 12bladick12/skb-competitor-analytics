@@ -19,7 +19,7 @@ log = logging.getLogger("price_monitor")
 class Worker:
     def __init__(self, store: Store, client_factory=SourceClient):
         self.store, self.client_factory = store, client_factory
-        self.owner = str(uuid.uuid4())
+        self.owner = "router1-" + str(uuid.uuid4())
         self.shutdown = threading.Event()
 
     def heartbeat_loop(self, finished):

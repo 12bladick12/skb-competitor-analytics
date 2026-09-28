@@ -77,6 +77,20 @@ def render_results(rows, key):
     st.caption("Выгружаются строки с выбранными фильтрами, включая исходный текст цены, статус HTTP и отпечаток ответа.")
 
 
+def sensoren_connection():
+    route = next((r for r in db.external_sources() if r['source']=='sensoren'), None)
+    if route and route['enabled']:
+        online = bool(route['heartbeat'] and time.time()-route['heartbeat']<45)
+        if online:
+            st.caption("● Sensoren: внешний сборщик подключён. Задания отправляются ему из этого приложения.")
+        else:
+            st.warning("Sensoren: внешний сборщик не подключён. Его задания будут ждать подключения; остальные сайты обрабатываются. Владельцу нужно включить компьютер или сервер со сборщиком.")
+        return True
+    if CLOUD_MODE:
+        st.warning("Sensoren сейчас обрабатывается из Streamlit Cloud, где зафиксирован HTTP 403 на robots.txt. Для запуска из этой кнопки необходимо подключить внешний сборщик Sensoren.")
+    return False
+
+
 @st.fragment(run_every=3)
 def active_progress():
     runs = db.runs()
@@ -87,6 +101,7 @@ def active_progress():
         st.caption("● Сборщик подключён")
     else:
         st.warning("Сборщик запускается или восстанавливается. Задания сохранены в очереди." if CLOUD_MODE else "Сборщик не подключён. Задания сохранятся в очереди; администратору нужно запустить процесс сборщика.")
+    external_sensoren = sensoren_connection()
     if active:
         st.subheader(f"Запуск №{active['id']} · {RUN_LABELS[active['state']]}")
         done,total = active["finished"],active["total"]
@@ -97,6 +112,9 @@ def active_progress():
             db.cancel(active["id"])
             st.rerun()
         data = db.results(run_id=active["id"])
+        waiting = sum(r['source']=='sensoren' and r['status']=='pending' for r in data)
+        if external_sensoren and waiting:
+            st.caption(f"Ожидают внешнего сборщика Sensoren: {waiting}. Результаты будут сохранены в этот же запуск.")
         last = [r for r in data if r["status"] not in {"pending","processing"}][-8:]
         if last:
             st.dataframe(pd.DataFrame([{"Артикул":r["article"],"Статус":STATUS_LABELS.get(r["status"],r["status"]),"Цена":r["price"],"Примечание":r["detail"]} for r in last]),hide_index=True,width="stretch")
@@ -111,10 +129,10 @@ if page == "Сбор цен":
     active_progress()
     st.divider()
     if CLOUD_MODE:
-        with st.expander("Sensoren: сбор с компьютера при HTTP 403 в облаке"):
-            st.write("При отказе Sensoren облачному сборщику владелец может запустить run_sensoren.cmd в папке приложения на своём компьютере. Сбор выполняется обычными HTTP-запросами с проверкой robots.txt.")
-            st.write("Программа берёт сохранённые задания Sensoren из Supabase и добавляет отдельный завершённый запуск. После окончания откройте «Результаты» → «Обновить результаты» и выберите новый запуск.")
-            st.caption("Для других моделей передайте локальному запуску CSV/XLSX с заданиями. Подробная инструкция — в разделе «Источники». При отказе сайта локальному сборщику нужен согласованный доступ или фид поставщика.")
+        with st.expander("Sensoren: подключение сборщика для запуска из приложения"):
+            st.write("Владелец один раз запускает start_sensoren_agent.cmd в папке приложения на компьютере с доступом к Sensoren. После сообщения о подключении используйте обычную кнопку «Запустить сбор» здесь.")
+            st.write("Компьютер и процесс сборщика должны оставаться включёнными. Задания Sensoren и остальных сайтов сохраняются в одном запуске. При отключении сборщика задания Sensoren ждут его возвращения; остановка запуска доступна в приложении.")
+            st.caption("Внешний сборщик также можно разместить на отдельном сервере после проверки доступа к Sensoren. Инструкция для владельца — в разделе «Источники».")
     st.subheader("1. Подготовьте задания")
     with st.expander("Формат таблицы и примеры",expanded=False):
         st.write("Обязательные столбцы: source, manufacturer, article. Для каждой строки заполните product_url или url_template. Шаблон — ссылка на карточку с параметром {article}; он не выполняет поиск или Python-код.")
@@ -170,6 +188,20 @@ elif page == "Результаты":
         b.metric("С публичной ценой",sum(r["status"]=="priced" for r in data))
         c.metric("Обработано",lookup[run_id]["finished"])
         render_results(data,f"run_{run_id}")
+        if any(r['source']=='sensoren' for r in data):
+            sensoren_connection()
+            if lookup[run_id]['state'] not in ('queued','running') and st.button("Повторить сбор Sensoren", key=f"retry_sensoren_{run_id}"):
+                wanted = {r['rule_id'] for r in data if r['source']=='sensoren'}
+                rows = [{k:r[k] for k in COLUMNS} for r in db.rule_options() if r['id'] in wanted]
+                rules, errors = validate_rows(rows)
+                if errors:
+                    st.error("Проверьте сохранённые правила Sensoren перед повторным запуском.")
+                else:
+                    try:
+                        st.session_state['selected_run'] = db.enqueue(rules)
+                        st.rerun()
+                    except ValueError as exc:
+                        st.error(str(exc))
     else:
         st.info("Запустите сбор на вкладке «Сбор цен».")
 
