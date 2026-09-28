@@ -62,7 +62,7 @@ class SourceClient:
                 raise FetchError("cancelled", "Запуск остановлен пользователем")
             time.sleep(min(0.25, max(0, until - time.monotonic())))
 
-    def _request(self, url):
+    def _request(self, url, max_response=MAX_RESPONSE):
         try:
             validate_url(self.spec.id, url, product=False)
             check_public_host(urlsplit(url).hostname)
@@ -76,7 +76,7 @@ class SourceClient:
                     if self.cancelled():
                         raise FetchError("cancelled", "Запуск остановлен пользователем")
                     size += len(chunk)
-                    if size > MAX_RESPONSE or time.monotonic()-started > 45:
+                    if size > max_response or time.monotonic()-started > 45:
                         raise FetchError("http_error", "Превышен лимит размера/времени ответа", r.status_code)
                     chunks.append(chunk)
                 r._content = b"".join(chunks)
@@ -134,6 +134,9 @@ class SourceClient:
             raise FetchError("robots_denied", "URL запрещён правилами robots.txt; используйте разрешённую карточку или согласованный источник")
 
     def fetch(self, url):
+        return self.fetch_document(url, html_only=True)
+
+    def fetch_document(self, url, html_only=False):
         target = url
         for _ in range(5):
             try:
@@ -143,7 +146,17 @@ class SourceClient:
             self.policy(target)
             for attempt in range(2):
                 try:
-                    code, headers, body = self._request(target)
+                    if html_only:
+                        code, headers, body = self._request(target)
+                    else:
+                        # XML sitemap servers can return 406 when Accept only
+                        # advertises HTML. This is standard content negotiation.
+                        previous = self.session.headers.get('Accept')
+                        self.session.headers['Accept'] = 'application/xml,text/xml,text/html;q=0.9,text/plain;q=0.8,*/*;q=0.5'
+                        try:
+                            code, headers, body = self._request(target,max_response=50*1024*1024)
+                        finally:
+                            self.session.headers['Accept'] = previous
                 except FetchError as e:
                     if e.status != "network_error" or attempt:
                         raise
@@ -164,7 +177,7 @@ class SourceClient:
                 continue
             if code not in (200,404,410):
                 raise FetchError("http_error", f"HTTP {code}", code)
-            if code == 200 and "html" not in headers.get("Content-Type", "").lower():
+            if html_only and code == 200 and "html" not in headers.get("Content-Type", "").lower():
                 raise FetchError("parse_error", "Ожидалась HTML-карточка товара", code)
             return target, code, body
         raise FetchError("http_error", "Слишком много перенаправлений")

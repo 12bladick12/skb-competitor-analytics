@@ -45,6 +45,7 @@ class Postgres:
         kwargs.setdefault("sslmode", "require")
         if kwargs["sslmode"] not in {"require", "verify-ca", "verify-full"}:
             raise ValueError("Облачная база требует SSL")
+        self.settings = dict(kwargs)
         kwargs.update(connect_timeout=10, prepare_threshold=None, row_factory=row_factory)
         self.pool = ConnectionPool(kwargs=kwargs, min_size=1, max_size=8, timeout=15, open=True)
         try:
@@ -59,6 +60,8 @@ class Postgres:
                 for statement in schema_sql(sqlite_schema).split(";"):
                     if statement.strip():
                         c.execute(statement)
+                c.execute("ALTER TABLE observations ADD COLUMN IF NOT EXISTS details_json TEXT NOT NULL DEFAULT '{}'")
+                c.execute("ALTER TABLE external_sources ADD COLUMN IF NOT EXISTS protocol INTEGER NOT NULL DEFAULT 1")
                 c.execute("INSERT INTO schema_version VALUES(1,1) ON CONFLICT(id) DO NOTHING")
         except Exception:
             self.pool.close()

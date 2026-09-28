@@ -19,7 +19,7 @@ log = logging.getLogger("price_monitor")
 class Worker:
     def __init__(self, store: Store, client_factory=SourceClient):
         self.store, self.client_factory = store, client_factory
-        self.owner = "router1-" + str(uuid.uuid4())
+        self.owner = "router2-" + str(uuid.uuid4())
         self.shutdown = threading.Event()
 
     def heartbeat_loop(self, finished):
@@ -77,6 +77,11 @@ class Worker:
             groups[job[1].source].append(job)
         with ThreadPoolExecutor(max_workers=5, thread_name_prefix="source") as pool:
             futures = [pool.submit(self.process_source,run_id,source,jobs) for source,jobs in groups.items()]
+            from .catalog import process_catalog
+            external={r['source'] for r in self.store.external_sources() if r['enabled']}
+            for row in self.store.catalog.sources(run_id):
+                if row['source'] not in external and row['state'] in ('pending','running'):
+                    futures.append(pool.submit(process_catalog,self.store.catalog,run_id,row['source'],self.owner,self.shutdown,self.client_factory))
             for future in futures:
                 future.result()
         if not self.shutdown.is_set():

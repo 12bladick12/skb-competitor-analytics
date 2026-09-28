@@ -52,6 +52,7 @@ class Observation:
     checked_at: str = ""
     http_status: int | None = None
     response_hash: str = ""
+    details_json: str = "{}"
 
     def __post_init__(self):
         if not self.checked_at:

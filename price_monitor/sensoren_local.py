@@ -38,7 +38,8 @@ WITH input AS MATERIALIZED (
   product_url text, url_template text, status text, url text, title text,
   price text, currency text, availability text, price_text text,
   availability_text text, detail text, checked_at text, http_status integer,
-  response_hash text)
+  response_hash text, details_json text, details_hash text, document_json text,
+  category text, attributes_count integer)
 ), existing AS (
  SELECT id FROM price_monitor.runs WHERE note=%(note)s
 ), new_run AS (
@@ -59,12 +60,23 @@ WITH input AS MATERIALIZED (
  RETURNING id,rule_id
 ), saved_observations AS (
  INSERT INTO price_monitor.observations(job_id,status,url,title,price,currency,
-  availability,price_text,availability_text,detail,checked_at,http_status,response_hash)
+  availability,price_text,availability_text,detail,checked_at,http_status,response_hash,details_json)
  SELECT j.id,i.status,i.url,i.title,i.price,i.currency,i.availability,i.price_text,
-  i.availability_text,i.detail,i.checked_at,i.http_status,i.response_hash
+  i.availability_text,i.detail,i.checked_at,i.http_status,i.response_hash,i.details_json
  FROM saved_jobs j JOIN saved_rules r ON r.id=j.rule_id
  JOIN input i ON i.rule_key=r.rule_key
  RETURNING id
+), saved_documents AS (
+ INSERT INTO price_monitor.product_documents(fingerprint,details_json)
+ SELECT DISTINCT i.details_hash,i.document_json FROM input i CROSS JOIN new_run WHERE i.details_hash<>''
+ ON CONFLICT(fingerprint) DO NOTHING RETURNING fingerprint
+), indexed AS (
+ INSERT INTO price_monitor.product_index(rule_id,title,category,search_text,details_hash,attributes_count,updated_at)
+ SELECT r.id,i.title,i.category,lower(i.source||' '||i.manufacturer||' '||i.article||' '||i.title||' '||i.category),
+  i.details_hash,i.attributes_count,i.checked_at FROM input i JOIN saved_rules r ON r.rule_key=i.rule_key WHERE i.details_hash<>''
+ ON CONFLICT(rule_id) DO UPDATE SET title=excluded.title,category=excluded.category,search_text=excluded.search_text,
+  details_hash=excluded.details_hash,attributes_count=excluded.attributes_count,updated_at=excluded.updated_at
+ WHERE excluded.updated_at>=product_index.updated_at RETURNING rule_id
 )
 SELECT id AS imported_run_id FROM new_run UNION ALL SELECT id FROM existing;
 COMMIT;
@@ -153,7 +165,7 @@ def validate_snapshot(snapshot):
         raise ValueError("Снимок должен содержать корректные уникальные задания Sensoren")
     values = []
     for index, (rule, row) in enumerate(zip(rules, rows)):
-        result = Observation(**{key: row[key] for key in Observation.__dataclass_fields__})
+        result = Observation(**{key: row[key] for key in Observation.__dataclass_fields__ if key in row})
         if result.status not in STATUS_LABELS or result.status in {"pending", "processing"}:
             raise ValueError("Снимок содержит незавершённое задание")
         validate_url("sensoren", result.url, product=False)
@@ -164,7 +176,12 @@ def validate_snapshot(snapshot):
                 raise ValueError("Некорректная цена в снимке")
         elif result.price is not None:
             raise ValueError("Цена указана у результата без полученной цены")
-        values.append({**asdict(rule), **asdict(result), "rule_key": rule.key, "ordinal": index})
+        from .catalog_schema import document
+        fingerprint,canonical,details=document(result.details_json)
+        values.append({**asdict(rule), **asdict(result), "rule_key": rule.key, "ordinal": index,
+            'details_hash':fingerprint,'document_json':canonical,'category':details.get('category',''),
+            'attributes_count':len(details.get('attributes',[])),
+            'details_json':json.dumps({'ref':fingerprint}) if fingerprint else '{}'})
     return values
 
 

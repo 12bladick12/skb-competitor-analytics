@@ -17,7 +17,9 @@ MAX_ROWS = 10000
 MAX_BYTES = 10 * 1024 * 1024
 
 
-def read_table(data: bytes, filename: str) -> list[dict]:
+def read_table(data: bytes, filename: str, columns=None, aliases=None, require_url=True, sheet_name='Задания') -> list[dict]:
+    columns=columns or COLUMNS
+    aliases=aliases or ALIASES
     if len(data) > MAX_BYTES:
         raise ValueError("Максимальный размер файла — 10 МБ")
     if filename.lower().endswith(".xlsx"):
@@ -27,7 +29,7 @@ def read_table(data: bytes, filename: str) -> list[dict]:
                     raise ValueError("Распакованный Excel превышает 80 МБ")
             wb = load_workbook(BytesIO(data), read_only=True, data_only=False, keep_links=False)
             try:
-                sheet = wb["Задания"] if "Задания" in wb.sheetnames else wb.worksheets[0]
+                sheet = wb[sheet_name] if sheet_name in wb.sheetnames else wb.worksheets[0]
                 rows = []
                 for cells in sheet.iter_rows():
                     if any(c.data_type == "f" for c in cells):
@@ -57,14 +59,14 @@ def read_table(data: bytes, filename: str) -> list[dict]:
         raise ValueError("Поддерживаются только XLSX и CSV")
     if not rows:
         raise ValueError("Файл пуст")
-    headers = [ALIASES.get(str(c or "").strip().lower(), str(c or "").strip().lower()) for c in rows[0]]
+    headers = [aliases.get(str(c or "").strip().lower(), str(c or "").strip().lower()) for c in rows[0]]
     while headers and not headers[-1]:
         headers.pop()
-    if len(set(headers)) != len(headers) or any(not h or h not in COLUMNS for h in headers):
-        raise ValueError("Проверьте заголовки: нужны уникальные столбцы из " + ", ".join(COLUMNS))
+    if len(set(headers)) != len(headers) or any(not h or h not in columns for h in headers):
+        raise ValueError("Проверьте заголовки: нужны уникальные столбцы из " + ", ".join(columns))
     if not {"source", "manufacturer", "article"}.issubset(headers):
         raise ValueError("Обязательные столбцы: source, manufacturer, article")
-    if not {"product_url", "url_template"}.intersection(headers):
+    if require_url and not {"product_url", "url_template"}.intersection(headers):
         raise ValueError("Нужен столбец product_url или url_template")
     result = []
     for n, row in enumerate(rows[1:], start=2):

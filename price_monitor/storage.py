@@ -8,6 +8,7 @@ import sqlite3
 import time
 
 from .models import Observation, Rule, SUCCESS_STATUSES, utcnow
+from .catalog_schema import SCHEMA as CATALOG_SCHEMA
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS rules (
@@ -28,7 +29,8 @@ CREATE TABLE IF NOT EXISTS observations (
  id INTEGER PRIMARY KEY, job_id INTEGER NOT NULL UNIQUE REFERENCES jobs(id),
  status TEXT NOT NULL, url TEXT NOT NULL, title TEXT NOT NULL, price TEXT, currency TEXT,
  availability TEXT NOT NULL, price_text TEXT NOT NULL, availability_text TEXT NOT NULL,
- detail TEXT NOT NULL, checked_at TEXT NOT NULL, http_status INTEGER, response_hash TEXT NOT NULL
+ detail TEXT NOT NULL, checked_at TEXT NOT NULL, http_status INTEGER, response_hash TEXT NOT NULL,
+ details_json TEXT NOT NULL DEFAULT '{}'
 );
 CREATE INDEX IF NOT EXISTS jobs_run ON jobs(run_id,state);
 CREATE INDEX IF NOT EXISTS jobs_rule ON jobs(rule_id);
@@ -38,10 +40,12 @@ CREATE TABLE IF NOT EXISTS source_pauses (
 CREATE TABLE IF NOT EXISTS worker_lease (id INTEGER PRIMARY KEY CHECK(id=1), owner TEXT NOT NULL, heartbeat REAL NOT NULL);
 CREATE TABLE IF NOT EXISTS external_sources (
  source TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0,
- owner TEXT NOT NULL DEFAULT '', heartbeat REAL NOT NULL DEFAULT 0
+ owner TEXT NOT NULL DEFAULT '', heartbeat REAL NOT NULL DEFAULT 0,
+ protocol INTEGER NOT NULL DEFAULT 1
 );
 PRAGMA user_version=1;
 """
+SCHEMA += CATALOG_SCHEMA
 
 
 class Store:
@@ -60,6 +64,10 @@ class Store:
                 raise RuntimeError(f"Версия базы {version} не поддерживается")
             c.execute("PRAGMA journal_mode=WAL")
             c.executescript(SCHEMA)
+            if 'details_json' not in {r['name'] for r in c.execute('PRAGMA table_info(observations)')}:
+                c.execute("ALTER TABLE observations ADD COLUMN details_json TEXT NOT NULL DEFAULT '{}'")
+            if 'protocol' not in {r['name'] for r in c.execute('PRAGMA table_info(external_sources)')}:
+                c.execute('ALTER TABLE external_sources ADD COLUMN protocol INTEGER NOT NULL DEFAULT 1')
 
     @contextmanager
     def connect(self):
@@ -69,6 +77,7 @@ class Store:
             return
         c = sqlite3.connect(self.path, timeout=15)
         c.row_factory = sqlite3.Row
+        c.create_function('lower',1,lambda value: str(value).casefold() if value is not None else None,deterministic=True)
         c.execute("PRAGMA foreign_keys=ON")
         c.execute("PRAGMA busy_timeout=15000")
         try:
@@ -86,6 +95,32 @@ class Store:
     def close(self):
         if self.pg is not None:
             self.pg.close()
+
+    @property
+    def catalog(self):
+        from .catalog_storage import CatalogRepository
+        return CatalogRepository(settings=self.pg.settings if self.pg else None,path=self.path)
+
+    def enqueue_catalog(self, selections):
+        from .sources import SOURCES
+        import json
+        valid={s:[b for b in brands if b in SOURCES[s].brands] for s,brands in selections.items() if s in SOURCES}
+        valid={s:list(dict.fromkeys(brands)) for s,brands in valid.items() if brands}
+        if not valid:raise ValueError('Выберите хотя бы одного производителя')
+        with self.connect() as c:
+            self.write_lock(c)
+            lease=c.execute('SELECT owner,heartbeat FROM worker_lease WHERE id=1').fetchone()
+            if lease and lease['heartbeat']>time.time()-120 and not lease['owner'].startswith('router2-'):
+                raise ValueError('Обновите процесс сборщика: в Streamlit откройте Manage app → ⋮ → Reboot app. После перезапуска полный каталог станет доступен.')
+            if c.execute("SELECT 1 FROM runs WHERE state IN ('queued','running')").fetchone():
+                raise ValueError('Уже есть активный запуск. Дождитесь завершения или остановите его')
+            insert="INSERT INTO runs(state,created_at,note) VALUES('queued',?,'Полный обход выбранных каталогов')"
+            if self.pg:
+                run_id=c.execute(insert+' RETURNING id',(utcnow(),)).fetchone()[0]
+            else:run_id=c.execute(insert,(utcnow(),)).lastrowid
+            for source,brands in valid.items():
+                c.execute('INSERT INTO catalog_sources(run_id,source,brands_json) VALUES(?,?,?)',(run_id,source,json.dumps(brands,ensure_ascii=False)))
+            return run_id
 
     def enqueue(self, rules: list[Rule]) -> int:
         if not rules or len({r.key for r in rules}) != len(rules):
@@ -126,7 +161,7 @@ class Store:
     def results(self, run_id=None, rule_id=None):
         query = """SELECT j.id job_id,j.run_id,q.id rule_id,q.source,q.manufacturer,q.article,
             COALESCE(o.status,j.state) status,o.price,o.currency,COALESCE(o.availability,'unknown') availability,
-            COALESCE(o.url,q.product_url) url,o.title,o.price_text,o.availability_text,o.detail,o.checked_at,o.http_status,o.response_hash
+            COALESCE(o.url,q.product_url) url,o.title,o.price_text,o.availability_text,o.detail,o.checked_at,o.http_status,o.response_hash,o.details_json
             FROM jobs j JOIN rules q ON q.id=j.rule_id LEFT JOIN observations o ON o.job_id=j.id"""
         conditions, values = [], []
         if run_id is not None:
@@ -141,27 +176,17 @@ class Store:
     def cancel(self, run_id):
         with self.connect() as c:
             self.write_lock(c)
-            c.execute("UPDATE runs SET cancel_requested=1 WHERE id=? AND state IN ('queued','running')", (run_id,))
-            row = c.execute("SELECT state FROM runs WHERE id=?", (run_id,)).fetchone()
-            if row and row[0] == "queued":
-                for job in c.execute("SELECT j.id,q.product_url FROM jobs j JOIN rules q ON q.id=j.rule_id WHERE j.run_id=?", (run_id,)).fetchall():
-                    values = asdict(Observation("cancelled",job["product_url"],detail="Запуск отменён до начала сбора"))
-                    columns = list(values)
-                    c.execute(f"INSERT INTO observations(job_id,{','.join(columns)}) VALUES({','.join('?' for _ in range(len(columns)+1))})", [job["id"]]+list(values.values()))
-                c.execute("UPDATE jobs SET state='done' WHERE run_id=?", (run_id,))
-                c.execute("UPDATE runs SET state='cancelled',finished_at=? WHERE id=?", (utcnow(),run_id))
-            elif row and row[0] == "running":
-                # The external collector may be offline. Cancellation must still
-                # finish its jobs, and fence any response already in flight.
-                jobs = c.execute("""SELECT j.id,q.product_url FROM jobs j
-                    JOIN rules q ON q.id=j.rule_id
-                    JOIN external_sources e ON e.source=q.source AND e.enabled=1
-                    WHERE j.run_id=? AND j.state!='done'""", (run_id,)).fetchall()
-                for job in jobs:
-                    values = asdict(Observation("cancelled",job["product_url"],detail="Остановлено пользователем"))
-                    columns = list(values)
-                    c.execute(f"INSERT INTO observations(job_id,{','.join(columns)}) VALUES({','.join('?' for _ in range(len(columns)+1))}) ON CONFLICT(job_id) DO NOTHING", [job["id"]]+list(values.values()))
-                    c.execute("UPDATE jobs SET state='done' WHERE id=?", (job["id"],))
+            if not c.execute("SELECT 1 FROM runs WHERE id=? AND state IN ('queued','running')",(run_id,)).fetchone():
+                return
+            now=utcnow()
+            c.execute("UPDATE runs SET cancel_requested=1,state='cancelled',finished_at=? WHERE id=?",(now,run_id))
+            c.execute("""INSERT INTO observations(job_id,status,url,title,availability,price_text,availability_text,detail,checked_at,response_hash)
+                SELECT j.id,'cancelled',q.product_url,'','unknown','','','Остановлено пользователем',?,''
+                FROM jobs j JOIN rules q ON q.id=j.rule_id WHERE j.run_id=? AND j.state!='done'
+                ON CONFLICT(job_id) DO NOTHING""",(now,run_id))
+            c.execute("UPDATE jobs SET state='done' WHERE run_id=?",(run_id,))
+            c.execute("UPDATE catalog_pages SET state='cancelled' WHERE run_id=? AND state IN ('pending','processing')",(run_id,))
+            c.execute("UPDATE catalog_sources SET state='cancelled',finished_at=? WHERE run_id=? AND state IN ('pending','running')",(now,run_id))
 
     def cancelled(self, run_id):
         with self.connect() as c:
@@ -194,7 +219,7 @@ class Store:
 
     def external_sources(self):
         with self.connect() as c:
-            return [dict(r) for r in c.execute("SELECT source,enabled,heartbeat FROM external_sources ORDER BY source")]
+            return [dict(r) for r in c.execute("SELECT source,enabled,heartbeat,protocol FROM external_sources ORDER BY source")]
 
     def release(self, owner):
         with self.connect() as c:
@@ -242,6 +267,10 @@ class Store:
             self.write_lock(c)
             if not c.execute("SELECT 1 FROM worker_lease WHERE owner=? AND heartbeat>?", (owner,time.time()-120)).fetchone():
                 raise RuntimeError("Потеряна блокировка сборщика")
+            if c.execute("SELECT 1 FROM observations WHERE job_id=?",(job_id,)).fetchone():
+                return
+            from .catalog_schema import index_product
+            values['details_json'] = index_product(c,job_id,observation) or '{}'
             columns = list(values)
             c.execute(f"INSERT INTO observations(job_id,{','.join(columns)}) VALUES({','.join('?' for _ in range(len(columns)+1))}) ON CONFLICT(job_id) DO NOTHING", [job_id]+[values[k] for k in columns])
             c.execute("UPDATE jobs SET state='done' WHERE id=?", (job_id,))
@@ -249,12 +278,15 @@ class Store:
     def finish(self, run_id, note=""):
         with self.connect() as c:
             self.write_lock(c)
+            if c.execute("SELECT 1 FROM catalog_sources WHERE run_id=? AND state IN ('pending','running')",(run_id,)).fetchone():
+                return
             if c.execute("SELECT 1 FROM jobs WHERE run_id=? AND state!='done'", (run_id,)).fetchone():
                 return
             statuses = [r[0] for r in c.execute("SELECT o.status FROM observations o JOIN jobs j ON j.id=o.job_id WHERE j.run_id=?", (run_id,))]
             cancel = c.execute("SELECT cancel_requested FROM runs WHERE id=?", (run_id,)).fetchone()[0]
-            state = "cancelled" if cancel else ("completed_with_errors" if any(s not in SUCCESS_STATUSES for s in statuses) else "completed")
-            c.execute("UPDATE runs SET state=?,finished_at=?,note=? WHERE id=?", (state,utcnow(),note,run_id))
+            catalog_error=c.execute("SELECT 1 FROM catalog_sources WHERE run_id=? AND state NOT IN ('completed','cancelled')",(run_id,)).fetchone()
+            state = "cancelled" if cancel else ("completed_with_errors" if catalog_error or any(s not in SUCCESS_STATUSES for s in statuses) else "completed")
+            c.execute("UPDATE runs SET state=?,finished_at=COALESCE(finished_at,?),note=CASE WHEN ?='' THEN note ELSE ? END WHERE id=?", (state,utcnow(),note,note,run_id))
 
     def backup(self, destination):
         if self.pg is not None:

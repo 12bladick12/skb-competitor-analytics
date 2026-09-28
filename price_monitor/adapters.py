@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
 import hashlib
+import json
 import re
 
 from bs4 import BeautifulSoup
@@ -51,13 +52,13 @@ class Adapter:
     def __init__(self, source: str):
         self.spec = SOURCES[source]
 
-    def parse(self, rule: Rule, html: str, url: str | None = None, http_status: int = 200) -> Observation:
+    def parse(self, rule: Rule, html: str, url: str | None = None, http_status: int = 200, soup=None) -> Observation:
         result = Observation("parse_error", url or rule.url, http_status=http_status,
                              response_hash=hashlib.sha256(html.encode("utf-8")).hexdigest())
         if http_status in (404, 410):
             result.status, result.detail = "not_found", f"HTTP {http_status}"
             return result
-        soup = BeautifulSoup(html, "html.parser")
+        soup = soup or BeautifulSoup(html, "html.parser")
         h1 = soup.select_one("h1")
         result.title = node_text(h1)
         if re.search(r"(страница|товар).{0,20}не найден|page not found|ошибка 404", result.title, re.I):
@@ -67,16 +68,19 @@ class Adapter:
         if not h1 or not root:
             result.detail = "Не найден основной блок карточки; нужна проверка адаптера"
             return result
+        from .details import offers, extract_details
+        variant = None
         if self.spec.id == "beskonta":
             selected = node_text(root.select_one(".rs-product-barcode"))
+            variant = next((v for v in offers(soup) if normalize(v['article'])==normalize(rule.article)),None)
             has_choices = root.select_one("select, .rs-multioffers") is not None
-            if selected and normalize(selected) != normalize(rule.article):
+            if selected and normalize(selected) != normalize(rule.article) and not variant:
                 result.status, result.detail = "needs_variant", f"В HTML выбрано исполнение {selected}; укажите его точную маркировку или ссылку на нужное исполнение"
                 return result
-            if has_choices and not selected:
+            if has_choices and not selected and not variant:
                 result.status, result.detail = "needs_variant", "На странице есть варианты, выбранная маркировка не подтверждена"
                 return result
-            identities = [result.title, selected]
+            identities = [result.title, selected, variant['article'] if variant else '']
         else:
             identities = [result.title]
             identities += [n.get("content") or node_text(n) for n in root.select('[itemprop="sku"], [itemprop="mpn"]')]
@@ -89,8 +93,11 @@ class Adapter:
             if brand not in title_brand:
                 result.status, result.detail = "identity_mismatch", "Производитель не подтверждён заголовком карточки Sensoren"
                 return result
+        result.details_json = json.dumps(extract_details(self.spec.id,soup,result.url,variant),ensure_ascii=False)
         av_nodes = root.select(self.spec.availability_selector)
         av_text = " ".join(node_text(n) for n in av_nodes)
+        if variant and not variant['selected']:
+            av_text = ''
         if not av_text and self.spec.id == "megak":
             av_text = " ".join(n.get("href", n.get("content", "")) for n in root.select('[itemprop="availability"]'))
         result.availability = availability(av_text)
@@ -109,6 +116,10 @@ class Adapter:
             number = parse_money(raw)
             if number:
                 prices.append(number)
+        if variant:
+            texts = [variant['price']]
+            value = parse_money(variant['price'])
+            prices = [value] if value else []
         result.price_text = " | ".join(dict.fromkeys(texts))[:500]
         if len(set(prices)) > 1:
             result.detail = "В основном блоке несколько разных цен; требуется проверка исполнения"
@@ -126,6 +137,9 @@ class Adapter:
                 result.detail = "Число найдено, но валюта не подтверждена"
                 return result
             result.status, result.price, result.currency = "priced", prices[0], curr
+            return result
+        if variant:
+            result.status, result.detail = 'no_price', 'Для выбранного исполнения цена не опубликована'
             return result
         # Only the offer area may declare a price on request.
         offer_scope = {

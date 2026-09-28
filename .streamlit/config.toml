@@ -1,9 +1,9 @@
 [theme]
 base = "light"
-primaryColor = "#176B87"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F3F6FA"
-textColor = "#172B3A"
+primaryColor = "#7A1F2B"
+backgroundColor = "#F4F6F8"
+secondaryBackgroundColor = "#F3ECEE"
+textColor = "#32262B"
 font = "sans serif"
 
 [server]
@@ -14,3 +14,7 @@ enableCORS = true
 
 [browser]
 gatherUsageStats = false
+
+[client]
+showErrorDetails = "none"
+toolbarMode = "minimal"

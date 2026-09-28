@@ -21,8 +21,9 @@ from .transport import FetchError, SourceClient
 
 DDL = """CREATE TABLE IF NOT EXISTS price_monitor.external_sources (
  source TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0,
- owner TEXT NOT NULL DEFAULT '', heartbeat DOUBLE PRECISION NOT NULL DEFAULT 0
-);"""
+ owner TEXT NOT NULL DEFAULT '', heartbeat DOUBLE PRECISION NOT NULL DEFAULT 0,
+ protocol INTEGER NOT NULL DEFAULT 1
+); ALTER TABLE price_monitor.external_sources ADD COLUMN IF NOT EXISTS protocol INTEGER NOT NULL DEFAULT 1;"""
 NOW = "EXTRACT(EPOCH FROM clock_timestamp())"
 LIVE = f"source='sensoren' AND enabled=1 AND owner=%(owner)s AND heartbeat>{NOW}-120"
 
@@ -56,7 +57,7 @@ class AgentStore:
             WHERE (NOT EXISTS(SELECT 1 FROM price_monitor.runs WHERE state IN ('queued','running'))
               OR EXISTS(SELECT 1 FROM price_monitor.external_sources WHERE source='sensoren' AND enabled=%(enabled)s))
               AND (%(enabled)s=0 OR EXISTS(SELECT 1 FROM price_monitor.worker_lease
-                  WHERE owner LIKE 'router1-%%' AND heartbeat>EXTRACT(EPOCH FROM clock_timestamp())-120)
+                  WHERE owner LIKE 'router%%' AND heartbeat>EXTRACT(EPOCH FROM clock_timestamp())-120)
                   OR EXISTS(SELECT 1 FROM price_monitor.external_sources WHERE source='sensoren' AND enabled=1))
             ON CONFLICT(source) DO UPDATE SET enabled=excluded.enabled,
               owner=CASE WHEN e.enabled=excluded.enabled THEN e.owner ELSE '' END,
@@ -69,7 +70,7 @@ class AgentStore:
     def acquire(self, owner):
         return bool(self.batch(f"""
             WITH acquired AS (
-              UPDATE price_monitor.external_sources SET owner=%(owner)s,heartbeat={NOW}
+              UPDATE price_monitor.external_sources SET owner=%(owner)s,heartbeat={NOW},protocol=2
               WHERE source='sensoren' AND enabled=1
                 AND (owner=%(owner)s OR owner='' OR heartbeat<{NOW}-120)
               RETURNING source
@@ -118,12 +119,16 @@ class AgentStore:
         return not rows or bool(rows[0]['cancel_requested']) or not rows[0]['owns']
 
     def record(self, job_id, result, owner, stop_reason=""):
+        from .catalog_schema import document
+        fingerprint,canonical,details=document(result.details_json)
         values = {**asdict(result), "job_id": job_id, "owner": owner, "stop_reason": stop_reason}
+        values.update(fingerprint=fingerprint,document=canonical,details_json=json.dumps({'ref':fingerprint}) if fingerprint else '{}',
+                      category=details.get('category',''),attributes_count=len(details.get('attributes',[])))
         # Cancellation owns the outcome if it was requested before this commit.
         # The lease check fences an old agent even if it finishes a late response.
         rows = self.batch(f"""
             WITH eligible AS (
-              SELECT j.id,j.run_id,r.cancel_requested FROM price_monitor.jobs j
+              SELECT j.id,j.run_id,j.rule_id,r.cancel_requested FROM price_monitor.jobs j
               JOIN price_monitor.runs r ON r.id=j.run_id
               JOIN price_monitor.rules q ON q.id=j.rule_id
               WHERE j.id=%(job_id)s AND j.state='processing' AND q.source='sensoren'
@@ -131,14 +136,26 @@ class AgentStore:
                 AND EXISTS(SELECT 1 FROM price_monitor.external_sources WHERE {LIVE})
             ), saved AS (
               INSERT INTO price_monitor.observations(job_id,status,url,title,price,currency,
-                availability,price_text,availability_text,detail,checked_at,http_status,response_hash)
+                availability,price_text,availability_text,detail,checked_at,http_status,response_hash,details_json)
               SELECT id,CASE WHEN cancel_requested=1 THEN 'cancelled' ELSE %(status)s END,
                 %(url)s,%(title)s,CASE WHEN cancel_requested=1 THEN NULL ELSE %(price)s END,
                 CASE WHEN cancel_requested=1 THEN NULL ELSE %(currency)s END,
                 %(availability)s,%(price_text)s,%(availability_text)s,
                 CASE WHEN cancel_requested=1 THEN 'Остановлено пользователем' ELSE %(detail)s END,
-                %(checked_at)s,%(http_status)s,%(response_hash)s FROM eligible
+                %(checked_at)s,%(http_status)s,%(response_hash)s,%(details_json)s FROM eligible
               ON CONFLICT(job_id) DO NOTHING RETURNING job_id
+            ), document_saved AS (
+              INSERT INTO price_monitor.product_documents(fingerprint,details_json)
+              SELECT %(fingerprint)s,%(document)s WHERE %(fingerprint)s<>'' AND EXISTS(SELECT 1 FROM saved)
+              ON CONFLICT(fingerprint) DO NOTHING RETURNING fingerprint
+            ), indexed AS (
+              INSERT INTO price_monitor.product_index(rule_id,title,category,search_text,details_hash,attributes_count,updated_at)
+              SELECT e.rule_id,%(title)s,%(category)s,lower(q.source||' '||q.manufacturer||' '||q.article||' '||%(title)s||' '||%(category)s),
+                %(fingerprint)s,%(attributes_count)s,%(checked_at)s
+              FROM eligible e JOIN saved s ON s.job_id=e.id JOIN price_monitor.rules q ON q.id=e.rule_id
+              WHERE %(fingerprint)s<>'' AND e.cancel_requested=0
+              ON CONFLICT(rule_id) DO UPDATE SET title=excluded.title,category=excluded.category,search_text=excluded.search_text,
+                details_hash=excluded.details_hash,attributes_count=excluded.attributes_count,updated_at=excluded.updated_at RETURNING rule_id
             ), paused AS (
               INSERT INTO price_monitor.source_pauses(run_id,source,reason)
               SELECT run_id,'sensoren',%(stop_reason)s FROM eligible
@@ -181,6 +198,14 @@ class SensorenAgent:
             while not self.stopping.is_set():
                 job = self.store.claim(self.owner)
                 if not job:
+                    from .catalog_storage import CatalogRepository
+                    from .catalog import process_catalog
+                    repository=CatalogRepository(settings=self.store.settings)
+                    catalogs=repository.batch("""SELECT s.run_id FROM catalog_sources s JOIN runs r ON r.id=s.run_id
+                        WHERE s.source='sensoren' AND s.state IN ('pending','running') AND r.state='running' AND r.cancel_requested=0 ORDER BY s.run_id LIMIT 1""")
+                    if catalogs:
+                        process_catalog(repository,catalogs[0]['run_id'],'sensoren',self.owner,self.stopping)
+                        continue
                     self.stopping.wait(5)
                     continue
                 if current_run != job['run_id']:
