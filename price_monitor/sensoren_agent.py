@@ -245,9 +245,8 @@ def main():
     args = parser.parse_args()
     try:
         store = AgentStore(settings_from_file(args.secrets))
-        if args.enable or args.disable:
-            store.configure(args.enable)
         if args.disable:
+            store.configure(False)
             print('Sensoren возвращён облачному сборщику. Доступ из облака всё ещё зависит от сайта.')
             return 0
         stopping = threading.Event()
@@ -258,6 +257,15 @@ def main():
                 agent.stopping.set()
         for sig in (signal.SIGINT, signal.SIGTERM):
             signal.signal(sig, stop)
+        if args.enable:
+            while not stopping.is_set():
+                try:
+                    store.configure(True)
+                    break
+                except Exception as exc:
+                    message = str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__
+                    print('Ожидание готовности Streamlit: '+message, flush=True)
+                    stopping.wait(10)
         while not stopping.is_set():
             agent = SensorenAgent(store)
             try:
