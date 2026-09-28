@@ -1,0 +1,101 @@
+[
+  {
+    "file": "sensoren_3.html",
+    "source": "sensoren",
+    "manufacturer": "ifm",
+    "article": "SI5000",
+    "product_url": "https://sensoren.ru/product/datchik_potoka_ifm_electronic_si5000/",
+    "price": "29530.00",
+    "status": "priced"
+  },
+  {
+    "file": "sensoren_brands_0.html",
+    "source": "sensoren",
+    "manufacturer": "Autonics",
+    "article": "THD-R-T",
+    "product_url": "https://sensoren.ru/product/datchik_temperatury_autonics_thd_r_t/",
+    "price": "11140.00",
+    "status": "priced"
+  },
+  {
+    "file": "sensoren_brands_1.html",
+    "source": "sensoren",
+    "manufacturer": "Balluff",
+    "article": "BSP B600-EV003-A02A0B-S4",
+    "product_url": "https://sensoren.ru/product/datchik_davleniya_balluff_bsp_b600_ev003_a02a0b_s4/",
+    "price": "41950.00",
+    "status": "priced"
+  },
+  {
+    "file": "sensoren_brands_2.html",
+    "source": "sensoren",
+    "manufacturer": "Pepperl+Fuchs",
+    "article": "RaDec-D",
+    "product_url": "https://sensoren.ru/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_radec_d/",
+    "price": "36800.00",
+    "status": "priced"
+  },
+  {
+    "file": "sensoren_brands_3.html",
+    "source": "sensoren",
+    "manufacturer": "LANBAO",
+    "article": "DPG-10TN",
+    "product_url": "https://sensoren.ru/product/datchik_davleniya_lanbao_dpg_10tn/",
+    "price": "6660.00",
+    "status": "priced"
+  },
+  {
+    "file": "sensoren_brands_4.html",
+    "source": "sensoren",
+    "manufacturer": "SICK",
+    "article": "FTS-I100F14A",
+    "product_url": "https://sensoren.ru/product/datchik_potoka_sick_fts_i100f14a/",
+    "price": "63160.00",
+    "status": "priced"
+  },
+  {
+    "file": "beskonta_3.html",
+    "source": "beskonta",
+    "manufacturer": "BESKONTA",
+    "article": "BORE01-S2000-8-20-P01",
+    "product_url": "https://beskonta.ru/product/bore01-opticheskiy-fotobarer/",
+    "price": "28960.00",
+    "status": "priced"
+  },
+  {
+    "file": "megak_extra_0.html",
+    "source": "megak",
+    "manufacturer": "МЕГА-К",
+    "article": "PS2-36M70-12B11-K",
+    "product_url": "https://mega-k.com/products/ps2-36m70-12b11-k",
+    "price": "2269.00",
+    "status": "priced"
+  },
+  {
+    "file": "teko_3.html",
+    "source": "teko",
+    "manufacturer": "ТЕКО",
+    "article": "CP S254R-3 (PG9)",
+    "product_url": "https://teko-com.ru/product/cp-s254r-3-pg9.html",
+    "price": "1708.00",
+    "status": "priced"
+  },
+  {
+    "file": "sensor_extra_0.html",
+    "source": "sensor",
+    "manufacturer": "СЕНСОР",
+    "article": "ВБИ-Д06-45У-1111-С",
+    "product_url": "https://sensor-com.ru/sensors/vbi-d06-45u-1111-s/",
+    "price": "5917.00",
+    "status": "priced"
+  },
+  {
+    "file": "sensor_3.html",
+    "source": "sensor",
+    "manufacturer": "СЕНСОР",
+    "article": "ВБИ-Д06-45У-1111-З",
+    "product_url": "https://sensor-com.ru/sensors/vbi-d06-45u-1111-z/",
+    "price": null,
+    "status": "no_price"
+  }
+]

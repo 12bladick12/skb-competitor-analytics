@@ -1,0 +1,123 @@
+User-agent: Yandex
+
+Disallow: /*?type=
+
+Disallow: /*?letter=
+
+Disallow: /*?brandid=
+
+Disallow: /*?pricefrom=
+
+Disallow: /*?priceto=
+
+Disallow: /*?prop=
+
+Disallow: /*?page=
+
+Disallow: /*?color=
+
+Disallow: /*?tab=
+
+Disallow: /*?*forcedMobile=true
+
+Disallow: /*?*forcedDesktop=true
+
+Disallow: /newscategory$
+
+Disallow: /fogotpassword
+
+Disallow: /compare
+
+Disallow: /myaccount
+
+Disallow: /checkout
+
+Disallow: /registration
+
+Disallow: /cart
+
+Disallow: /wishlist
+
+Disallow: /checkout/billing
+
+Disallow: /tools/
+
+Disallow: /login
+
+Disallow: /productlist/best
+
+Disallow: /preorder/*
+
+Disallow: /search
+
+Disallow: /manufacturers
+
+
+
+Clean-param: etext
+
+Clean-param: baobab
+
+Clean-param: tab
+
+Clean-param: success
+
+
+
+User-agent: *
+
+Disallow: /*?type=
+
+Disallow: /*?letter=
+
+Disallow: /*?brandid=
+
+Disallow: /*?pricefrom=
+
+Disallow: /*?priceto=
+
+Disallow: /*?prop=
+
+Disallow: /*?page=
+
+Disallow: /*?color=
+
+Disallow: /*?tab=
+
+Disallow: /*?*forcedMobile=true
+
+Disallow: /*?*forcedDesktop=true
+
+Disallow: /newscategory$
+
+Disallow: /fogotpassword
+
+Disallow: /compare
+
+Disallow: /myaccount
+
+Disallow: /checkout
+
+Disallow: /registration
+
+Disallow: /cart
+
+Disallow: /wishlist
+
+Disallow: /checkout/billing
+
+Disallow: /tools/
+
+Disallow: /login
+
+Disallow: /productlist/best
+
+Disallow: /preorder/*
+
+Disallow: /search
+
+Disallow: /manufacturers
+
+
+
+Sitemap: https://mega-k.com/sitemap.xml

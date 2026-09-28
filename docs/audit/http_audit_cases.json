@@ -1,0 +1,1250 @@
+[
+  {
+    "source": "sensoren_brands",
+    "requested_url": "https://sensoren.ru/product/datchik_temperatury_autonics_thd_r_t/",
+    "checked_at": "2026-09-28T05:49:41.016824+00:00",
+    "status": 200,
+    "final_url": "https://sensoren.ru/product/datchik_temperatury_autonics_thd_r_t/",
+    "seconds": 3.69,
+    "bytes": 410103,
+    "content_type": "text/html; charset=UTF-8",
+    "sha256": "21c303b774a2fb91e510a4b1384844784bcd94853b5fd1daedb8847abd06b0c5",
+    "file": "sensoren_brands_0.txt",
+    "title": "THD-R-T Autonics Датчик температуры купить в «Sensoren» по цене 11140 руб.",
+    "h1": [
+      "Датчик температуры Autonics THD-R-T"
+    ],
+    "forms": [
+      {
+        "action": "/catalog/",
+        "method": null,
+        "fields": [
+          "q",
+          "s"
+        ]
+      },
+      {
+        "action": "",
+        "method": null,
+        "fields": [
+          "CARDID",
+          "STARS",
+          "NAME",
+          "PHOTO",
+          "POLICY"
+        ]
+      },
+      {
+        "action": "/product/datchik_temperatury_autonics_thd_r_t/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "button_source",
+          "form_text_6",
+          "form_text_7",
+          "form_email_8",
+          "form_text_9",
+          "form_hidden_36",
+          "form_file_11",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_temperatury_autonics_thd_r_t/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_12",
+          "form_text_13",
+          "form_email_14",
+          "form_text_15",
+          "form_hidden_35",
+          "form_file_17",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_temperatury_autonics_thd_r_t/?login=yes",
+        "method": "post",
+        "fields": [
+          "backurl",
+          "AUTH_FORM",
+          "TYPE",
+          "USER_LOGIN",
+          "USER_PASSWORD",
+          "Login"
+        ]
+      },
+      {
+        "action": "/product/datchik_temperatury_autonics_thd_r_t/",
+        "method": "post",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "backurl",
+          "REGISTER[LOGIN]",
+          "REGISTER[NAME]",
+          "REGISTER[PERSONAL_PHONE]",
+          "REGISTER[EMAIL]",
+          "REGISTER[PASSWORD]",
+          "REGISTER[CONFIRM_PASSWORD]",
+          "register_submit_button"
+        ]
+      },
+      {
+        "action": "/product/datchik_temperatury_autonics_thd_r_t/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_49",
+          "form_text_50",
+          "form_hidden_52",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_temperatury_autonics_thd_r_t/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_53",
+          "form_text_54",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "form_text_6",
+          "form_text_7"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "IDTovar",
+          "NameTovar",
+          "NAME",
+          "PHONE"
+        ]
+      }
+    ],
+    "price_nodes": [
+      "<div class=\"product-info__all-order-price\">\n<div>\n<div class=\"price\">11 140 руб. <span>/ шт</span></div>\n</div>\n<div class=\"btns\">\n<a class=\"js-add-compare\" data-id=\"88534\" href=\"\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</a>\n<a class=\"js-add-favorite\" data-id=\"88534\" href=\"\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</a>\n</div>\n</div>",
+      "<div class=\"price\">11 140 руб. <span>/ шт</span></div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">16 360 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88533\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88533\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">16 360 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88533\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88533\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">16 360 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88532\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88532\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">16 360 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88532\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88532\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88524\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88524\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88524\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88524\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88523\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88523\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88523\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88523\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">24 640 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88520\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88520\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">24 640 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88520\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88520\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88519\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88519\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88519\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88519\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">22 320 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88514\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88514\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">22 320 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88514\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88514\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">25 920 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88510\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88510\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">25 920 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"88510\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"88510\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">12 750 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"187817\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"187817\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">12 750 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"187817\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"187817\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">12 750 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"187816\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"187816\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">12 750 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"187816\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"187816\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">12 750 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"187815\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"187815\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>"
+    ],
+    "product_links": [
+      "https://sensoren.ru/product/datchik_temperatury_autonics_thd_r_v/",
+      "https://sensoren.ru/product/datchik_temperatury_autonics_thd_r_c/",
+      "https://sensoren.ru/product/datchik_temperatury_autonics_thd_wd2_v/",
+      "https://sensoren.ru/product/datchik_temperatury_autonics_thd_wd2_c/",
+      "https://sensoren.ru/product/datchik_temperatury_autonics_thd_wd1_c/",
+      "https://sensoren.ru/product/datchik_temperatury_autonics_thd_d2_t/",
+      "https://sensoren.ru/product/datchik_temperatury_autonics_thd_d1_c/",
+      "https://sensoren.ru/product/datchik_temperatury_autonics_thd_dd1_t/",
+      "https://sensoren.ru/product/datchik_davleniya_autonics_psan_dv01cpv_rc1_8/",
+      "https://sensoren.ru/product/datchik_davleniya_autonics_psan_dv01cv_rc1_8/",
+      "https://sensoren.ru/product/datchik_davleniya_autonics_psan_d1cpv_rc1_8/",
+      "https://sensoren.ru/product/induktivnyy_datchik_autonics_prcml30_15dp2/"
+    ]
+  },
+  {
+    "source": "sensoren_brands",
+    "requested_url": "https://sensoren.ru/product/datchik_davleniya_balluff_bsp_b600_ev003_a02a0b_s4/",
+    "checked_at": "2026-09-28T05:49:47.145710+00:00",
+    "status": 200,
+    "final_url": "https://sensoren.ru/product/datchik_davleniya_balluff_bsp_b600_ev003_a02a0b_s4/",
+    "seconds": 3.59,
+    "bytes": 421749,
+    "content_type": "text/html; charset=UTF-8",
+    "sha256": "601c9145964d7e8472c3fb8ad305737bfc1ef4377db60d97a502a96cd06d64dc",
+    "file": "sensoren_brands_1.txt",
+    "title": "BSP0030 Balluff Датчик давления BSP B600-EV003-A02A0B-S4 купить в «Sensoren» по цене 41950 руб.",
+    "h1": [
+      "Датчик давления Balluff BSP B600-EV003-A02A0B-S4"
+    ],
+    "forms": [
+      {
+        "action": "/catalog/",
+        "method": null,
+        "fields": [
+          "q",
+          "s"
+        ]
+      },
+      {
+        "action": "",
+        "method": null,
+        "fields": [
+          "CARDID",
+          "STARS",
+          "NAME",
+          "PHOTO",
+          "POLICY"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_balluff_bsp_b600_ev003_a02a0b_s4/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "button_source",
+          "form_text_6",
+          "form_text_7",
+          "form_email_8",
+          "form_text_9",
+          "form_hidden_36",
+          "form_file_11",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_balluff_bsp_b600_ev003_a02a0b_s4/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_12",
+          "form_text_13",
+          "form_email_14",
+          "form_text_15",
+          "form_hidden_35",
+          "form_file_17",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_balluff_bsp_b600_ev003_a02a0b_s4/?login=yes",
+        "method": "post",
+        "fields": [
+          "backurl",
+          "AUTH_FORM",
+          "TYPE",
+          "USER_LOGIN",
+          "USER_PASSWORD",
+          "Login"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_balluff_bsp_b600_ev003_a02a0b_s4/",
+        "method": "post",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "backurl",
+          "REGISTER[LOGIN]",
+          "REGISTER[NAME]",
+          "REGISTER[PERSONAL_PHONE]",
+          "REGISTER[EMAIL]",
+          "REGISTER[PASSWORD]",
+          "REGISTER[CONFIRM_PASSWORD]",
+          "register_submit_button"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_balluff_bsp_b600_ev003_a02a0b_s4/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_49",
+          "form_text_50",
+          "form_hidden_52",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_balluff_bsp_b600_ev003_a02a0b_s4/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_53",
+          "form_text_54",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "form_text_6",
+          "form_text_7"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "IDTovar",
+          "NameTovar",
+          "NAME",
+          "PHONE"
+        ]
+      }
+    ],
+    "price_nodes": [
+      "<div class=\"product-info__all-order-price\">\n<div>\n<div class=\"price\">41 950 руб. <span>/ шт</span></div>\n</div>\n<div class=\"btns\">\n<a class=\"js-add-compare\" data-id=\"32703\" href=\"\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</a>\n<a class=\"js-add-favorite\" data-id=\"32703\" href=\"\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</a>\n</div>\n</div>",
+      "<div class=\"price\">41 950 руб. <span>/ шт</span></div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">45 320 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"273389\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"273389\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">45 320 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"273389\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"273389\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">26 780 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"33267\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"33267\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">26 780 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"33267\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"33267\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">26 780 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"33250\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"33250\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">26 780 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"33250\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"33250\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">29 230 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"33229\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"33229\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">29 230 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"33229\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"33229\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"32736\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"32736\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"32736\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"32736\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"32727\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"32727\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"32727\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"32727\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">64 270 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"32704\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"32704\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">64 270 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"32704\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"32704\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"32660\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"32660\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"32660\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"32660\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">59 350 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"32590\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"32590\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">59 350 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"32590\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"32590\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">3 780 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"187694\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"187694\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">3 780 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"187694\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"187694\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">164 020 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"96056\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"96056\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>"
+    ],
+    "product_links": [
+      "https://sensoren.ru/product/datchik_davleniya_sentinel_seh_c6_1_4ga_li6d_sc/",
+      "https://sensoren.ru/product/datchik_davleniya_balluff_bsp_b250_fv004_a06a1a_s4/",
+      "https://sensoren.ru/product/datchik_davleniya_balluff_bsp_b020_kv004_a06a1a_s4/",
+      "https://sensoren.ru/product/datchik_davleniya_balluff_bsp_v002_hv004_a06a1a_s4/",
+      "https://sensoren.ru/product/datchik_davleniya_balluff_bsp_b005_ev003_a03s1b_s4/",
+      "https://sensoren.ru/product/datchik_davleniya_balluff_bsp_b002_ev002_a02s1b_s4/",
+      "https://sensoren.ru/product/datchik_davleniya_balluff_bsp_b600_ev003_a03s1b_s4/",
+      "https://sensoren.ru/product/datchik_davleniya_balluff_bsp_b005_ev003_a02a0b_s4/",
+      "https://sensoren.ru/product/datchik_davleniya_balluff_bsp_b005_ev003_a03a0b_s4/",
+      "https://sensoren.ru/product/koltsevoy_magnit_balluff_btl_p_1013_4r/",
+      "https://sensoren.ru/product/reflektor_balluff_bos_r_60_22/",
+      "https://sensoren.ru/product/reflektor_balluff_bos_r_59/"
+    ]
+  },
+  {
+    "source": "sensoren_brands",
+    "requested_url": "https://sensoren.ru/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_radec_d/",
+    "checked_at": "2026-09-28T05:49:53.065129+00:00",
+    "status": 200,
+    "final_url": "https://sensoren.ru/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_radec_d/",
+    "seconds": 5.61,
+    "bytes": 403788,
+    "content_type": "text/html; charset=UTF-8",
+    "sha256": "9497e57dab860d5f40f9118bc10a316d638700d9cb99728aee2256213da1e801",
+    "file": "sensoren_brands_2.txt",
+    "title": "RaDec-D Pepperl Fuchs Датчик движения Radar sensor купить в «Sensoren» по цене 36800 руб.",
+    "h1": [
+      "Датчик движения Pepperl Fuchs Radar sensor RaDec-D"
+    ],
+    "forms": [
+      {
+        "action": "/catalog/",
+        "method": null,
+        "fields": [
+          "q",
+          "s"
+        ]
+      },
+      {
+        "action": "",
+        "method": null,
+        "fields": [
+          "CARDID",
+          "STARS",
+          "NAME",
+          "PHOTO",
+          "POLICY"
+        ]
+      },
+      {
+        "action": "/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_radec_d/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "button_source",
+          "form_text_6",
+          "form_text_7",
+          "form_email_8",
+          "form_text_9",
+          "form_hidden_36",
+          "form_file_11",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_radec_d/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_12",
+          "form_text_13",
+          "form_email_14",
+          "form_text_15",
+          "form_hidden_35",
+          "form_file_17",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_radec_d/?login=yes",
+        "method": "post",
+        "fields": [
+          "backurl",
+          "AUTH_FORM",
+          "TYPE",
+          "USER_LOGIN",
+          "USER_PASSWORD",
+          "Login"
+        ]
+      },
+      {
+        "action": "/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_radec_d/",
+        "method": "post",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "backurl",
+          "REGISTER[LOGIN]",
+          "REGISTER[NAME]",
+          "REGISTER[PERSONAL_PHONE]",
+          "REGISTER[EMAIL]",
+          "REGISTER[PASSWORD]",
+          "REGISTER[CONFIRM_PASSWORD]",
+          "register_submit_button"
+        ]
+      },
+      {
+        "action": "/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_radec_d/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_49",
+          "form_text_50",
+          "form_hidden_52",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_radec_d/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_53",
+          "form_text_54",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "form_text_6",
+          "form_text_7"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "IDTovar",
+          "NameTovar",
+          "NAME",
+          "PHONE"
+        ]
+      }
+    ],
+    "price_nodes": [
+      "<div class=\"product-info__all-order-price\">\n<div>\n<div class=\"price\">36 800 руб. <span>/ шт</span></div>\n</div>\n<div class=\"btns\">\n<a class=\"js-add-compare\" data-id=\"100859\" href=\"\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</a>\n<a class=\"js-add-favorite\" data-id=\"100859\" href=\"\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</a>\n</div>\n</div>",
+      "<div class=\"price\">36 800 руб. <span>/ шт</span></div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">25 400 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100909\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100909\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">25 400 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100909\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100909\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">38 900 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100906\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100906\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">38 900 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100906\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100906\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">35 100 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100905\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100905\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">35 100 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100905\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100905\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">78 200 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100903\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100903\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">78 200 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100903\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100903\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">70 600 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100898\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100898\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">70 600 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100898\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100898\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">70 600 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100897\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100897\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">70 600 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100897\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100897\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">66 200 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100896\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100896\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">66 200 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100896\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100896\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">53 500 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100857\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100857\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">53 500 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"100857\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"100857\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">36 050 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"309249\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"309249\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">36 050 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"309249\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"309249\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">69 940 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"309246\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"309246\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>"
+    ],
+    "product_links": [
+      "https://sensoren.ru/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_radec_m_silver/",
+      "https://sensoren.ru/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_rms_m_rc/",
+      "https://sensoren.ru/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_rms_m_na/",
+      "https://sensoren.ru/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_rms_g_rc_hs/",
+      "https://sensoren.ru/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_rave_d_na/",
+      "https://sensoren.ru/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_rave_d_gb/",
+      "https://sensoren.ru/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_rave_d/",
+      "https://sensoren.ru/product/datchik_dvizheniya_pepperl_fuchs_radar_sensor_rms_d/",
+      "https://sensoren.ru/product/datchik_urovnya_vibratsionnyy_pepperl_fuchs_lvl_a7_ag1a_e5v1_cg/",
+      "https://sensoren.ru/product/datchik_urovnya_vibratsionnyy_pepperl_fuchs_lvl_a7_ag1a_e5pu_na/",
+      "https://sensoren.ru/product/datchik_urovnya_vibratsionnyy_pepperl_fuchs_lvl_a7_ag1a_e5pu_cg/",
+      "https://sensoren.ru/product/montazhnyy_flanets_pepperl_fuchs_bf_30/"
+    ]
+  },
+  {
+    "source": "sensoren_brands",
+    "requested_url": "https://sensoren.ru/product/datchik_davleniya_lanbao_dpg_10tn/",
+    "checked_at": "2026-09-28T05:50:01.120559+00:00",
+    "status": 200,
+    "final_url": "https://sensoren.ru/product/datchik_davleniya_lanbao_dpg_10tn/",
+    "seconds": 4.99,
+    "bytes": 406225,
+    "content_type": "text/html; charset=UTF-8",
+    "sha256": "8967cac7e556c106d01cb73e463e95e8e49c846ab25b62704649a6bd0cf5a720",
+    "file": "sensoren_brands_3.txt",
+    "title": "DPG-10TN LANBAO Датчик давления купить в «Sensoren» по цене 6660 руб.",
+    "h1": [
+      "Датчик давления LANBAO DPG-10TN"
+    ],
+    "forms": [
+      {
+        "action": "/catalog/",
+        "method": null,
+        "fields": [
+          "q",
+          "s"
+        ]
+      },
+      {
+        "action": "",
+        "method": null,
+        "fields": [
+          "CARDID",
+          "STARS",
+          "NAME",
+          "PHOTO",
+          "POLICY"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_lanbao_dpg_10tn/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "button_source",
+          "form_text_6",
+          "form_text_7",
+          "form_email_8",
+          "form_text_9",
+          "form_hidden_36",
+          "form_file_11",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_lanbao_dpg_10tn/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_12",
+          "form_text_13",
+          "form_email_14",
+          "form_text_15",
+          "form_hidden_35",
+          "form_file_17",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_lanbao_dpg_10tn/?login=yes",
+        "method": "post",
+        "fields": [
+          "backurl",
+          "AUTH_FORM",
+          "TYPE",
+          "USER_LOGIN",
+          "USER_PASSWORD",
+          "Login"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_lanbao_dpg_10tn/",
+        "method": "post",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "backurl",
+          "REGISTER[LOGIN]",
+          "REGISTER[NAME]",
+          "REGISTER[PERSONAL_PHONE]",
+          "REGISTER[EMAIL]",
+          "REGISTER[PASSWORD]",
+          "REGISTER[CONFIRM_PASSWORD]",
+          "register_submit_button"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_lanbao_dpg_10tn/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_49",
+          "form_text_50",
+          "form_hidden_52",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_davleniya_lanbao_dpg_10tn/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_53",
+          "form_text_54",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "form_text_6",
+          "form_text_7"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "IDTovar",
+          "NameTovar",
+          "NAME",
+          "PHONE"
+        ]
+      }
+    ],
+    "price_nodes": [
+      "<div class=\"product-info__all-order-price\">\n<div>\n<div class=\"price\">6 660 руб. <span>/ шт</span></div>\n</div>\n<div class=\"btns\">\n<a class=\"js-add-compare\" data-id=\"270496\" href=\"\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</a>\n<a class=\"js-add-favorite\" data-id=\"270496\" href=\"\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</a>\n</div>\n</div>",
+      "<div class=\"price\">6 660 руб. <span>/ шт</span></div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">45 320 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"273355\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"273355\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">45 320 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"273355\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"273355\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">6 660 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"270499\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"270499\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">6 660 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"270499\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"270499\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">6 660 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"270498\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"270498\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">6 660 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"270498\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"270498\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">6 660 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"270497\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"270497\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">6 660 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"270497\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"270497\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">8 800 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"283308\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"283308\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">8 800 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"283308\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"283308\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">1 280 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"281994\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"281994\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">1 280 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"281994\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"281994\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">840 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"281993\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"281993\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">840 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"281993\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"281993\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">1 120 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"281992\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"281992\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">1 120 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"281992\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"281992\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">1 120 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"281991\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"281991\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">1 120 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"281991\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"281991\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">2 020 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"281990\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"281990\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>"
+    ],
+    "product_links": [
+      "https://sensoren.ru/product/datchik_davleniya_sentinel_seh_ab_1_4ga_dpn6d_sc/",
+      "https://sensoren.ru/product/datchik_davleniya_lanbao_dpg_10tp_l/",
+      "https://sensoren.ru/product/datchik_davleniya_lanbao_dpg_10tp/",
+      "https://sensoren.ru/product/datchik_davleniya_lanbao_dpg_10tn_l/",
+      "https://sensoren.ru/product/kontsevoy_vyklyuchatel_lanbao_lsar_96mr/",
+      "https://sensoren.ru/product/kontsevoy_vyklyuchatel_lanbao_lsar_9501m/",
+      "https://sensoren.ru/product/kontsevoy_vyklyuchatel_lanbao_lsar_8112/",
+      "https://sensoren.ru/product/kontsevoy_vyklyuchatel_lanbao_lsar_8108/",
+      "https://sensoren.ru/product/kontsevoy_vyklyuchatel_lanbao_lsar_8104/",
+      "https://sensoren.ru/product/kontsevoy_vyklyuchatel_lanbao_lsar_5108/",
+      "https://sensoren.ru/product/kontsevoy_vyklyuchatel_lanbao_lsar_5107/",
+      "https://sensoren.ru/product/kontsevoy_vyklyuchatel_lanbao_lsar_5106/"
+    ]
+  },
+  {
+    "source": "sensoren_brands",
+    "requested_url": "https://sensoren.ru/product/datchik_potoka_sick_fts_i100f14a/",
+    "checked_at": "2026-09-28T05:50:08.471772+00:00",
+    "status": 200,
+    "final_url": "https://sensoren.ru/product/datchik_potoka_sick_fts_i100f14a/",
+    "seconds": 4.89,
+    "bytes": 402426,
+    "content_type": "text/html; charset=UTF-8",
+    "sha256": "5c59a22604ff92eaa27298a7ab9f64da544d0971b11c20c9cd905e4a154343f5",
+    "file": "sensoren_brands_4.txt",
+    "title": "FTS-I100F14A SICK Датчик потока купить в «Sensoren» по цене 63160 руб.",
+    "h1": [
+      "Датчик потока SICK FTS-I100F14A"
+    ],
+    "forms": [
+      {
+        "action": "/catalog/",
+        "method": null,
+        "fields": [
+          "q",
+          "s"
+        ]
+      },
+      {
+        "action": "",
+        "method": null,
+        "fields": [
+          "CARDID",
+          "STARS",
+          "NAME",
+          "PHOTO",
+          "POLICY"
+        ]
+      },
+      {
+        "action": "/product/datchik_potoka_sick_fts_i100f14a/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "button_source",
+          "form_text_6",
+          "form_text_7",
+          "form_email_8",
+          "form_text_9",
+          "form_hidden_36",
+          "form_file_11",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_potoka_sick_fts_i100f14a/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_12",
+          "form_text_13",
+          "form_email_14",
+          "form_text_15",
+          "form_hidden_35",
+          "form_file_17",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_potoka_sick_fts_i100f14a/?login=yes",
+        "method": "post",
+        "fields": [
+          "backurl",
+          "AUTH_FORM",
+          "TYPE",
+          "USER_LOGIN",
+          "USER_PASSWORD",
+          "Login"
+        ]
+      },
+      {
+        "action": "/product/datchik_potoka_sick_fts_i100f14a/",
+        "method": "post",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "backurl",
+          "REGISTER[LOGIN]",
+          "REGISTER[NAME]",
+          "REGISTER[PERSONAL_PHONE]",
+          "REGISTER[EMAIL]",
+          "REGISTER[PASSWORD]",
+          "REGISTER[CONFIRM_PASSWORD]",
+          "register_submit_button"
+        ]
+      },
+      {
+        "action": "/product/datchik_potoka_sick_fts_i100f14a/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_49",
+          "form_text_50",
+          "form_hidden_52",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/datchik_potoka_sick_fts_i100f14a/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_53",
+          "form_text_54",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "form_text_6",
+          "form_text_7"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "IDTovar",
+          "NameTovar",
+          "NAME",
+          "PHONE"
+        ]
+      }
+    ],
+    "price_nodes": [
+      "<div class=\"product-info__all-order-price\">\n<div>\n<div class=\"price\">63 160 руб. <span>/ шт</span></div>\n</div>\n<div class=\"btns\">\n<a class=\"js-add-compare\" data-id=\"44779\" href=\"\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</a>\n<a class=\"js-add-favorite\" data-id=\"44779\" href=\"\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</a>\n</div>\n</div>",
+      "<div class=\"price\">63 160 руб. <span>/ шт</span></div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">69 600 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"44784\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"44784\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">69 600 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"44784\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"44784\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">61 080 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"44783\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"44783\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">61 080 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"44783\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"44783\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">63 900 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"44782\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"44782\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">63 900 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"44782\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"44782\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">69 600 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"44781\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"44781\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">69 600 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"44781\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"44781\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">76 430 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"44780\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"44780\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">76 430 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"44780\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"44780\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">13 840 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"290075\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"290075\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">13 840 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"290075\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"290075\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">13 560 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"290074\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"290074\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">13 560 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"290074\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"290074\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">16 210 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"289402\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"289402\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">16 210 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"289402\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"289402\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">6 920 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"288956\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"288956\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>",
+      "<div class=\"price\">6 920 руб.</div>",
+      "<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"288956\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"288956\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>",
+      "<div class=\"catalog-element__price\">\n<div class=\"price\">11 500 руб.</div>\n<div class=\"catalog-element__price-btn\">\n<div class=\"icon comparison js-add-compare\" data-id=\"288038\">\n<svg fill=\"none\" height=\"19\" viewbox=\"0 0 15 19\" width=\"15\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13.5 17.7619V7.88098\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M7.5 17.7619V1.95239\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n<path d=\"M1.5 17.7619V11.8334\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Сравнение</div>\n</div>\n<div class=\"icon favorites js-add-favorite\" data-id=\"288038\">\n<svg fill=\"none\" height=\"18\" viewbox=\"0 0 14 18\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M13 17L7 12.5556L1 17V2.77778C1 2.30628 1.18061 1.8541 1.5021 1.5207C1.82359 1.1873 2.25963 1 2.71429 1H11.2857C11.7404 1 12.1764 1.1873 12.4979 1.5207C12.8194 1.8541 13 2.30628 13 2.77778V17Z\" stroke=\"#0E0E0F\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n<div class=\"title\">Избранное</div>\n</div>\n</div>\n</div>"
+    ],
+    "product_links": [
+      "https://sensoren.ru/product/datchik_potoka_sick_fts_h200f04a/",
+      "https://sensoren.ru/product/datchik_potoka_sick_fts_i060f14a/",
+      "https://sensoren.ru/product/datchik_potoka_sick_fts_i200f14a/",
+      "https://sensoren.ru/product/datchik_potoka_sick_fts_h060f04a/",
+      "https://sensoren.ru/product/datchik_potoka_sick_fts_h100f04a/",
+      "https://sensoren.ru/product/opticheskiy_datchik_sick_wt150_p460/",
+      "https://sensoren.ru/product/opticheskiy_datchik_sick_wt150_p430/",
+      "https://sensoren.ru/product/opticheskiy_datchik_sick_wl150_p430/",
+      "https://sensoren.ru/product/avariynyy_vyklyuchatel_sick_re15_sa03/",
+      "https://sensoren.ru/product/datchik_dlya_tsilindrov_sick_mzk3_02vps_at0/",
+      "https://sensoren.ru/product/opticheskiy_datchik_sick_wt260_f470/",
+      "https://sensoren.ru/product/opticheskiy_datchik_sick_vl18_3f3140/"
+    ]
+  },
+  {
+    "source": "sensoren_brands",
+    "requested_url": "https://sensoren.ru/product/price-monitor-nonexistent-20260928/",
+    "checked_at": "2026-09-28T05:50:15.699558+00:00",
+    "status": 404,
+    "final_url": "https://sensoren.ru/product/price-monitor-nonexistent-20260928/",
+    "seconds": 0.52,
+    "bytes": 259413,
+    "content_type": "text/html; charset=UTF-8",
+    "sha256": "5e05e4941daa3df6eef213649a4236b8b63c70221e3ec93b2ccf507a339d173e",
+    "file": "sensoren_brands_5.txt",
+    "title": "Каталог товаров",
+    "h1": [],
+    "forms": [
+      {
+        "action": "/catalog/",
+        "method": null,
+        "fields": [
+          "q",
+          "s"
+        ]
+      },
+      {
+        "action": "/product/price-monitor-nonexistent-20260928/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "button_source",
+          "form_text_6",
+          "form_text_7",
+          "form_email_8",
+          "form_text_9",
+          "form_hidden_36",
+          "form_file_11",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/price-monitor-nonexistent-20260928/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_12",
+          "form_text_13",
+          "form_email_14",
+          "form_text_15",
+          "form_hidden_35",
+          "form_file_17",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/price-monitor-nonexistent-20260928/?login=yes",
+        "method": "post",
+        "fields": [
+          "backurl",
+          "AUTH_FORM",
+          "TYPE",
+          "USER_LOGIN",
+          "USER_PASSWORD",
+          "Login"
+        ]
+      },
+      {
+        "action": "/product/price-monitor-nonexistent-20260928/",
+        "method": "post",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "backurl",
+          "REGISTER[LOGIN]",
+          "REGISTER[NAME]",
+          "REGISTER[PERSONAL_PHONE]",
+          "REGISTER[EMAIL]",
+          "REGISTER[PASSWORD]",
+          "REGISTER[CONFIRM_PASSWORD]",
+          "register_submit_button"
+        ]
+      },
+      {
+        "action": "/product/price-monitor-nonexistent-20260928/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_49",
+          "form_text_50",
+          "form_hidden_52",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": "/product/price-monitor-nonexistent-20260928/",
+        "method": "POST",
+        "fields": [
+          "bxajaxid",
+          "AJAX_CALL",
+          "sessid",
+          "WEB_FORM_ID",
+          "form_text_53",
+          "form_text_54",
+          "captcha_sid",
+          "web_form_submit"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "form_text_6",
+          "form_text_7"
+        ]
+      },
+      {
+        "action": null,
+        "method": "POST",
+        "fields": [
+          "IDTovar",
+          "NameTovar",
+          "NAME",
+          "PHONE"
+        ]
+      }
+    ],
+    "price_nodes": [
+      "<li class=\"popup-form__row-product_text-price\"></li>"
+    ],
+    "product_links": []
+  },
+  {
+    "source": "beskonta_missing",
+    "requested_url": "https://beskonta.ru/product/price-monitor-nonexistent-20260928/",
+    "checked_at": "2026-09-28T05:49:41.017267+00:00",
+    "status": 404,
+    "final_url": "https://beskonta.ru/product/price-monitor-nonexistent-20260928/",
+    "seconds": 0.34,
+    "bytes": 1915,
+    "content_type": "text/html; charset=utf-8",
+    "sha256": "3c8d4915223ad6b7e5e6a9d8a5dc1055fa436679f8a490fa8884c4faa7404a0f",
+    "file": "beskonta_missing_0.txt",
+    "title": "Ошибка 404",
+    "h1": [],
+    "forms": [],
+    "price_nodes": [],
+    "product_links": []
+  },
+  {
+    "source": "megak_missing",
+    "requested_url": "https://mega-k.com/products/price-monitor-nonexistent-20260928",
+    "checked_at": "2026-09-28T05:49:41.017599+00:00",
+    "status": 404,
+    "final_url": "https://mega-k.com/products/price-monitor-nonexistent-20260928",
+    "seconds": 0.95,
+    "bytes": 144152,
+    "content_type": "text/html; charset=utf-8",
+    "sha256": "5d4387693409d732925cae01cbe0c9c9134e66467cb3305a7eab08c0cc1dd85d",
+    "file": "megak_missing_0.txt",
+    "title": "Такой страницы нет! - Мега-К",
+    "h1": [],
+    "forms": [
+      {
+        "action": null,
+        "method": null,
+        "fields": [
+          "q"
+        ]
+      }
+    ],
+    "price_nodes": [],
+    "product_links": []
+  },
+  {
+    "source": "sensor_missing",
+    "requested_url": "https://sensor-com.ru/sensors/price-monitor-nonexistent-20260928/",
+    "checked_at": "2026-09-28T05:49:41.017982+00:00",
+    "status": 404,
+    "final_url": "https://sensor-com.ru/sensors/price-monitor-nonexistent-20260928/",
+    "seconds": 0.58,
+    "bytes": 82748,
+    "content_type": "text/html; charset=UTF-8",
+    "sha256": "944e6eaa4bf440b8c38a517f2ab0f5c40bb218aa5fc04839f7adfd49b55a7a41",
+    "file": "sensor_missing_0.txt",
+    "title": "Страница не найдена",
+    "h1": [],
+    "forms": [
+      {
+        "action": "https://sensor-com.ru/search/",
+        "method": "get",
+        "fields": [
+          "query"
+        ]
+      },
+      {
+        "action": "https://sensor-com.ru/search/",
+        "method": "get",
+        "fields": [
+          "query"
+        ]
+      },
+      {
+        "action": "fromcatalog",
+        "method": null,
+        "fields": [
+          "name",
+          "email",
+          "phone",
+          "files[]",
+          "url",
+          "company_name"
+        ]
+      },
+      {
+        "action": "callback",
+        "method": null,
+        "fields": [
+          "name",
+          "email",
+          "phone",
+          "files[]",
+          "url",
+          "company_name"
+        ]
+      },
+      {
+        "action": "/directrequest/cabinet/partner/auth.json/",
+        "method": "post",
+        "fields": [
+          "login",
+          "password",
+          "remember",
+          "redirection"
+        ]
+      }
+    ],
+    "price_nodes": [],
+    "product_links": []
+  },
+  {
+    "source": "teko_missing",
+    "requested_url": "https://teko-com.ru/product/price-monitor-nonexistent-20260928.html",
+    "checked_at": "2026-09-28T05:49:41.018287+00:00",
+    "status": 404,
+    "final_url": "https://teko-com.ru/catalog/product/price-monitor-nonexistent-20260928/",
+    "seconds": 0.45,
+    "bytes": 151886,
+    "content_type": "text/html; charset=UTF-8",
+    "sha256": "97df354b4ce2b2c6107a0f2d122959218ed4296a9b6d188ab85862a33d6d4a0b",
+    "file": "teko_missing_0.txt",
+    "title": "Страница не найдена",
+    "h1": [],
+    "forms": [
+      {
+        "action": "/search/",
+        "method": null,
+        "fields": [
+          "q"
+        ]
+      }
+    ],
+    "price_nodes": [],
+    "product_links": []
+  }
+]

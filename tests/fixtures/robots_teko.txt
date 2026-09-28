@@ -1,0 +1,144 @@
+User-Agent: *
+
+Allow: /
+
+Disallow: /include/ajax/
+
+Disallow: /local/ajax/*
+
+Disallow: /ajax/*
+
+Disallow: /auth*
+
+Disallow: /basket*
+
+Disallow: /order*
+
+Disallow: /personal/
+
+Disallow: /search/
+
+Disallow: /test/
+
+Disallow: /ajax/
+
+Disallow: *index.php*
+
+Disallow: /*show_include_exec_time=
+
+Disallow: /*show_page_exec_time=
+
+Disallow: /*show_sql_stat=
+
+Disallow: *bitrix*
+
+Disallow: /*clear_cache=
+
+Disallow: /*clear_cache_session=
+
+Disallow: /*ADD_TO_COMPARE_LIST
+
+Disallow: /*ORDER_BY
+
+Disallow: /*print*
+
+Disallow: /*action*
+
+Disallow: /*register=
+
+Disallow: /*password*
+
+Disallow: /*login=
+
+Disallow: /*type=
+
+Disallow: /*sort=
+
+Disallow: /*order=
+
+Disallow: /*logout=
+
+Disallow: /*auth=
+
+Disallow: /*backurl=
+
+Disallow: /*back_url=
+
+Disallow: /*BACKURL=
+
+Disallow: /*BACK_URL=
+
+Disallow: /*back_url_admin=
+
+Disallow: /*?utm_source=
+
+Disallow: /*?sphrase_id=
+
+Disallow: /*etext=
+
+Disallow: *?arrFilter*
+
+Disallow: */filter/*
+
+Disallow: /search/*
+
+Disallow: /*?lp=
+
+Disallow: /*?set_filter=
+
+Disallow: /*?newsblog_category_id=
+
+Disallow: /*?page=
+
+Disallow: /*?limit=
+
+Disallow: /*?roistat_referrer=
+
+Disallow: /*?rs=
+
+Disallow: /*?q=
+
+Disallow: /*?roistat=
+
+Disallow: /*?rs_stat=
+
+Disallow: /*?yprqee=
+
+Disallow: /*?ro=
+
+Disallow: /*ypppel=
+
+Disallow: /*?b24form_user=
+
+Disallow: /*?back_url_admin=
+
+Disallow: /*ybaip=
+
+Disallow: /*?filter_ocfilter
+
+Disallow: /*catalogLPFilter*
+
+Disallow: /*gt;_t_me*
+
+Disallow: /upload/mailb24
+
+Disallow: /html_old
+
+Disallow: /html
+
+Disallow: /*src_pof=
+
+Disallow: /podbor-analoga-datchika-po-proizvoditelyu/analogi-datchikov-autonics/
+
+Clean-param: utm&lp&set_filter
+
+Clean-param: b24form_user
+
+Clean-param: PAGEN_3
+
+Clean-param: sertificate
+
+Sitemap: https://teko-com.ru/sitemap/sitemap.xml
+
+Sitemap: https://teko-com.ru/sitemap/images_sitemap.xml
+

@@ -1,0 +1,1 @@
+"""Internal public price monitor."""

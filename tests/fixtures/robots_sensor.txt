@@ -1,0 +1,48 @@
+User-agent: *
+Disallow: /lk/
+Disallow: /reg/
+Disallow: /login/
+Disallow: /logout/
+Disallow: /forgot/
+Disallow: /*openstat*
+Disallow: /*?utm*
+Disallow: /*&utm*
+Disallow: /*?from*
+Disallow: /*&from*
+Disallow: /*gclid*
+Disallow: /*yclid*
+Disallow: /*ymclid*
+Disallow: /*?tid*
+Disallow: /*&tid*
+Disallow: /*.swf
+Disallow: /zakaz
+Disallow: /admin
+Disallow: /vpanel
+Disallow: /test*
+Disallow: /*?*
+Disallow: /*arhiv-produktsii*
+Disallow: /*?area*
+
+
+User-agent: Googlebot
+Disallow: /*openstat*
+Disallow: /*?utm*
+Disallow: /*&utm*
+Disallow: /*?from*
+Disallow: /*&from*
+Disallow: /*gclid*
+Disallow: /*yclid*
+Disallow: /*ymclid*
+Disallow: /*?tid*
+Disallow: /*&tid*
+Disallow: /*.swf
+Disallow: /zakaz
+Disallow: /admin
+Disallow: /vpanel
+Disallow: /test*
+Disallow: /*?*
+Disallow: /*arhiv-produktsii*
+Disallow: /*?area*
+
+Sitemap: https://sensor-com.ru/sitemap/main.xml
+

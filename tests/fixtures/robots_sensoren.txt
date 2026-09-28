@@ -1,0 +1,229 @@
+
+
+User-agent: Yandex
+
+Disallow: /upload/
+
+Disallow: /v/
+
+Disallow: /include/
+
+Disallow: /quick_search/
+
+Disallow: /about/clients/*
+
+Disallow: /*personal/
+
+Disallow: /*basket/
+
+Disallow: /*clear/
+
+Disallow: /*order/
+
+Disallow: /*bitrix/
+
+Disallow: /*bxajaxid
+
+Disallow: /*seriya*brend
+
+Disallow: /*seria*brend
+
+Disallow: */filter/*
+
+Disallow: /*?*
+
+Disallow: /*?digiSearch
+
+Allow: /*?PAGEN
+
+Allow: */brand-is-*/apply/$
+
+Allow: /*.js
+
+Allow: /*.css
+
+Allow: /*.png
+
+Allow: /*.jpg
+
+Allow: /*.JPG
+
+Allow: /*.jpeg
+
+Allow: /*.svg
+
+Allow: /*.gif
+
+Allow: /*.webp
+
+Allow: /*.woff
+
+Allow: /*.woff2
+
+Allow: /*.ttf
+
+Allow: /bitrix/tools/conversion/
+
+Allow: /*captcha
+
+Clean-param: sort&order&show&view&ajax_load&_ym_debug&k50id&baobab_event_id&divider_type&section_query
+
+Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid&from&etext&clear_cache
+
+
+
+User-agent: Googlebot
+
+Disallow: /upload/
+
+Disallow: /v/
+
+Disallow: /include/
+
+Disallow: /quick_search/
+
+Disallow: /about/clients/*
+
+Disallow: /*personal/
+
+Disallow: /*basket/
+
+Disallow: /*clear/
+
+Disallow: /*order/
+
+Disallow: /*bitrix/
+
+Disallow: /*bxajaxid
+
+Disallow: /*seriya*brend
+
+Disallow: /*seria*brend
+
+Disallow: /*?q=
+
+Disallow: /*VENDOR=
+
+Disallow: /*vendor_
+
+Disallow: /*k50id=
+
+Disallow: /*baobab_event_id=
+
+Disallow: /*divider_type=
+
+Disallow: /*section_query=
+
+Disallow: /*_ym_debug=
+
+Disallow: /*ajax_load=
+
+Disallow: /*back_url_
+
+Disallow: /*bitrix_include_
+
+Disallow: /*ref=xranks
+
+Disallow: /*forgot_password=
+
+Disallow: /*?digiSearch
+
+Allow: /*.js
+
+Allow: /*.css
+
+Allow: /*.png
+
+Allow: /*.jpg
+
+Allow: /*.JPG
+
+Allow: /*.jpeg
+
+Allow: /*.svg
+
+Allow: /*.gif
+
+Allow: /*.webp
+
+Allow: /*.woff
+
+Allow: /*.woff2
+
+Allow: /*.ttf
+
+Allow: /bitrix/tools/conversion/
+
+Allow: /*captcha
+
+
+
+User-agent: *
+
+Disallow: /upload/
+
+Disallow: /v/
+
+Disallow: /include/
+
+Disallow: /quick_search/
+
+Disallow: /about/clients/*
+
+Disallow: /*personal/
+
+Disallow: /*basket/
+
+Disallow: /*clear/
+
+Disallow: /*order/
+
+Disallow: /*bitrix/
+
+Disallow: /*bxajaxid
+
+Disallow: /*seriya*brend
+
+Disallow: /*seria*brend
+
+Disallow: */filter/*
+
+Disallow: /*?*
+
+Disallow: /*?digiSearch
+
+Allow: /*?PAGEN
+
+Allow: */brand-is-*/apply/$
+
+Allow: /*.js
+
+Allow: /*.css
+
+Allow: /*.png
+
+Allow: /*.jpg
+
+Allow: /*.JPG
+
+Allow: /*.jpeg
+
+Allow: /*.svg
+
+Allow: /*.gif
+
+Allow: /*.webp
+
+Allow: /*.woff
+
+Allow: /*.woff2
+
+Allow: /*.ttf
+
+Allow: /bitrix/tools/conversion/
+
+Allow: /*captcha
+
+
+
+Sitemap: https://sensoren.ru/sitemap.xml
