@@ -1,5 +1,5 @@
-# Bootstrap Streamlit application; the local monitor has separate dependencies.
-# Documents release 2026-09-21: rebuild the app process to load the new editor and PDF worker.
+# Unified news and price analytics, Python 3.13.
+# Reboot the Streamlit process after upgrading to reload both background workers.
 -c requirements-cloud-lock.txt
 streamlit[auth]==1.64.0
 requests==2.34.2
@@ -11,3 +11,5 @@ pydantic==2.13.4
 PyYAML==6.0.3
 feedparser==6.0.12
 playwright==1.60.0
+openpyxl==3.1.5
+psycopg-pool==3.3.3

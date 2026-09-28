@@ -30,7 +30,7 @@ html, body, [data-testid="stApp"] { font-family: "Segoe UI", Arial, sans-serif; 
 [data-testid="stSidebar"] [data-testid="stRadioOption"][data-focus-visible="true"] { outline:2px solid #d89aab; outline-offset:2px; }
 [data-testid="stSidebar"] [data-testid="stRadioOption"] p { font-size:.86rem; color:#c9d4df; font-weight:500; }
 [data-testid="stSidebar"] [data-testid="stRadioOption"]:has(input:checked) p { color:#fff; font-weight:650; }
-[data-testid="stSidebar"] [data-testid="stRadioOption"]>div>div:first-child { display:none; }
+[data-testid="stSidebar"] [data-testid="stRadioOption"]>div>div:first-child:not(:has([data-testid="stMarkdownContainer"])) { display:none; }
 [data-testid="stSidebar"] [data-testid="stRadioOption"]>div { margin:0; padding:0; }
 [data-testid="stSidebar"] [data-testid="stRadioOption"]::before { content:"▦"; color:#b3c4d4; width:20px; margin-right:10px; text-align:center; font-size:1.1rem; }
 [data-testid="stSidebar"] [data-testid="stRadioOption"]:has(input:checked)::before { color:white; }
@@ -143,3 +143,14 @@ html, body, [data-testid="stApp"] { font-family: "Segoe UI", Arial, sans-serif; 
 .brand {display:block;}
 .brand img {display:block;width:100%;max-width:225px;background:white;padding:9px;border-radius:7px;}
 .brand .brand-caption {display:block;color:#eed5dc;font-size:.72rem;margin-top:9px;}
+
+/* The two workspaces share one shell; nested content keeps its own layout. */
+.st-key-workspace-tabs > div > [role="tablist"] {gap:8px;margin:2px 0 18px;border-bottom:1px solid var(--line);}
+.st-key-workspace-tabs > div > [role="tablist"] [role="tab"] {min-height:48px;padding:0 18px;border-radius:8px 8px 0 0;}
+.st-key-workspace-tabs > div > [role="tablist"] [aria-selected="true"] {background:#f4e8eb;color:var(--accent);}
+.st-key-workspace-tabs > div > [role="tablist"] [role="tab"] p {font-weight:650;font-size:.96rem;}
+@media (max-width:640px) {
+  .st-key-workspace-tabs > div > [role="tablist"] {gap:0;}
+  .st-key-workspace-tabs > div > [role="tablist"] [role="tab"] {padding:0 10px;}
+  .st-key-workspace-tabs > div > [role="tablist"] [role="tab"] p {font-size:.8rem;}
+}

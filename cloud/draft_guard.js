@@ -25,6 +25,17 @@
     document.addEventListener('click', (event) => {
       const target = event.target;
       // A download can be clicked before the text area's blur reaches Python.
+      // A tab click has the same race. Flush the field first; Python then
+      // offers the explicit discard action on the next tab click.
+      if (state.dirty && !state.serverDirty && target instanceof Element &&
+          target.closest('.st-key-workspace-tabs [role="tab"][aria-selected="false"]') &&
+          document.querySelector('.st-key-draft-workspace')) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        document.activeElement?.blur();
+        const label = document.querySelector('.draft-save-status');
+        if (label) label.textContent = 'Есть несохранённые правки. Сохраните записку или повторите переход для подтверждения';
+      }
       // Prevent that race from exporting the preceding saved revision.
       if (state.dirty && target instanceof Element &&
           target.closest('.st-key-draft-workspace') &&
@@ -37,6 +48,7 @@
     }, true);
   }
   const state = window.__skbDraftGuard;
+  state.serverDirty = serverDirty;
   if (state.token !== resetToken) state.dirty = serverDirty;
   else if (serverDirty) state.dirty = true;
   state.token = resetToken;

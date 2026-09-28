@@ -1,5 +1,7 @@
-"""Invited-user cloud library. Persistent data lives in Neon and private Drive."""
+"""Shared Streamlit shell for news (Neon/Drive) and prices (Supabase)."""
 
+from pathlib import Path
+import runpy
 import streamlit as st
 
 from cloud.access import ROLE_LABELS, current_access, current_admin
@@ -9,7 +11,7 @@ from cloud.storage_probe import check_drive_write, check_neon_write
 from cloud.drive_store import StorageError
 from cloud.screens import load_library, render_library
 from cloud.presentation import apply_theme, brand, masthead, account
-from cloud.editor import dirty, render_guard
+from cloud.editor import dirty, discard_editor, render_guard
 
 
 TITLE = "Конкурентная аналитика СКБ ИНДУКЦИЯ"
@@ -55,15 +57,7 @@ def sidebar_account(access):
             public_links()
 
 
-def main():
-    st.set_page_config(page_title=TITLE, page_icon="◈", layout="wide")
-    apply_theme()
-    masthead()
-    st.title("Конкурентная аналитика")
-    if render_public_document(st.query_params.get("page", "")):
-        public_links()
-        st.stop()
-
+def render_news():
     config = settings()
     login = check_login_config(config)
     if login.status != "unchecked":
@@ -109,8 +103,6 @@ def main():
             st.rerun()
     check_membership()
 
-    with st.sidebar:
-        brand()
     library = None
     if section(config, "cloud").get("database_url"):
         try:
@@ -160,6 +152,75 @@ def main():
             show_check(check_neon_write(fresh))
             show_check(check_drive_write(fresh))
     st.caption("Отключённый или отозванный доступ проверяется при каждом действии и обновлении страницы.")
+
+
+WORKSPACES = {"news": "Новости конкурентов", "prices": "Цены конкурентов"}
+
+
+def select_workspace(workspace):
+    st.session_state["workspace-tabs"] = WORKSPACES[workspace]
+    st.session_state["_workspace_url"] = workspace
+    st.query_params["workspace"] = workspace
+
+
+def workspace_changed():
+    chosen = st.session_state["workspace-tabs"]
+    target = next(key for key, label in WORKSPACES.items() if label == chosen)
+    if target == "prices" and dirty():
+        st.session_state["pending_workspace"] = target
+        select_workspace("news")
+        return
+    select_workspace(target)
+
+
+def continue_to_prices():
+    discard_editor()
+    st.session_state.pop("pending_workspace", None)
+    select_workspace("prices")
+
+
+def stay_in_news():
+    st.session_state.pop("pending_workspace", None)
+
+
+def main():
+    st.set_page_config(page_title=TITLE, page_icon="◈", layout="wide")
+    apply_theme()
+    masthead()
+    st.title("Конкурентная аналитика")
+    if render_public_document(st.query_params.get("page", "")):
+        public_links()
+        st.stop()
+    with st.sidebar:
+        brand()
+
+    target = st.query_params.get("workspace", "news")
+    if target not in WORKSPACES:
+        target = "news"
+    if st.session_state.get("_workspace_url") != target:
+        if target == "prices" and dirty():
+            st.session_state["pending_workspace"] = target
+            target = "news"
+        select_workspace(target)
+
+    news, prices = st.tabs(list(WORKSPACES.values()), key="workspace-tabs", on_change=workspace_changed)
+    if news.open:
+        with news:
+            if st.session_state.get("pending_workspace"):
+                st.warning("В новостной записке есть несохранённые правки. Сохраните их перед переходом к ценам или продолжите без сохранения.")
+                back, proceed = st.columns(2)
+                back.button("Остаться в новостях", on_click=stay_in_news, width="stretch")
+                proceed.button("Перейти к ценам без сохранения", on_click=continue_to_prices, width="stretch")
+            render_news()
+    if prices.open:
+        with prices:
+            render_guard()
+            if globals().get("PRICE_CLOUD_MODE", True) and not settings().get("database"):
+                st.info("Вкладка цен подготовлена. Для подключения сохранённой истории владелец приложения должен добавить раздел [database] из настроек прежнего приложения цен в Secrets этого приложения.")
+                st.caption("Существующие разделы настроек Google, Neon и Drive нужно сохранить. После подключения здесь появятся сбор, база товаров и сравнение цен.")
+                return
+            runpy.run_path(str(Path(__file__).parent / "price_monitor" / "ui.py"),
+                           init_globals={"CLOUD_MODE": globals().get("PRICE_CLOUD_MODE", True)})
 
 
 if __name__ == "__main__":
