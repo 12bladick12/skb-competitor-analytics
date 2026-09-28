@@ -12,6 +12,7 @@ PRODUCT_SELECT="""SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.produc
     COALESCE(i.title,o.title,'') title,COALESCE(i.category,'') category,
     COALESCE(i.attributes_count,0) attributes_count,
     COALESCE(o.status,'pending') status,o.price,o.currency,o.availability,o.checked_at,o.detail,
+    o.url,o.price_text,o.availability_text,o.http_status,o.response_hash,i.updated_at specifications_checked_at,
     p.price last_price,p.currency last_currency,p.checked_at price_checked_at,
     c.our_article,c.our_price,c.our_currency,c.note,c.updated_at our_price_updated_at,
     CASE WHEN c.rule_id IS NULL THEN 0 ELSE 1 END selected
@@ -94,7 +95,8 @@ class Library:
         conditions=['j.rule_id IN ('+','.join(f'%(id{i})s' for i in range(len(rule_ids)))+')']
         if start:conditions.append('o.checked_at>=%(start)s');p['start']=str(start)
         if end:conditions.append('o.checked_at<%(end)s');p['end']=str(end)
-        return self.repo.batch('''SELECT j.rule_id,j.run_id,o.* FROM jobs j JOIN observations o ON o.job_id=j.id
+        return self.repo.batch('''SELECT j.rule_id,j.run_id,q.source,q.manufacturer,q.article,q.product_url,o.*
+            FROM jobs j JOIN observations o ON o.job_id=j.id JOIN rules q ON q.id=j.rule_id
             WHERE '''+' AND '.join(conditions)+' ORDER BY o.checked_at,o.id',p)
 
     def details(self,rule_id):
@@ -122,8 +124,9 @@ class Library:
         return found,errors
 
     def result_page(self,run_id,offset=0,limit=100):
-        return self.repo.batch('''SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.product_url,
-            COALESCE(o.status,j.state) status,o.price,o.currency,o.availability,o.checked_at,o.http_status,o.detail
+        return self.repo.batch('''SELECT j.id job_id,j.run_id,q.id rule_id,q.source,q.manufacturer,q.article,q.product_url,
+            COALESCE(o.status,j.state) status,o.price,o.currency,o.availability,o.checked_at,o.http_status,o.detail,
+            o.url,o.title,o.price_text,o.availability_text,o.response_hash,o.details_json
             FROM jobs j JOIN rules q ON q.id=j.rule_id LEFT JOIN observations o ON o.job_id=j.id
             WHERE j.run_id=%(run)s ORDER BY j.id LIMIT %(limit)s OFFSET %(offset)s''',{'run':run_id,'limit':limit,'offset':offset})
 
