@@ -40,7 +40,7 @@ h3 {font-size:1.05rem!important}
 .positive {color:#AE3838}.negative {color:#18756A}
 [data-testid="stDataFrame"] {border-radius:10px;overflow:hidden}
 [data-testid="stExpander"] {background:#fff;border-radius:10px}
-@media(max-width:800px){.block-container{padding:2rem .9rem}}
+@media(max-width:800px){.block-container{padding:3.8rem .9rem 2rem}}
 </style>'''
 
 
@@ -66,13 +66,13 @@ def price_chart(points,reference=None,height=120):
     data=pd.DataFrame(points)
     date_format='%d.%m %H:%M' if (data.date.max()-data.date.min()).total_seconds()<86400 else '%d.%m'
     chart=alt.Chart(data).mark_line(color='#7A1F2B',strokeWidth=2,point=alt.OverlayMarkDef(size=34,filled=True,color='#7A1F2B')).encode(
-        x=alt.X('date:T',title=None,axis=alt.Axis(format=date_format,tickCount=3,labelColor='#637387')),
+        x=alt.X('date:T',title=None,scale=alt.Scale(type='utc'),axis=alt.Axis(format=date_format,tickCount=3,labelColor='#637387')),
         y=alt.Y('price:Q',title=None,scale=alt.Scale(zero=False),axis=alt.Axis(format=',.0f',tickCount=3,labelColor='#637387')),
-        detail='segment:N',tooltip=[alt.Tooltip('date:T',title='Получено (UTC)',format='%d.%m.%Y %H:%M'),alt.Tooltip('price:Q',title='Цена',format=',.2f'),alt.Tooltip('run:O',title='Запуск')])
+        detail='segment:N',tooltip=[alt.Tooltip('checked_at:N',title='Получено (UTC)'),alt.Tooltip('price:Q',title='Цена',format=',.2f'),alt.Tooltip('run:O',title='Запуск')])
     if reference is not None:
         line=alt.Chart(pd.DataFrame([{'reference':reference}])).mark_rule(color='#18756A',strokeDash=[5,4]).encode(y='reference:Q',tooltip=[alt.Tooltip('reference:Q',title='Наша текущая цена',format=',.2f')])
         chart=chart+line
-    st.altair_chart(chart.properties(height=height).configure_view(stroke=None).configure_axis(gridColor='#EDF0F3'),width='stretch')
+    st.altair_chart(chart.properties(height=height,background='#FFFFFF').configure_view(stroke=None).configure_axis(gridColor='#EDF0F3'),width='stretch')
 
 
 def visible_rows(rows):

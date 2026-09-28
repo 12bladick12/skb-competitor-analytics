@@ -59,7 +59,7 @@ if st.session_state.get('_navigation_section')!=section:
     st.session_state['_navigation_section']=section
 st.sidebar.markdown('<div class="brand">СКБ<small>Мониторинг цен конкурентов</small></div>',unsafe_allow_html=True)
 st.sidebar.caption('10 производителей · 5 сайтов')
-st.sidebar.radio('Раздел',list(PAGES),index=list(PAGES).index(section if section in PAGES else 'compare'),format_func=PAGES.get,key='navigation',on_change=navigation_changed,label_visibility='collapsed')
+st.sidebar.radio('Раздел',list(PAGES),index=None,format_func=PAGES.get,key='navigation',on_change=navigation_changed,label_visibility='collapsed')
 st.sidebar.divider()
 st.sidebar.markdown('[Источники и правила сбора](?section=sources)')
 st.sidebar.caption('Общая база и список сравнения. Изменения видны всем посетителям.')

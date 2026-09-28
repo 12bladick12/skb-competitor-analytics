@@ -97,7 +97,7 @@ def series(history,currency):
         if item['status']!='priced' or item.get('currency')!=currency or item.get('price') is None:
             segment+=1;continue
         points.append({'date':datetime.fromisoformat(item['checked_at']),'price':float(item['price']),
-                       'segment':str(segment),'run':item['run_id']})
+                       'segment':str(segment),'run':item['run_id'],'checked_at':item['checked_at']})
     return points
 
 
