@@ -7,7 +7,7 @@ DEST = ROOT / "dist" / "price-monitor-streamlit.zip"
 
 
 def package():
-    files = [ROOT/name for name in ("streamlit_app.py", "app.py", "requirements.txt", "README.md", ".gitignore", "run.ps1", "Dockerfile", ".dockerignore", "compose.yaml", ".streamlit/config.toml", ".streamlit/secrets.example.toml")]
+    files = [ROOT/name for name in ("streamlit_app.py", "app.py", "requirements.txt", "README.md", ".gitignore", "run.ps1", "run_sensoren.cmd", "Dockerfile", ".dockerignore", "compose.yaml", ".streamlit/config.toml", ".streamlit/secrets.example.toml")]
     files += sorted((ROOT/"price_monitor").glob("*.py"))
     files += sorted((ROOT/"examples").glob("*.csv"))
     files += sorted((ROOT/"examples").glob("*.xlsx"))

@@ -91,12 +91,17 @@ class SourceClient:
         finally:
             self.next_request = time.monotonic() + self.delay
 
-    def _check_status(self, status, headers, body):
+    def _check_status(self, status, headers, body, url="", stage="карточка"):
+        context = f"{stage}: HTTP {status}" + (f"; {url}" if url else "")
         if status == 429:
             retry_after = headers.get("Retry-After", "не указан")
-            raise FetchError("rate_limited", f"Источник остановлен: HTTP 429; Retry-After: {retry_after}", status, True)
-        if status in (401, 403) or challenge(body):
-            raise FetchError("blocked", "Источник требует авторизацию или ограничил автоматический доступ", status, True)
+            raise FetchError("rate_limited", f"{context}; Retry-After: {retry_after}; источник остановлен", status, True)
+        if status == 401:
+            raise FetchError("blocked", f"{context}; сервер требует авторизацию", status, True)
+        if status == 403:
+            raise FetchError("blocked", f"{context}; сервер отказал в доступе с адреса сборщика. Причина запрета сервером не уточнена", status, True)
+        if challenge(body):
+            raise FetchError("blocked", f"{context}; получена страница проверки браузера/CAPTCHA, источник остановлен", status, True)
 
     def policy(self, url):
         host = urlsplit(url).hostname
@@ -105,7 +110,7 @@ class SourceClient:
             try:
                 for _ in range(4):
                     code, headers, body = self._request(target)
-                    self._check_status(code, headers, body)
+                    self._check_status(code, headers, body, target, "robots.txt")
                     if code in (301,302,303,307,308) and headers.get("Location"):
                         target = self.redirect(target, headers["Location"])
                         continue
@@ -144,7 +149,7 @@ class SourceClient:
                         raise
                     self.wait(3)
                     continue
-                self._check_status(code, headers, body)
+                self._check_status(code, headers, body, target)
                 if code in (500,502,503,504) and not attempt:
                     # Do not retry before an explicitly requested waiting period.
                     if headers.get("Retry-After"):

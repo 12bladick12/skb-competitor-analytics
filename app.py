@@ -67,9 +67,9 @@ def render_results(rows, key):
     view["source"] = view.source.map(lambda s:SOURCES[s].label)
     view["status"] = view.status.map(lambda s:STATUS_LABELS.get(s,s))
     view["availability"] = view.availability.map(lambda s:AVAILABILITY_LABELS.get(s,s))
-    visible = ["source","manufacturer","article","price","currency","status","availability","checked_at","url","detail"]
-    labels = {"source":"Источник","manufacturer":"Производитель","article":"Артикул","price":"Цена","currency":"Валюта","status":"Результат","availability":"Наличие","checked_at":"Проверено (UTC)","url":"Карточка","detail":"Примечание"}
-    st.dataframe(view[visible].rename(columns=labels),hide_index=True,width="stretch",column_config={"Карточка":st.column_config.LinkColumn("Карточка",display_text="Открыть")})
+    visible = ["source","manufacturer","article","price","currency","status","availability","http_status","checked_at","url","detail"]
+    labels = {"source":"Источник","manufacturer":"Производитель","article":"Артикул","price":"Цена","currency":"Валюта","status":"Результат","availability":"Наличие","http_status":"HTTP","checked_at":"Проверено (UTC)","url":"Карточка","detail":"Примечание"}
+    st.dataframe(view[visible].rename(columns=labels),hide_index=True,width="stretch",column_config={"Карточка":st.column_config.LinkColumn("Карточка",display_text="Открыть"),"HTTP":st.column_config.NumberColumn("HTTP",format="%d")})
     a,b = st.columns(2)
     export_rows = df.where(pd.notnull(df),None).to_dict("records")
     a.download_button("Скачать XLSX",xlsx_bytes(export_rows,list(df.columns)),file_name=f"prices_{key}.xlsx",mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",key=key+"xlsx")
@@ -110,6 +110,11 @@ if page == "Сбор цен":
     st.write("Загрузите список моделей и ссылок, проверьте задания и запустите сбор. Результаты и история сохранятся автоматически.")
     active_progress()
     st.divider()
+    if CLOUD_MODE:
+        with st.expander("Sensoren: сбор с компьютера при HTTP 403 в облаке"):
+            st.write("При отказе Sensoren облачному сборщику владелец может запустить run_sensoren.cmd в папке приложения на своём компьютере. Сбор выполняется обычными HTTP-запросами с проверкой robots.txt.")
+            st.write("Программа берёт сохранённые задания Sensoren из Supabase и добавляет отдельный завершённый запуск. После окончания откройте «Результаты» → «Обновить результаты» и выберите новый запуск.")
+            st.caption("Для других моделей передайте локальному запуску CSV/XLSX с заданиями. Подробная инструкция — в разделе «Источники». При отказе сайта локальному сборщику нужен согласованный доступ или фид поставщика.")
     st.subheader("1. Подготовьте задания")
     with st.expander("Формат таблицы и примеры",expanded=False):
         st.write("Обязательные столбцы: source, manufacturer, article. Для каждой строки заполните product_url или url_template. Шаблон — ссылка на карточку с параметром {article}; он не выполняет поиск или Python-код.")
@@ -157,6 +162,8 @@ elif page == "Результаты":
         ids = [r["id"] for r in runs]
         lookup = {r["id"]:r for r in runs}
         run_id = st.selectbox("Запуск",ids,index=ids.index(selected) if selected in ids else 0,format_func=lambda n:f"№{n} · {lookup[n]['created_at']} · {RUN_LABELS[lookup[n]['state']]}")
+        if lookup[run_id]["note"]:
+            st.caption(lookup[run_id]["note"])
         data = db.results(run_id=run_id)
         a,b,c = st.columns(3)
         a.metric("Заданий",len(data))
@@ -189,6 +196,10 @@ else:
     st.title("Источники и аудит")
     st.dataframe([{"Источник":s.label,"Сайт":f"https://{s.host}","Производители":", ".join(s.brands),"Метод":"Публичная HTML-карточка"} for s in SOURCES.values()],hide_index=True,width="stretch")
     st.info("Источник останавливается при авторизации, CAPTCHA, HTTP 403/429 или невозможности проверить robots.txt. Данные, полученные до остановки, сохраняются.")
+    sensoren_report = ROOT/"docs"/"SENSOREN.md"
+    if sensoren_report.exists():
+        with st.expander("Sensoren: доступ из облака и локальный сбор", expanded=True):
+            st.markdown(sensoren_report.read_text(encoding="utf-8"))
     report = ROOT/"docs"/"AUDIT.md"
     if report.exists():
         st.markdown(report.read_text(encoding="utf-8"))
