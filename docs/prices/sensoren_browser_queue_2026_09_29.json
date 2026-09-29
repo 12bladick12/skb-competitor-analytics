@@ -1,0 +1,235 @@
+{
+  "run7": {
+    "id": 7,
+    "state": "completed",
+    "started_at": "2026-09-29T06:55:20+00:00",
+    "finished_at": "2026-09-29T06:56:05+00:00"
+  },
+  "ui_exports": {
+    "run_id": 7,
+    "xlsx_sheets": [
+      "Результаты",
+      "Характеристики"
+    ],
+    "products": 6,
+    "properties": 114,
+    "csv_spec_columns": 57,
+    "results": [
+      {
+        "manufacturer": "ifm",
+        "article": "SI5000",
+        "price": "29530.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "Характеристик": 23
+      },
+      {
+        "manufacturer": "Autonics",
+        "article": "THD-R-T",
+        "price": "11140.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "Характеристик": 13
+      },
+      {
+        "manufacturer": "Balluff",
+        "article": "BSP B600-EV003-A02A0B-S4",
+        "price": "41950.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "Характеристик": 17
+      },
+      {
+        "manufacturer": "Pepperl+Fuchs",
+        "article": "RaDec-D",
+        "price": "36800.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "Характеристик": 13
+      },
+      {
+        "manufacturer": "LANBAO",
+        "article": "DPG-10TN",
+        "price": "6660.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "Характеристик": 25
+      },
+      {
+        "manufacturer": "SICK",
+        "article": "FTS-I100F14A",
+        "price": "63160.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "Характеристик": 23
+      }
+    ]
+  },
+  "catalog_cancellation": {
+    "run_id": 8,
+    "note": "Проверка каталога Sensoren: только ifm; плановая остановка после 8 карточек, 29.09.2026",
+    "started_at": "2026-09-29T06:58:56+00:00",
+    "samples": [
+      {
+        "state": "queued",
+        "saved": 0,
+        "errors": 0,
+        "source_state": "pending"
+      },
+      {
+        "state": "running",
+        "saved": 0,
+        "errors": 0,
+        "source_state": "running"
+      },
+      {
+        "state": "running",
+        "saved": 0,
+        "errors": 0,
+        "source_state": "running"
+      },
+      {
+        "state": "running",
+        "saved": 0,
+        "errors": 0,
+        "source_state": "running"
+      },
+      {
+        "state": "running",
+        "saved": 0,
+        "errors": 0,
+        "source_state": "running"
+      },
+      {
+        "state": "running",
+        "saved": 1,
+        "errors": 0,
+        "source_state": "running"
+      },
+      {
+        "state": "running",
+        "saved": 2,
+        "errors": 0,
+        "source_state": "running"
+      },
+      {
+        "state": "running",
+        "saved": 3,
+        "errors": 0,
+        "source_state": "running"
+      },
+      {
+        "state": "running",
+        "saved": 5,
+        "errors": 0,
+        "source_state": "running"
+      },
+      {
+        "state": "running",
+        "saved": 6,
+        "errors": 0,
+        "source_state": "running"
+      },
+      {
+        "state": "running",
+        "saved": 7,
+        "errors": 0,
+        "source_state": "running"
+      },
+      {
+        "state": "running",
+        "saved": 8,
+        "errors": 0,
+        "source_state": "running"
+      }
+    ],
+    "finished_at": "2026-09-29T06:59:59+00:00",
+    "results": [
+      {
+        "manufacturer": "ifm",
+        "article": "E37340",
+        "status": "priced",
+        "price": "2020.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "attributes_count": 2
+      },
+      {
+        "manufacturer": "ifm",
+        "article": "PY9060",
+        "status": "priced",
+        "price": "176240.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "attributes_count": 28
+      },
+      {
+        "manufacturer": "ifm",
+        "article": "SI5000",
+        "status": "priced",
+        "price": "29530.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "attributes_count": 23
+      },
+      {
+        "manufacturer": "ifm",
+        "article": "SL0101",
+        "status": "priced",
+        "price": "24170.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "attributes_count": 19
+      },
+      {
+        "manufacturer": "ifm",
+        "article": "DI602A",
+        "status": "priced",
+        "price": "49950.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "attributes_count": 7
+      },
+      {
+        "manufacturer": "ifm",
+        "article": "LMT100",
+        "status": "priced",
+        "price": "27560.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "attributes_count": 28
+      },
+      {
+        "manufacturer": "ifm",
+        "article": "VTV122",
+        "status": "priced",
+        "price": "42030.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "attributes_count": 17
+      },
+      {
+        "manufacturer": "ifm",
+        "article": "SM6000",
+        "status": "priced",
+        "price": "74060.00",
+        "currency": "RUB",
+        "http_status": 200,
+        "attributes_count": 32
+      }
+    ],
+    "final": {
+      "state": "cancelled",
+      "cancel_requested": 1,
+      "unfinished": 0
+    }
+  },
+  "pending_pages_after_cancel": 0,
+  "agent_connected": true,
+  "unit_tests_passed": 26,
+  "limitations": [
+    "Full catalog and multi-hour stability not verified",
+    "Session expiry simulated in regression tests; actual lifetime not measured",
+    "Local PostgreSQL bulk document read stalled; Streamlit XLSX and CSV downloads verified successfully"
+  ]
+}

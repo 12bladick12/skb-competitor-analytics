@@ -1,7 +1,8 @@
-"""Consume Sensoren jobs submitted by Streamlit, from an approved HTTP network.
+"""Consume Sensoren jobs submitted by Streamlit using an ordinary browser session.
 
 The UI and other source workers stay in Community Cloud. This process uses the
 same database, robots policy, rate limits and adapter. It is not an HTTP proxy.
+Browser transport is the default; --transport http keeps the legacy option.
 """
 from __future__ import annotations
 
@@ -151,9 +152,13 @@ class AgentStore:
 
 
 class SensorenAgent:
-    def __init__(self, store, output=None):
+    def __init__(self, store, output=None, client_factory=None):
+        if client_factory is None:
+            from .sensoren_browser import SensorenBrowserClient
+            client_factory = SensorenBrowserClient
+        self.client_factory = client_factory
         self.store = store
-        self.owner = str(uuid.uuid4())
+        self.owner = 'sensoren-browser1-' + str(uuid.uuid4())
         self.stopping = threading.Event()
         self.output = Path(output or ROOT/'data'/'sensoren_agent')
         self.output.mkdir(parents=True, exist_ok=True)
@@ -176,7 +181,8 @@ class SensorenAgent:
         heartbeat = threading.Thread(target=self.heartbeat_loop, args=(finished,), daemon=True)
         heartbeat.start()
         client, current_run, failures = None, None, 0
-        print("Sensoren подключён к очереди Streamlit. Нажимайте «Запустить сбор» в приложении.", flush=True)
+        print("Sensoren подключён к очереди Streamlit; транспорт: "
+              + self.client_factory.__name__ + ". Нажимайте «Запустить сбор» в приложении.", flush=True)
         try:
             while not self.stopping.is_set():
                 job = self.store.claim(self.owner)
@@ -187,7 +193,11 @@ class SensorenAgent:
                     catalogs=repository.batch("""SELECT s.run_id FROM catalog_sources s JOIN runs r ON r.id=s.run_id
                         WHERE s.source='sensoren' AND s.state IN ('pending','running') AND r.state='running' AND r.cancel_requested=0 ORDER BY s.run_id LIMIT 1""")
                     if catalogs:
-                        process_catalog(repository,catalogs[0]['run_id'],'sensoren',self.owner,self.stopping)
+                        if client:
+                            client.close()
+                            client, current_run = None, None
+                        process_catalog(repository,catalogs[0]['run_id'],'sensoren',self.owner,self.stopping,
+                                        client_factory=self.client_factory)
                         continue
                     self.stopping.wait(5)
                     continue
@@ -197,7 +207,7 @@ class SensorenAgent:
                     current_run, failures = job['run_id'], 0
                     cancelled = CancellationProbe(
                         lambda: self.store.cancelled(current_run, self.owner), self.stopping, ttl=3)
-                    client = SourceClient('sensoren', cancelled=cancelled)
+                    client = self.client_factory('sensoren', cancelled=cancelled)
                 rule = Rule(**{k:job[k] for k in ('source','manufacturer','article','product_url','url_template')})
                 stop_reason = job['stop_reason']
                 path = self.output/f"job_{job['job_id']}.json"
@@ -249,6 +259,8 @@ def main():
     parser.add_argument('--secrets', type=Path, default=ROOT/'.streamlit'/'secrets.toml')
     parser.add_argument('--fresh-connections', action='store_true',
         help='Короткие подключения к базе, если сеть обрывает постоянные соединения')
+    parser.add_argument('--transport', choices=('browser', 'http'), default='browser',
+        help='Sensoren: браузерная сессия (по умолчанию) или прежний HTTP-клиент')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--enable', action='store_true', help='Подключить внешний сборщик и ждать заданий')
     mode.add_argument('--disable', action='store_true', help='Вернуть обработку Sensoren облачному сборщику')
@@ -278,7 +290,7 @@ def main():
                     message = str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__
                     print('Ожидание готовности Streamlit: '+message, flush=True)
                     stopping.wait(10)
-        agent = SensorenAgent(store)
+        agent = SensorenAgent(store, client_factory=SourceClient if args.transport == 'http' else None)
         while not stopping.is_set():
             # Recover with the same lease identity after a temporary disconnect.
             # A failed release must not make us wait for our own 120-second lease.
