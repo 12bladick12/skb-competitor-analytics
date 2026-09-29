@@ -36,6 +36,7 @@ def schema_sql(sqlite_schema):
 class Postgres:
     def __init__(self, settings, sqlite_schema):
         from psycopg_pool import ConnectionPool
+        from .db_connection import DeadlineConnection
 
         allowed = {"host", "port", "dbname", "user", "password", "sslmode", "sslrootcert"}
         if not {"host", "dbname", "user", "password"}.issubset(settings):
@@ -49,7 +50,7 @@ class Postgres:
         kwargs = connection_settings(kwargs)
         self.settings = dict(kwargs)
         kwargs.update(connect_timeout=10, prepare_threshold=None, row_factory=row_factory)
-        self.pool = ConnectionPool(kwargs=kwargs, min_size=1, max_size=4, max_idle=60, timeout=15, open=True)
+        self.pool = ConnectionPool(connection_class=DeadlineConnection, kwargs=kwargs, min_size=1, max_size=4, max_idle=60, timeout=15, open=True)
         try:
             self.pool.wait(timeout=15)
             with self.connect() as c:
@@ -65,6 +66,9 @@ class Postgres:
                 c.execute("ALTER TABLE observations ADD COLUMN IF NOT EXISTS details_json TEXT NOT NULL DEFAULT '{}'")
                 c.execute("ALTER TABLE external_sources ADD COLUMN IF NOT EXISTS protocol INTEGER NOT NULL DEFAULT 1")
                 c.execute("INSERT INTO schema_version VALUES(1,1) ON CONFLICT(id) DO NOTHING")
+                from .sensoren_payload import SCHEMA as TRANSFER_SCHEMA
+                for statement in TRANSFER_SCHEMA:
+                    c.execute(statement)
         except Exception:
             self.pool.close()
             raise

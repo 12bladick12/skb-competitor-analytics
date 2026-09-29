@@ -77,7 +77,7 @@ class CatalogRepository:
         from .catalog import page_id
         # The external agent's short-connection mode also keeps upload batches
         # small on networks where long transfers are interrupted.
-        batch_size = 25 if self.settings and not self.settings.get('reuse_connections',True) else 250
+        batch_size = 4 if self.settings and not self.settings.get('reuse_connections',True) else 250
         for offset in range(0,len(links),batch_size):
             p={**self.params(run_id,source,owner),**month_window()}
             values=[]
@@ -136,6 +136,11 @@ class CatalogRepository:
             AND """+self.allowed(),self.params(run_id,source,owner))
 
     def record_products(self,run_id,source,page_id,results,owner):
+        if source=='sensoren' and self.settings and not self.settings.get('reuse_connections',True):
+            from .sensoren_payload import save_catalog
+            pages=self.batch('SELECT url FROM catalog_pages WHERE id=%(page)s',{'page':page_id})
+            if not pages:return False
+            return save_catalog(self.settings,run_id,page_id,results,owner,pages[0]['url'])
         p=self.params(run_id,source,owner);p['page']=page_id
         # A partly completed multi-execution page may need fetching again, but
         # executions already obtained this month must not create history points.
@@ -189,8 +194,8 @@ class CatalogRepository:
             for index,url in enumerate(sorted(urls)):
                 statement,values=page_memory_statement(source,url,stamp,f'm{index}_',self.allowed())
                 sql.append(statement);p.update(values)
-        sql.append('UPDATE catalog_pages SET state=%(page_state)s,detail=%(page_detail)s,http_status=200,checked_at=%(now)s WHERE id=%(page)s AND '+self.allowed())
-        self.batch(sql,p)
+        sql.append('UPDATE catalog_pages SET state=%(page_state)s,detail=%(page_detail)s,http_status=200,checked_at=%(now)s WHERE id=%(page)s AND '+self.allowed()+' RETURNING id')
+        return bool(self.batch(sql,p))
 
     def progress(self,run_id):
         from .scope import VISIBLE
@@ -199,8 +204,10 @@ class CatalogRepository:
             COALESCE(p.cards,0) cards, COALESCE(p.cards_visited,0) cards_visited,
             COALESCE(p.monthly_skipped,0) monthly_skipped,
             COALESCE(p.failures,0) failures, COALESCE(j.positions,0) positions,
-            COALESCE(p.navigation_left,0) navigation_left, p.last_checked
-            FROM catalog_sources s LEFT JOIN (
+            COALESCE(p.navigation_left,0) navigation_left, p.last_checked,
+            h.phase work_phase,h.phase_started,h.activity_at,h.completed_at,h.recoveries,h.url work_url
+            FROM catalog_sources s LEFT JOIN collector_health h ON h.source=s.source AND h.run_id=s.run_id
+            LEFT JOIN (
                 SELECT source,count(*) pages,
                     sum(CASE WHEN state IN ('done','skipped','failed','cached') THEN 1 ELSE 0 END) visited,
                     sum(CASE WHEN kind='product' THEN 1 ELSE 0 END) cards,

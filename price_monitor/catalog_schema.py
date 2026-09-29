@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS product_scope (
 
 from .monthly import SCHEMA as MONTHLY_SCHEMA
 SCHEMA += MONTHLY_SCHEMA
+from .runtime import SCHEMA as RUNTIME_SCHEMA
+SCHEMA += RUNTIME_SCHEMA
 
 
 def document(details_json):

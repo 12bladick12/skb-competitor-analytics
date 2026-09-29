@@ -121,8 +121,10 @@ def discover(source, kind, body, base, brands):
     return [(kind,url) for url,kind in found.items() if url!=base]
 
 
-def process_catalog(repository, run_id, source, owner, shutdown, client_factory=SourceClient):
+def process_catalog(repository, run_id, source, owner, shutdown, client_factory=SourceClient, outbox=None):
     from .cloud import CancellationProbe
+    from .runtime import context, phase, completed
+    context(run_id)
     info=repository.source(run_id,source)
     if not info or info['state'] not in ('pending','running'):return
     brands=json.loads(info['brands_json'])
@@ -145,24 +147,35 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                 repository.finish_source(run_id,source,owner)
                 return
             claimed+=1
+            context(run_id,page['url'])
             try:
-                url,code,body=client.fetch_document(page['url'],html_only=page['kind']=='product')
+                saved=outbox.load(page) if outbox and page['kind']=='product' else None
+                if saved:
+                    with phase('save'):accepted=repository.record_products(run_id,source,page['id'],saved,owner)
+                    if accepted:outbox.acknowledge(page)
+                    completed()
+                    continue
+                with phase('download'):
+                    url,code,body=client.fetch_document(page['url'],html_only=page['kind']=='product')
                 if code!=200:
                     repository.finish_page(page['id'],owner,'failed',f'HTTP {code}',code)
                     continue
                 if page['kind']=='product':
-                    results,detail=parse_catalog_product(source,body,url,brands)
+                    with phase('parse'):results,detail=parse_catalog_product(source,body,url,brands)
                     if detail=='outside_scope':
                         repository.finish_page(page['id'],owner,'skipped','Другой производитель',code)
                     elif results:
-                        repository.record_products(run_id,source,page['id'],results,owner)
+                        if outbox:outbox.save(page,results)
+                        with phase('save'):accepted=repository.record_products(run_id,source,page['id'],results,owner)
+                        if outbox and accepted:outbox.acknowledge(page)
                     else:
                         repository.finish_page(page['id'],owner,'failed',detail,code)
                 else:
-                    links=discover(source,page['kind'],body,url,brands)
+                    with phase('discover'):links=discover(source,page['kind'],body,url,brands)
                     repository.add_pages(run_id,source,links,owner)
                     repository.finish_page(page['id'],owner,'done','',code)
                 failures=0
+                completed()
             except FetchError as exc:
                 if shutdown.is_set() or exc.status=='cancelled':return
                 repository.finish_page(page['id'],owner,'failed',str(exc),exc.http_status)

@@ -24,7 +24,7 @@ st.html(CSS)
 
 
 @st.cache_resource
-def services(cloud_mode,version='monthly-memory-v1'):
+def services(cloud_mode,version='collector-io-deadline-v2'):
     from price_monitor.scope import refresh_scope
     if not cloud_mode:
         store=Store();refresh_scope(store.catalog);return store,None
@@ -100,12 +100,18 @@ def source_connection():
 
 
 def catalog_progress(run_id):
+    from price_monitor.runtime import PHASES
     progress=catalog.progress(run_id)
     if not progress:return False
     view=[]
     for item in progress:
+        phase=item.get('work_phase')
+        phase_age=max(0,time.time()-(item.get('phase_started') or time.time()))
+        if item['state']=='running' and phase and phase!='idle' and phase_age>90:
+            st.warning(f"{SOURCES[item['source']].label}: этап «{PHASES.get(phase,phase)}» не завершён {int(phase_age)} с. Связь со сборщиком не подтверждает продвижение очереди.")
         view.append({'Источник':SOURCES[item['source']].label,'Производители':', '.join(json.loads(item['brands_json'])),
             'Состояние':CATALOG_STATES.get(item['state'],item['state']),'Страниц найдено':item['pages'],
+            'Текущий этап':PHASES.get(phase,'—'),'Восстановлений связи':item.get('recoveries') or 0,
             'Обработано страниц':item['visited'],'Карточек найдено':item['cards'],
             'Карточек обработано':item['cards_visited'],'Позиций сохранено':item['positions'],
             'Уже собрано в месяце':item['monthly_skipped'],
@@ -351,7 +357,7 @@ def sources_page():
     st.dataframe([{'Источник':s.label,'Сайт':'https://'+s.host,'Производители':', '.join(s.brands),'Данные':'Карты сайта, каталог, карточки и характеристики'} for s in SOURCES.values()],hide_index=True,width='stretch')
     source_connection()
     st.info('При проверке браузера/CAPTCHA, HTTP 403/429 или запрете robots.txt источник останавливается. Подключение сборщика не означает, что сайт разрешил доступ. Причина отказа сохраняется в журнале.')
-    for name,label in [('MONTHLY_COLLECTION.md','Память сбора и обновление по месяцам'),('AUDIT_2026_09_29.md','Sensoren, ТЕКО и характеристики: аудит 29.09.2026'),('CATALOGS.md','Полные каталоги и характеристики'),('SENSOREN.md','Подключение Sensoren'),('AUDIT.md','Первичный аудит источников')]:
+    for name,label in [('SENSOREN_RECOVERY_2026_09_29.md','Sensoren: устранение зависания и проверка восстановления'),('MONTHLY_COLLECTION.md','Память сбора и обновление по месяцам'),('AUDIT_2026_09_29.md','Sensoren, ТЕКО и характеристики: аудит 29.09.2026'),('CATALOGS.md','Полные каталоги и характеристики'),('SENSOREN.md','Подключение Sensoren'),('AUDIT.md','Первичный аудит источников')]:
         path=ROOT/'docs'/'prices'/name
         if path.exists():
             with st.expander(label):st.markdown(path.read_text(encoding='utf-8'))

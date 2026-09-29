@@ -99,7 +99,9 @@ class MonthlyMemory:
                 GROUP BY q.source,q.product_url
                 ON CONFLICT(source,url) DO UPDATE SET checked_at=excluded.checked_at,revision=excluded.revision
                 WHERE excluded.checked_at>monthly_page_memory.checked_at''')
-        self.repo.batch(statements,params)
+        if self.repo.settings and not self.repo.settings.get('reuse_connections',True):
+            for statement in statements:self.repo.batch(statement,params)
+        else:self.repo.batch(statements,params)
 
     def recent_rule_keys(self, rules):
         found=set()

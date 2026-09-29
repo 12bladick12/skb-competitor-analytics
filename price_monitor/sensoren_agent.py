@@ -67,9 +67,21 @@ class AgentStore:
             ) SELECT source FROM acquired
             """, {"owner": owner}))
 
-    def heartbeat(self, owner):
-        return bool(self.batch(f"UPDATE price_monitor.external_sources SET heartbeat={NOW} "
-                               f"WHERE {LIVE} RETURNING source", {"owner": owner}))
+    def heartbeat(self, owner, health=None):
+        statements=[f"UPDATE price_monitor.external_sources SET heartbeat={NOW} WHERE {LIVE} RETURNING source"]
+        values={'owner':owner}
+        if health is not None:
+            values.update(health)
+            statements.append(f'''INSERT INTO collector_health(source,owner,run_id,phase,url,
+                phase_started,activity_at,completed_at,recoveries,detail)
+                SELECT 'sensoren',%(owner)s,%(run_id)s,%(phase)s,%(url)s,%(phase_started)s,
+                    %(activity_at)s,%(completed_at)s,%(recoveries)s,%(detail)s
+                WHERE EXISTS(SELECT 1 FROM external_sources WHERE {LIVE})
+                ON CONFLICT(source) DO UPDATE SET owner=excluded.owner,run_id=excluded.run_id,
+                    phase=excluded.phase,url=excluded.url,phase_started=excluded.phase_started,
+                    activity_at=excluded.activity_at,completed_at=excluded.completed_at,
+                    recoveries=excluded.recoveries,detail=excluded.detail''')
+        return bool(self.batch(statements,values))
 
     def release(self, owner):
         self.batch("UPDATE price_monitor.external_sources SET owner='',heartbeat=0 "
@@ -108,6 +120,12 @@ class AgentStore:
         return MonthlyMemory(CatalogRepository(settings=self.settings)).reuse_job(job_id,owner,external=True)
 
     def record(self, job_id, result, owner, stop_reason=""):
+        if not self.settings.get('reuse_connections',True):
+            from .sensoren_payload import save_payload,product_payload
+            jobs=self.batch('SELECT run_id FROM jobs WHERE id=%(job)s',{'job':job_id})
+            if not jobs:return False
+            return save_payload(self.settings,{'mode':'job','run':jobs[0]['run_id'],'job':job_id,
+                'owner':owner,'product':product_payload(None,result),'stop_reason':stop_reason})
         from .catalog_schema import document
         fingerprint,canonical,details=document(result.details_json)
         values = {**asdict(result), "job_id": job_id, "owner": owner, "stop_reason": stop_reason}
@@ -163,15 +181,19 @@ class SensorenAgent:
             client_factory = SensorenBrowserClient
         self.client_factory = client_factory
         self.store = store
-        self.owner = 'sensoren-monthly1-' + str(uuid.uuid4())
+        self.owner = 'sensoren-monthly1-io2-' + str(uuid.uuid4())
+        from .runtime import RuntimeProgress
+        self.progress = RuntimeProgress()
         self.stopping = threading.Event()
         self.output = Path(output or ROOT/'data'/'sensoren_agent')
         self.output.mkdir(parents=True, exist_ok=True)
+        from .catalog_outbox import CatalogOutbox
+        self.catalog_outbox=CatalogOutbox(self.output/'catalog')
 
     def heartbeat_loop(self, finished):
         while not finished.wait(15):
             try:
-                if not self.store.heartbeat(self.owner):
+                if not self.store.heartbeat(self.owner,self.progress.snapshot()):
                     self.stopping.set()
                     return
             except Exception as exc:
@@ -180,6 +202,8 @@ class SensorenAgent:
                 return
 
     def run(self):
+        from .runtime import activate, context, phase, completed
+        activate(self.progress)
         if not self.store.acquire(self.owner):
             raise RuntimeError("Маршрут Sensoren выключен или уже подключён другой сборщик")
         finished = threading.Event()
@@ -202,7 +226,7 @@ class SensorenAgent:
                             client.close()
                             client, current_run = None, None
                         process_catalog(repository,catalogs[0]['run_id'],'sensoren',self.owner,self.stopping,
-                                        client_factory=self.client_factory)
+                                        client_factory=self.client_factory,outbox=self.catalog_outbox)
                         continue
                     self.stopping.wait(5)
                     continue
@@ -214,6 +238,7 @@ class SensorenAgent:
                         lambda: self.store.cancelled(current_run, self.owner), self.stopping, ttl=3)
                     client = self.client_factory('sensoren', cancelled=cancelled)
                 rule = Rule(**{k:job[k] for k in ('source','manufacturer','article','product_url','url_template')})
+                context(current_run,rule.url)
                 if self.store.reuse_monthly(job['job_id'],self.owner) is True:
                     print(f"Запуск №{current_run}: {rule.article} — уже собрано в этом месяце",flush=True)
                     continue
@@ -231,8 +256,8 @@ class SensorenAgent:
                     result = Observation('source_stopped', rule.url, detail=stop_reason)
                 else:
                     try:
-                        url, status, html = client.fetch(rule.url)
-                        result = ADAPTERS['sensoren'].parse(rule, html, url, status)
+                        with phase('download'):url, status, html = client.fetch(rule.url)
+                        with phase('parse'):result = ADAPTERS['sensoren'].parse(rule, html, url, status)
                         failures = 0
                     except FetchError as exc:
                         result = Observation(exc.status, rule.url, detail=str(exc), http_status=exc.http_status)
@@ -248,6 +273,7 @@ class SensorenAgent:
                 temporary.write_text(json.dumps({'job':job,'observation':asdict(result),'stop_reason':stop_reason},ensure_ascii=False,indent=2),encoding='utf-8')
                 temporary.replace(path)
                 saved = self.store.record(job['job_id'], result, self.owner, stop_reason)
+                if saved:completed()
                 print(f"Запуск №{current_run}: {rule.article} — "
                       + (STATUS_LABELS[result.status] if saved else 'результат не записан: отмена или потеря соединения')
                       + (f"; {result.price} {result.currency}" if saved and result.price else ''), flush=True)
@@ -306,6 +332,7 @@ def main():
             try:
                 agent.run()
             except Exception as exc:
+                agent.progress.recover(exc)
                 message = str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__
                 print('Ожидание подключения: '+message, flush=True)
             if not stopping.is_set():

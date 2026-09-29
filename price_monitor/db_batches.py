@@ -1,6 +1,7 @@
 """Reusable PostgreSQL connections for atomic catalog and external-agent work."""
 import atexit
 import threading
+import time
 
 _pools = {}
 _guard = threading.Lock()
@@ -23,7 +24,9 @@ def pool_for(settings):
             import psycopg
             from psycopg.rows import dict_row
             from psycopg_pool import ConnectionPool
+            from .db_connection import DeadlineConnection
             pool = ConnectionPool(
+                connection_class=DeadlineConnection,
                 kwargs={**settings, 'connect_timeout':10, 'autocommit':True, 'prepare_threshold':None,
                         'cursor_factory':psycopg.ClientCursor, 'row_factory':dict_row},
                 min_size=1, max_size=4, timeout=15, max_idle=60, max_lifetime=600,
@@ -48,12 +51,19 @@ def connection_for(settings):
     import psycopg
     from psycopg.rows import dict_row
     from .db_settings import connection_settings
-    return psycopg.connect(**connection_settings(settings), connect_timeout=10,
+    from .db_connection import DeadlineConnection
+    return DeadlineConnection.connect(**connection_settings(settings), connect_timeout=10,
         autocommit=True, prepare_threshold=None, cursor_factory=psycopg.ClientCursor,
         row_factory=dict_row)
 
 
 def batch(settings, statements, params=None):
+    from .runtime import phase
+    with phase('database'):
+        return _batch(settings,statements,params)
+
+
+def _batch(settings, statements, params=None):
     if isinstance(statements, str):
         statements = [statements]
     read_only = read_statements(statements)
@@ -66,12 +76,17 @@ def batch(settings, statements, params=None):
     query += '; '.join(statements) + '; COMMIT;'
     result = []
     with connection_for(settings) as connection:
-        cursor = connection.execute(query, params or {})
-        while True:
-            if cursor.description:
-                rows = cursor.fetchall()
-                if cursor.description[0].name != 'pg_advisory_xact_lock':
-                    result = rows
-            if not cursor.nextset():
-                break
+        connection.io_deadline = time.monotonic()+45
+        try:
+            cursor = connection.execute(query, params or {})
+            while True:
+                if cursor.description:
+                    rows = cursor.fetchall()
+                    if cursor.description[0].name != 'pg_advisory_xact_lock':
+                        result = rows
+                if not cursor.nextset():
+                    break
+        finally:
+            connection.io_deadline = None
     return result
+
