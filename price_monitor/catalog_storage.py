@@ -74,10 +74,13 @@ class CatalogRepository:
 
     def add_pages(self,run_id,source,links,owner):
         from .catalog import page_id
-        for offset in range(0,len(links),250):
+        # The external agent's short-connection mode also keeps upload batches
+        # small on networks where long transfers are interrupted.
+        batch_size = 25 if self.settings and not self.settings.get('reuse_connections',True) else 250
+        for offset in range(0,len(links),batch_size):
             p=self.params(run_id,source,owner)
             values=[]
-            for index,(kind,url) in enumerate(links[offset:offset+250]):
+            for index,(kind,url) in enumerate(links[offset:offset+batch_size]):
                 p.update({f'id{index}':page_id(run_id,source,url),f'url{index}':url,f'kind{index}':kind})
                 values.append(f'(%(id{index})s,%(url{index})s,%(kind{index})s)')
             if values:self.batch(f'''WITH input(id,url,kind) AS (VALUES {','.join(values)})
