@@ -38,6 +38,21 @@ def read_statements(statements):
     return all(sql.lstrip().upper().startswith('SELECT ') for sql in statements)
 
 
+def connection_for(settings):
+    settings = dict(settings)
+    reuse = settings.pop('reuse_connections', True)
+    if reuse:
+        return pool_for(settings).connection()
+    # Optional external-agent mode for networks that break persistent sessions.
+    # One atomic SQL batch uses one connection; closing rolls back any failure.
+    import psycopg
+    from psycopg.rows import dict_row
+    from .db_settings import connection_settings
+    return psycopg.connect(**connection_settings(settings), connect_timeout=10,
+        autocommit=True, prepare_threshold=None, cursor_factory=psycopg.ClientCursor,
+        row_factory=dict_row)
+
+
 def batch(settings, statements, params=None):
     if isinstance(statements, str):
         statements = [statements]
@@ -50,7 +65,7 @@ def batch(settings, statements, params=None):
         query += 'SELECT pg_advisory_xact_lock(6743928101); '
     query += '; '.join(statements) + '; COMMIT;'
     result = []
-    with pool_for(settings).connection() as connection:
+    with connection_for(settings) as connection:
         cursor = connection.execute(query, params or {})
         while True:
             if cursor.description:

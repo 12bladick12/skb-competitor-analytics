@@ -19,11 +19,6 @@ from .models import Observation, Rule, STATUS_LABELS
 from .sensoren_local import ROOT, settings_from_file
 from .transport import FetchError, SourceClient
 
-DDL = """CREATE TABLE IF NOT EXISTS price_monitor.external_sources (
- source TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0,
- owner TEXT NOT NULL DEFAULT '', heartbeat DOUBLE PRECISION NOT NULL DEFAULT 0,
- protocol INTEGER NOT NULL DEFAULT 1
-); ALTER TABLE price_monitor.external_sources ADD COLUMN IF NOT EXISTS protocol INTEGER NOT NULL DEFAULT 1;"""
 NOW = "EXTRACT(EPOCH FROM clock_timestamp())"
 LIVE = f"source='sensoren' AND enabled=1 AND owner=%(owner)s AND heartbeat>{NOW}-120"
 
@@ -37,7 +32,9 @@ class AgentStore:
         return batch(self.settings,sql,params)
 
     def configure(self, enabled):
-        rows = self.batch(DDL + """
+        # Streamlit owns schema initialization. Reconnecting an agent must not
+        # run DDL or take schema locks while other sources are collecting.
+        rows = self.batch("""
             INSERT INTO price_monitor.external_sources AS e(source,enabled)
             SELECT 'sensoren',%(enabled)s
             WHERE (NOT EXISTS(SELECT 1 FROM price_monitor.runs WHERE state IN ('queued','running'))
@@ -250,12 +247,16 @@ class SensorenAgent:
 def main():
     parser = argparse.ArgumentParser(description='Сборщик Sensoren для кнопки запуска в Streamlit')
     parser.add_argument('--secrets', type=Path, default=ROOT/'.streamlit'/'secrets.toml')
+    parser.add_argument('--fresh-connections', action='store_true',
+        help='Короткие подключения к базе, если сеть обрывает постоянные соединения')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--enable', action='store_true', help='Подключить внешний сборщик и ждать заданий')
     mode.add_argument('--disable', action='store_true', help='Вернуть обработку Sensoren облачному сборщику')
     args = parser.parse_args()
     try:
         store = AgentStore(settings_from_file(args.secrets))
+        if args.fresh_connections:
+            store.settings['reuse_connections'] = False
         if args.disable:
             store.configure(False)
             print('Sensoren возвращён облачному сборщику. Доступ из облака всё ещё зависит от сайта.')
