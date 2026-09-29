@@ -38,9 +38,11 @@ def services(cloud_mode,version='collector-io-deadline-v2'):
 try:db,cloud_worker=services(CLOUD_MODE)
 except Exception as exc:
     logging.getLogger('price_monitor').error('Storage initialization failed (%s)',type(exc).__name__)
-    st.error('Не удалось подключиться к базе. Владельцу нужно проверить настройки подключения в Streamlit.');st.stop()
-catalog=db.catalog
-library=Library(catalog)
+    if st.query_params.get('price_section')=='sources':db=None;cloud_worker=None
+    else:
+        st.error('Не удалось подключиться к базе. Владельцу нужно проверить настройки подключения в Streamlit.');st.stop()
+catalog=db.catalog if db else None
+library=Library(catalog) if catalog else None
 PAGES={'collect':'Сбор цен','products':'База товаров','compare':'Сравнение цен','runs':'Запуски'}
 CATALOG_STATES={'pending':'В очереди','running':'Сбор идёт','completed':'Завершён','partial':'Завершён с пропусками','blocked':'Источник остановлен: см. причину','cancelled':'Остановлен'}
 
@@ -66,7 +68,7 @@ st.sidebar.divider()
 st.sidebar.markdown('[Источники и правила сбора](?workspace=prices&price_section=sources)')
 st.sidebar.caption('Общая база и список сравнения. Изменения видны всем посетителям.')
 st.sidebar.caption('Время — UTC. Валюты и условия цены сохраняются как у источника.')
-st.sidebar.caption('Версия 2 · Каталоги и сравнение')
+st.sidebar.caption('Подбор индуктивных датчиков · версия 1')
 
 
 def page_number(total,size,key):
@@ -90,6 +92,8 @@ def downloads(rows,key,name='prices'):
 
 
 def source_connection():
+    if db is None:
+        st.caption('Состояние сборщиков недоступно без подключения к базе. Правила и алгоритмы доступны ниже.');return
     route=next((r for r in db.external_sources() if r['source']=='sensoren'),None)
     if route and route['enabled']:
         if route['heartbeat'] and time.time()-route['heartbeat']<50:
@@ -237,7 +241,7 @@ def products_page():
 def import_comparisons():
     with st.expander('Загрузить выборку и наши цены из Excel / CSV'):
         st.download_button('Скачать шаблон Excel с инструкцией',template_bytes(),file_name='comparison_template.xlsx')
-        st.caption('Обязательны источник, производитель и точный артикул конкурента. Наша цена необязательна. Связь с нашим артикулом задаётся вами явно.')
+        st.caption('Импорт находит точный артикул конкурента в базе. Подбор нашей модели выполняется по характеристикам; явная связь и цена из файла сохраняются как заданные вами.')
         uploaded=st.file_uploader('Файл сравнения',type=['xlsx','csv'],max_upload_size=10,key='comparison_import')
         if uploaded:
             try:
@@ -251,53 +255,8 @@ def import_comparisons():
 
 
 def compare_page():
-    heading('Сравнение цен','По одной строке на номенклатуру: динамика конкурента и сопоставление с нашей текущей ценой.')
-    import_comparisons()
-    a,b=st.columns([2,1])
-    query=a.text_input('Найти в выбранных',placeholder='Артикул или производитель')
-    period=b.date_input('Период истории (UTC)',value=(date.today()-timedelta(days=90),date.today()),format='DD.MM.YYYY',key='compare_dates')
-    if len(period)!=2:st.info('Выберите начало и конец периода');return
-    start,end=period;end=end+timedelta(days=1)
-    total,_=library.products(query,selected=True,limit=1)
-    if not total:st.info('Добавьте товары галочками в «Базе товаров» или загрузите Excel.');return
-    offset=page_number(total,10,'comparison_page_'+str(hash(query)))
-    _,items=library.products(query,selected=True,offset=offset,limit=10)
-    history=library.history([x['rule_id'] for x in items],start.isoformat(),end.isoformat())
-    st.caption('Бордовая линия — цена конкурента. Зелёный пунктир — наша текущая цена. Разрывы означают проверки без цены. Проценты не рассчитываются между разными валютами; НДС и упаковка не пересчитываются.')
-    for item in items:
-        data=[x for x in history if x['rule_id']==item['rule_id']]
-        currencies=list(dict.fromkeys(x['currency'] for x in data if x['status']=='priced'))
-        with st.container(border=True,key=f'compare_card_{item["rule_id"]}'):
-            info,chart,competitor,ours=st.columns([2,3.6,1.45,1.45],vertical_alignment='center')
-            with info:
-                st.markdown(f'<div class="row-title">{escape(item["article"])}</div><div class="row-meta">{escape(item["manufacturer"])} · {escape(SOURCES[item["source"]].label)}</div>',unsafe_allow_html=True)
-                if item['our_article']:st.caption('Наш артикул: '+item['our_article'])
-                st.markdown(f'[История и характеристики](?workspace=prices&price_section=history&model={item["rule_id"]})')
-                currency=st.selectbox('Валюта',currencies,key=f'currency_{item["rule_id"]}') if len(currencies)>1 else (currencies[0] if currencies else item['last_currency'] or 'RUB')
-            points=series(data,currency);latest,change,reference,gap=metrics(points,item['our_price'],item['our_currency'],currency)
-            with chart:price_chart(points,reference)
-            with competitor:
-                movement=(('+' if latest-points[0]['price']>=0 else '')+money(latest-points[0]['price'],currency)+f' · {change:+.1f}%') if change is not None else 'Нет двух точек для динамики'
-                metric_html('Конкурент · '+currency,money(latest,currency),movement,change)
-                if points:st.caption(points[-1]['date'].strftime('%d.%m.%Y %H:%M UTC'))
-                if data and data[-1]['status']!='priced':st.caption('Последняя проверка: '+STATUS_LABELS.get(data[-1]['status'],data[-1]['status']))
-            with ours:
-                difference=(('+' if latest-reference>=0 else '')+money(latest-reference,currency)+f' · {gap:+.1f}% к нашей') if gap is not None else ('Разные валюты' if item['our_price'] and item['our_currency']!=currency else 'Цена для сравнения не задана' if not item['our_price'] else 'Нет цены конкурента')
-                metric_html('Наша текущая цена',money(item['our_price'],item['our_currency']),difference,gap)
-    with st.expander('Изменить наши цены и примечания для этой страницы'):
-        edits=[{'rule_id':x['rule_id'],'article':x['article'],'our_article':x['our_article'] or '',
-                'our_price':x['our_price'] or '', 'our_currency':x['our_currency'] or 'RUB','note':x['note'] or ''} for x in items]
-        changed=st.data_editor(edits,hide_index=True,width='stretch',disabled=['rule_id','article'],key=f'edit_ours_{offset}_{query}',column_config={
-            'rule_id':None,'article':'Артикул конкурента','our_article':'Наш артикул','our_price':'Наша цена','our_currency':st.column_config.SelectboxColumn('Валюта',options=['RUB','USD','EUR','CNY'],required=True),'note':'Примечание'})
-        if st.button('Сохранить изменения'):
-            try:library.save_comparisons(changed);st.toast('Наши цены сохранены');st.rerun()
-            except ValueError as exc:st.error(str(exc))
-        remove=st.selectbox('Убрать позицию из сравнения',[None]+[x['rule_id'] for x in items],format_func=lambda v:'Выберите позицию' if v is None else next(x['article'] for x in items if x['rule_id']==v))
-        if st.button('Убрать из сравнения',disabled=remove is None):library.remove(remove);st.rerun()
-    with st.expander('Выгрузить сравнение'):
-        st.caption('Текущая страница и наблюдения за выбранный период. Поля our_price — текущий ориентир; история нашей цены пока не ведётся.')
-        downloads(items,'comparison_current','comparison_current')
-        downloads(history,'comparison_history','competitor_history')
+    from price_monitor.matching_ui import render_comparison
+    render_comparison(library,import_comparisons,downloads)
 
 
 def runs_page():
@@ -353,14 +312,20 @@ def history_page():
 
 
 def sources_page():
-    heading('Источники','Сбор публичных страниц с соблюдением правил сайтов.')
-    st.dataframe([{'Источник':s.label,'Сайт':'https://'+s.host,'Производители':', '.join(s.brands),'Данные':'Карты сайта, каталог, карточки и характеристики'} for s in SOURCES.values()],hide_index=True,width='stretch')
-    source_connection()
-    st.info('При проверке браузера/CAPTCHA, HTTP 403/429 или запрете robots.txt источник останавливается. Подключение сборщика не означает, что сайт разрешил доступ. Причина отказа сохраняется в журнале.')
-    for name,label in [('SENSOREN_RECOVERY_2026_09_29.md','Sensoren: устранение зависания и проверка восстановления'),('MONTHLY_COLLECTION.md','Память сбора и обновление по месяцам'),('AUDIT_2026_09_29.md','Sensoren, ТЕКО и характеристики: аудит 29.09.2026'),('CATALOGS.md','Полные каталоги и характеристики'),('SENSOREN.md','Подключение Sensoren'),('AUDIT.md','Первичный аудит источников')]:
-        path=ROOT/'docs'/'prices'/name
-        if path.exists():
-            with st.expander(label):st.markdown(path.read_text(encoding='utf-8'))
+    heading('Источники и правила сбора','Источники данных, правила сбора и алгоритмы сопоставления номенклатуры.')
+    default='Алгоритмы подбора' if st.query_params.get('source_tab')=='algorithms' else 'Источники и правила сбора'
+    sources,algorithms=st.tabs(['Источники и правила сбора','Алгоритмы подбора'],default=default)
+    with sources:
+        st.dataframe([{'Источник':s.label,'Сайт':'https://'+s.host,'Производители':', '.join(s.brands),'Данные':'Карты сайта, каталог, карточки и характеристики'} for s in SOURCES.values()],hide_index=True,width='stretch')
+        source_connection()
+        st.info('При проверке браузера/CAPTCHA, HTTP 403/429 или запрете robots.txt источник останавливается. Причина отказа сохраняется в журнале.')
+        for name,label in [('SENSOREN_RECOVERY_2026_09_29.md','Sensoren: устранение зависания и проверка восстановления'),('MONTHLY_COLLECTION.md','Память сбора и обновление по месяцам'),('AUDIT_2026_09_29.md','Sensoren, ТЕКО и характеристики: аудит 29.09.2026'),('CATALOGS.md','Полные каталоги и характеристики'),('SENSOREN.md','Подключение Sensoren'),('AUDIT.md','Первичный аудит источников')]:
+            path=ROOT/'docs'/'prices'/name
+            if path.exists():
+                with st.expander(label):st.markdown(path.read_text(encoding='utf-8'))
+    with algorithms:
+        from price_monitor.algorithms import render_algorithms
+        render_algorithms()
 
 
 try:

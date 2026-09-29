@@ -15,6 +15,11 @@ CSS='''<style>
 .price-value {font-size:1.17rem;font-weight:700;margin:4px 0}
 .price-detail {font-size:.74rem;color:#637387}
 .positive {color:#AE3838}.negative {color:#18756A}
+.match-badge{display:inline-block;font-size:.7rem;font-weight:650;padding:4px 8px;border-radius:6px;margin:4px 5px 0 0}
+.match-direct{background:#E9F5F1;color:#176557}.match-close{background:#FFF5E4;color:#8B5A13}
+.match-review,.match-unsupported{background:#F0F3F7;color:#526175}.match-incompatible{background:#FBECEF;color:#922C3D}
+.match-proposed{font-size:.7rem;color:#788596}.match-arrow{font-size:.68rem;color:#7A1F2B;margin:5px 0 2px}
+.match-our-model{font-size:.85rem;color:#176557}
 </style>'''
 
 

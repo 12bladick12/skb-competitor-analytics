@@ -215,7 +215,7 @@ def main():
     if prices.open:
         with prices:
             render_guard()
-            if globals().get("PRICE_CLOUD_MODE", True) and not settings().get("database"):
+            if globals().get("PRICE_CLOUD_MODE", True) and not settings().get("database") and st.query_params.get("price_section") != "sources":
                 st.info("Вкладка цен подготовлена. Для подключения сохранённой истории владелец приложения должен добавить раздел [database] из настроек прежнего приложения цен в Secrets этого приложения.")
                 st.caption("Существующие разделы настроек Google, Neon и Drive нужно сохранить. После подключения здесь появятся сбор, база товаров и сравнение цен.")
                 return
