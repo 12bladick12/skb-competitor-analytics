@@ -14,8 +14,8 @@ with sync_playwright() as p:
     page.goto('http://127.0.0.1:18512/?workspace=prices&price_section=compare',wait_until='domcontentloaded')
     page.get_by_text('Группа сопоставления',exact=True).wait_for(timeout=60000)
     page.get_by_text('TEST-DIRECT',exact=True).wait_for(timeout=45000)
-    page.get_by_text('По указанному исполнению',exact=True).wait_for(timeout=30000)
-    page.locator('[data-testid="stVegaLiteChart"] canvas').first.wait_for(timeout=30000)
+    page.locator('[data-testid="stSelectbox"]').filter(has_text='Назначение подбора').get_by_role('combobox').wait_for(timeout=30000)
+    page.locator('[data-testid="stVegaLiteChart"]').locator('canvas, svg').first.wait_for(timeout=30000)
     page.screenshot(path=str(OUT/'comparison.png'),full_page=True)
     assert page.locator('[data-testid="stException"]').count()==0
     page.get_by_text('Характеристики и варианты подбора',exact=True).first.click()
