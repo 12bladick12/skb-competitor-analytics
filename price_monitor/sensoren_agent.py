@@ -102,6 +102,11 @@ class AgentStore:
             {"owner": owner, "run_id": run_id})
         return not rows or bool(rows[0]['cancel_requested']) or not rows[0]['owns']
 
+    def reuse_monthly(self,job_id,owner):
+        from .monthly import MonthlyMemory
+        from .catalog_storage import CatalogRepository
+        return MonthlyMemory(CatalogRepository(settings=self.settings)).reuse_job(job_id,owner,external=True)
+
     def record(self, job_id, result, owner, stop_reason=""):
         from .catalog_schema import document
         fingerprint,canonical,details=document(result.details_json)
@@ -158,7 +163,7 @@ class SensorenAgent:
             client_factory = SensorenBrowserClient
         self.client_factory = client_factory
         self.store = store
-        self.owner = 'sensoren-browser1-' + str(uuid.uuid4())
+        self.owner = 'sensoren-monthly1-' + str(uuid.uuid4())
         self.stopping = threading.Event()
         self.output = Path(output or ROOT/'data'/'sensoren_agent')
         self.output.mkdir(parents=True, exist_ok=True)
@@ -209,6 +214,9 @@ class SensorenAgent:
                         lambda: self.store.cancelled(current_run, self.owner), self.stopping, ttl=3)
                     client = self.client_factory('sensoren', cancelled=cancelled)
                 rule = Rule(**{k:job[k] for k in ('source','manufacturer','article','product_url','url_template')})
+                if self.store.reuse_monthly(job['job_id'],self.owner) is True:
+                    print(f"Запуск №{current_run}: {rule.article} — уже собрано в этом месяце",flush=True)
+                    continue
                 stop_reason = job['stop_reason']
                 path = self.output/f"job_{job['job_id']}.json"
                 restored = None

@@ -14,6 +14,7 @@ import time
 
 from .catalog_schema import document
 from .models import utcnow
+from .monthly import MonthlyMemory, month_window, page_key, page_memory_statement
 
 
 class CatalogRepository:
@@ -78,15 +79,31 @@ class CatalogRepository:
         # small on networks where long transfers are interrupted.
         batch_size = 25 if self.settings and not self.settings.get('reuse_connections',True) else 250
         for offset in range(0,len(links),batch_size):
-            p=self.params(run_id,source,owner)
+            p={**self.params(run_id,source,owner),**month_window()}
             values=[]
             for index,(kind,url) in enumerate(links[offset:offset+batch_size]):
-                p.update({f'id{index}':page_id(run_id,source,url),f'url{index}':url,f'kind{index}':kind})
-                values.append(f'(%(id{index})s,%(url{index})s,%(kind{index})s)')
-            if values:self.batch(f'''WITH input(id,url,kind) AS (VALUES {','.join(values)})
-                INSERT INTO catalog_pages(id,run_id,source,url,kind)
-                SELECT id,%(run)s,%(source)s,url,kind FROM input
+                p.update({f'id{index}':page_id(run_id,source,url),f'url{index}':url,f'kind{index}':kind,
+                          f'memory{index}':page_key(source,url)})
+                values.append(f'(%(id{index})s,%(url{index})s,%(kind{index})s,%(memory{index})s)')
+            if values:self.batch(f'''WITH input(id,url,kind,memory_url) AS (VALUES {','.join(values)})
+                INSERT INTO catalog_pages(id,run_id,source,url,kind,state,detail,checked_at)
+                SELECT i.id,%(run)s,%(source)s,i.url,i.kind,
+                    CASE WHEN m.url IS NOT NULL THEN 'cached' ELSE 'pending' END,
+                    CASE WHEN m.url IS NOT NULL THEN 'Уже собрано в месяце '||%(month)s ELSE '' END,m.checked_at
+                FROM input i LEFT JOIN monthly_page_memory m ON i.kind='product' AND m.source=%(source)s
+                    AND m.url=i.memory_url AND m.revision=%(memory_revision)s
+                    AND m.checked_at>=%(month_start)s AND m.checked_at<%(month_end)s
                 WHERE {self.allowed()} ON CONFLICT(run_id,source,url) DO NOTHING''',p)
+
+    def skip_remembered_pages(self,run_id,source,owner):
+        p={**self.params(run_id,source,owner),**month_window()}
+        match="""m.source=catalog_pages.source AND m.url=catalog_pages.url AND m.revision=%(memory_revision)s
+            AND m.checked_at>=%(month_start)s AND m.checked_at<%(month_end)s"""
+        self.batch(f'''UPDATE catalog_pages SET state='cached',http_status=NULL,
+            detail='Уже собрано в месяце '||%(month)s,
+            checked_at=(SELECT m.checked_at FROM monthly_page_memory m WHERE {match})
+            WHERE run_id=%(run)s AND source=%(source)s AND kind='product' AND state='pending'
+            AND EXISTS(SELECT 1 FROM monthly_page_memory m WHERE {match}) AND {self.allowed()}''',p)
 
     def claim(self,run_id,source,owner,prefer_navigation=False):
         kinds=('sitemap','listing','product') if prefer_navigation else ('product','listing','sitemap')
@@ -120,8 +137,12 @@ class CatalogRepository:
 
     def record_products(self,run_id,source,page_id,results,owner):
         p=self.params(run_id,source,owner);p['page']=page_id
+        # A partly completed multi-execution page may need fetching again, but
+        # executions already obtained this month must not create history points.
+        collected=MonthlyMemory(self).recent_rule_keys([rule for rule,_ in results])
+        fresh=[(rule,result) for rule,result in results if rule.key not in collected]
         sql=[]
-        for i,(rule,result) in enumerate(results):
+        for i,(rule,result) in enumerate(fresh):
             prefix=f'p{i}_'
             fingerprint,canonical,details=document(result.details_json)
             values={**asdict(rule),**asdict(result),'key':rule.key,'fingerprint':fingerprint,
@@ -155,11 +176,19 @@ class CatalogRepository:
             sql += [f'''INSERT INTO observations(job_id,{','.join(fields)},details_json)
                 SELECT {jid},{','.join(v(k) for k in fields)},{v('ref')} WHERE {self.allowed()}
                 ON CONFLICT(job_id) DO UPDATE SET {','.join(k+'=excluded.'+k for k in fields)},details_json=excluded.details_json
-                WHERE observations.status NOT IN ('priced','on_request','no_price','not_found')''',
+                WHERE observations.status NOT IN ('priced','on_request','no_price')''',
                 f"UPDATE jobs SET state='done' WHERE id={jid} AND {self.allowed()}"]
-        errors=any(result.status not in ('priced','on_request','no_price','not_found') for _,result in results)
-        p['page_state']='failed' if errors else 'done'
-        p['page_detail']='Есть исполнения с ошибкой распознавания' if errors else ''
+        errors=any(result.status not in ('priced','on_request','no_price') for _,result in results)
+        p['page_state']='failed' if errors else ('done' if fresh else 'cached')
+        p['page_detail']='Есть исполнения с ошибкой распознавания' if errors else ('Уже собрано в текущем месяце' if not fresh else '')
+        if results and not errors:
+            page_rows=self.batch('SELECT url FROM catalog_pages WHERE id=%(page)s',p)
+            urls={result.url for _,result in results}
+            if page_rows:urls.add(page_rows[0]['url'])
+            stamp=min(result.checked_at for _,result in results)
+            for index,url in enumerate(sorted(urls)):
+                statement,values=page_memory_statement(source,url,stamp,f'm{index}_',self.allowed())
+                sql.append(statement);p.update(values)
         sql.append('UPDATE catalog_pages SET state=%(page_state)s,detail=%(page_detail)s,http_status=200,checked_at=%(now)s WHERE id=%(page)s AND '+self.allowed())
         self.batch(sql,p)
 
@@ -168,13 +197,15 @@ class CatalogRepository:
         return self.batch('''SELECT s.*,
             COALESCE(p.pages,0) pages, COALESCE(p.visited,0) visited,
             COALESCE(p.cards,0) cards, COALESCE(p.cards_visited,0) cards_visited,
+            COALESCE(p.monthly_skipped,0) monthly_skipped,
             COALESCE(p.failures,0) failures, COALESCE(j.positions,0) positions,
             COALESCE(p.navigation_left,0) navigation_left, p.last_checked
             FROM catalog_sources s LEFT JOIN (
                 SELECT source,count(*) pages,
-                    sum(CASE WHEN state IN ('done','skipped','failed') THEN 1 ELSE 0 END) visited,
+                    sum(CASE WHEN state IN ('done','skipped','failed','cached') THEN 1 ELSE 0 END) visited,
                     sum(CASE WHEN kind='product' THEN 1 ELSE 0 END) cards,
-                    sum(CASE WHEN kind='product' AND state IN ('done','skipped','failed') THEN 1 ELSE 0 END) cards_visited,
+                    sum(CASE WHEN kind='product' AND state IN ('done','skipped','failed','cached') THEN 1 ELSE 0 END) cards_visited,
+                    sum(CASE WHEN kind='product' AND state='cached' THEN 1 ELSE 0 END) monthly_skipped,
                     sum(CASE WHEN state='failed' THEN 1 ELSE 0 END) failures,
                     sum(CASE WHEN kind!='product' AND state IN ('pending','processing') THEN 1 ELSE 0 END) navigation_left,
                     max(checked_at) last_checked
@@ -189,6 +220,11 @@ class CatalogRepository:
         return self.batch("SELECT source,url,detail,http_status FROM catalog_pages WHERE run_id=%(run)s AND state='failed' ORDER BY source,url LIMIT %(limit)s",{'run':run_id,'limit':limit})
 
     def resume(self,run_id):
+        if self.settings:
+            MonthlyMemory(self).require_workers({row['source'] for row in self.sources(run_id)})
+        original=self.batch('SELECT created_at FROM runs WHERE id=%(run)s',{'run':run_id})
+        if original and original[0]['created_at'][:7]!=month_window()['month']:
+            raise ValueError('Этот запуск относится к другому месяцу. Создайте новый сбор для обновления цен и новой точки истории.')
         if self.batch("SELECT id FROM runs WHERE state IN ('queued','running')"):
             raise ValueError('Сначала завершите или остановите активный запуск')
         p={'run':run_id}

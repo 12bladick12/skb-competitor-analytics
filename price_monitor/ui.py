@@ -24,7 +24,7 @@ st.html(CSS)
 
 
 @st.cache_resource
-def services(cloud_mode,version='catalog-v3-brand-scope'):
+def services(cloud_mode,version='monthly-memory-v1'):
     from price_monitor.scope import refresh_scope
     if not cloud_mode:
         store=Store();refresh_scope(store.catalog);return store,None
@@ -108,10 +108,11 @@ def catalog_progress(run_id):
             'Состояние':CATALOG_STATES.get(item['state'],item['state']),'Страниц найдено':item['pages'],
             'Обработано страниц':item['visited'],'Карточек найдено':item['cards'],
             'Карточек обработано':item['cards_visited'],'Позиций сохранено':item['positions'],
+            'Уже собрано в месяце':item['monthly_skipped'],
             'Разделов осталось':item['navigation_left'],
             'Ошибок':item['failures'],'Последняя обработка (UTC)':item['last_checked'],'Примечание':item['detail']})
     st.dataframe(view,hide_index=True,width='stretch')
-    st.caption('Найденные карточки обрабатываются сразу, поиск новых ссылок продолжается между ними. «Разделов осталось» включает карты сайта. Полный обход больших каталогов занимает часы; ошибки и ограничения показаны отдельно.')
+    st.caption('Уже собранные за текущий месяц карточки пропускаются. Категории и карты сайта проверяются для поиска новых товаров. «Разделов осталось» включает карты сайта; ошибки показаны отдельно.')
     return True
 
 
@@ -129,7 +130,7 @@ def active_progress():
             if st.button('Остановить сбор',key='stop_active'):
                 db.cancel(active['id']);st.rerun()
     elif runs:
-        st.caption(f"Последний запуск №{runs[0]['id']}: {RUN_LABELS[runs[0]['state']]} · сохранено {runs[0]['finished']} позиций")
+        st.caption(f"Последний запуск №{runs[0]['id']}: {RUN_LABELS[runs[0]['state']]} · обработано {runs[0]['finished']} позиций")
 
 
 def details_panel(rule_id):
@@ -147,6 +148,9 @@ def details_panel(rule_id):
 
 def collect_page():
     heading('Сбор цен','Полный каталог выбранных производителей, опубликованные цены и характеристики товаров.')
+    from price_monitor.monthly import month_window
+    period=month_window()
+    st.info(f"Период сбора: {period['month']} (UTC). Успешно проверенные карточки пропускаются до следующего календарного месяца. Ошибки можно обработать повторно.")
     active_progress()
     st.subheader('Выберите конкурентов')
     selection={}
@@ -165,7 +169,7 @@ def collect_page():
             run_id=db.enqueue_catalog({s:list(spec.brands) for s,spec in SOURCES.items()} if all_clicked else selection)
             st.session_state['selected_run']=run_id;st.toast(f'Запуск №{run_id} сохранён');st.rerun()
         except ValueError as exc:st.error(str(exc))
-    st.caption('Полный обход больших каталогов может занимать часы и дольше. Очередь хранится в базе; при пробуждении Streamlit и подключении сборщика обработка продолжается. Повторный запуск создаёт новую точку истории цен.')
+    st.caption('Память сбора и история хранятся в базе. Повторный запуск в этом месяце дополняет каталог новыми товарами и повторяет неудачные проверки. В новом месяце цены собираются заново; запуск остаётся ручным.')
     with st.expander('Собрать только модели из Excel / CSV'):
         st.write('Для небольшого списка используйте source, manufacturer, article и product_url (или url_template).')
         a,b=st.columns(2)
@@ -314,7 +318,11 @@ def runs_page():
     offset=page_number(visible_total,100,f'run_page_{run_id}')
     rows=library.result_page(run_id,offset)
     if rows:result_table(rows);downloads(rows,f'run_{run_id}_{offset}',f'run_{run_id}_page_{offset//100+1}')
+    elif run['state'] in ('completed','completed_with_errors','cancelled'):
+        st.info('Новых результатов в этом запуске нет. Уже собранные за месяц товары доступны в «Базе товаров» и предыдущих запусках.')
     else:st.info('Очередь страниц формируется. Позиции появятся после обработки карточек.')
+    if rows and any(row.get('status')=='already_collected' for row in rows):
+        st.caption('«Уже собрано в этом месяце» — сохранённый результат с исходной датой проверки. Такие строки не добавляют точки в историю цен.')
     st.caption('Таблица и выгрузка показывают текущую страницу. Полная база доступна в разделе «База товаров».')
 
 
@@ -343,7 +351,7 @@ def sources_page():
     st.dataframe([{'Источник':s.label,'Сайт':'https://'+s.host,'Производители':', '.join(s.brands),'Данные':'Карты сайта, каталог, карточки и характеристики'} for s in SOURCES.values()],hide_index=True,width='stretch')
     source_connection()
     st.info('При проверке браузера/CAPTCHA, HTTP 403/429 или запрете robots.txt источник останавливается. Подключение сборщика не означает, что сайт разрешил доступ. Причина отказа сохраняется в журнале.')
-    for name,label in [('AUDIT_2026_09_29.md','Sensoren, ТЕКО и характеристики: аудит 29.09.2026'),('CATALOGS.md','Полные каталоги и характеристики'),('SENSOREN.md','Подключение Sensoren'),('AUDIT.md','Первичный аудит источников')]:
+    for name,label in [('MONTHLY_COLLECTION.md','Память сбора и обновление по месяцам'),('AUDIT_2026_09_29.md','Sensoren, ТЕКО и характеристики: аудит 29.09.2026'),('CATALOGS.md','Полные каталоги и характеристики'),('SENSOREN.md','Подключение Sensoren'),('AUDIT.md','Первичный аудит источников')]:
         path=ROOT/'docs'/'prices'/name
         if path.exists():
             with st.expander(label):st.markdown(path.read_text(encoding='utf-8'))

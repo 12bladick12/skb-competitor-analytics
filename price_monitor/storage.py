@@ -107,6 +107,9 @@ class Store:
         valid={s:[b for b in brands if b in SOURCES[s].brands] for s,brands in selections.items() if s in SOURCES}
         valid={s:list(dict.fromkeys(brands)) for s,brands in valid.items() if brands}
         if not valid:raise ValueError('Выберите хотя бы одного производителя')
+        if self.pg:
+            from .monthly import MonthlyMemory
+            MonthlyMemory(self.catalog).require_workers(valid)
         with self.connect() as c:
             self.write_lock(c)
             lease=c.execute('SELECT owner,heartbeat FROM worker_lease WHERE id=1').fetchone()
@@ -125,6 +128,9 @@ class Store:
     def enqueue(self, rules: list[Rule]) -> int:
         if not rules or len({r.key for r in rules}) != len(rules):
             raise ValueError("Задания пусты или содержат дубли")
+        if self.pg:
+            from .monthly import MonthlyMemory
+            MonthlyMemory(self.catalog).require_workers({r.source for r in rules})
         with self.connect() as c:
             self.write_lock(c)
             if c.execute("SELECT 1 FROM runs WHERE state IN ('queued','running')").fetchone():
@@ -159,10 +165,12 @@ class Store:
             return [dict(r) for r in c.execute("SELECT id,source,manufacturer,article,product_url,url_template FROM rules ORDER BY source,article")]
 
     def results(self, run_id=None, rule_id=None):
-        query = """SELECT j.id job_id,j.run_id,q.id rule_id,q.source,q.manufacturer,q.article,
-            COALESCE(o.status,j.state) status,o.price,o.currency,COALESCE(o.availability,'unknown') availability,
-            COALESCE(o.url,q.product_url) url,o.title,o.price_text,o.availability_text,o.detail,o.checked_at,o.http_status,o.response_hash,o.details_json
-            FROM jobs j JOIN rules q ON q.id=j.rule_id LEFT JOIN observations o ON o.job_id=j.id"""
+        from .monthly import RESULT_FROM, RESULT_STATUS, RESULT_DETAIL
+        query = f"""SELECT j.id job_id,j.run_id,q.id rule_id,q.source,q.manufacturer,q.article,
+            {RESULT_STATUS} status,o.price,o.currency,COALESCE(o.availability,'unknown') availability,
+            COALESCE(o.url,q.product_url) url,o.title,o.price_text,o.availability_text,{RESULT_DETAIL} detail,
+            o.checked_at,o.http_status,o.response_hash,o.details_json,
+            reuse.observation_id reused_observation_id,o.status original_status {RESULT_FROM}"""
         conditions, values = [], []
         if run_id is not None:
             conditions.append("j.run_id=?"); values.append(run_id)
@@ -260,6 +268,10 @@ class Store:
                 AND EXISTS(SELECT 1 FROM worker_lease WHERE owner=? AND heartbeat>?)
                 AND rule_id NOT IN (SELECT q.id FROM rules q JOIN external_sources e
                     ON e.source=q.source AND e.enabled=1)""", (job_id,owner,time.time()-120)).rowcount == 1
+
+    def reuse_monthly(self,job_id,owner):
+        from .monthly import MonthlyMemory
+        return MonthlyMemory(self.catalog).reuse_job(job_id,owner)
 
     def record(self, job_id, observation: Observation, owner):
         values = asdict(observation)

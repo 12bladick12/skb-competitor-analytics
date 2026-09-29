@@ -127,6 +127,9 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
     if not info or info['state'] not in ('pending','running'):return
     brands=json.loads(info['brands_json'])
     if not repository.start(run_id,source,owner):return
+    from .monthly import MonthlyMemory
+    MonthlyMemory(repository).backfill_pages(source)
+    repository.skip_remembered_pages(run_id,source,owner)
     repository.add_pages(run_id,source,seeds(source,brands),owner)
     cancelled=CancellationProbe(lambda:repository.cancelled(run_id,source,owner),shutdown,ttl=3)
     client=client_factory(source,cancelled=cancelled)

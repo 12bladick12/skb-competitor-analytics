@@ -19,7 +19,7 @@ log = logging.getLogger("price_monitor")
 class Worker:
     def __init__(self, store: Store, client_factory=SourceClient):
         self.store, self.client_factory = store, client_factory
-        self.owner = "router2-catalog4-" + str(uuid.uuid4())
+        self.owner = "router2-monthly1-" + str(uuid.uuid4())
         self.shutdown = threading.Event()
 
     def heartbeat_loop(self, finished):
@@ -48,6 +48,9 @@ class Worker:
                     continue
                 if self.store.cancelled(run_id):
                     result = Observation("cancelled",rule.url,detail="Остановлено пользователем")
+                elif self.store.reuse_monthly(job_id,self.owner) is True:
+                    log.info("run=%s job=%s source=%s status=already_collected",run_id,job_id,source)
+                    continue
                 elif stop_reason:
                     result = Observation("source_stopped",rule.url,detail=stop_reason)
                 else:

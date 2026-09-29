@@ -157,14 +157,16 @@ class Library:
         return found,errors
 
     def result_page(self,run_id,offset=0,limit=100):
-        return self.repo.batch('''SELECT j.id job_id,j.run_id,q.id rule_id,q.source,q.manufacturer,q.article,q.product_url,
-            COALESCE(o.status,j.state) status,o.price,o.currency,o.availability,o.checked_at,o.http_status,o.detail,
-            o.url,o.title,o.price_text,o.availability_text,o.response_hash,o.details_json
-            FROM jobs j JOIN rules q ON q.id=j.rule_id LEFT JOIN observations o ON o.job_id=j.id
+        from .monthly import RESULT_FROM, RESULT_STATUS, RESULT_DETAIL
+        return self.repo.batch(f'''SELECT j.id job_id,j.run_id,q.id rule_id,q.source,q.manufacturer,q.article,q.product_url,
+            {RESULT_STATUS} status,o.price,o.currency,o.availability,o.checked_at,o.http_status,{RESULT_DETAIL} detail,
+            o.url,o.title,o.price_text,o.availability_text,o.response_hash,o.details_json,
+            reuse.observation_id reused_observation_id,o.status original_status {RESULT_FROM}
             WHERE j.run_id=%(run)s AND '''+RESULT_VISIBLE+''' ORDER BY j.id LIMIT %(limit)s OFFSET %(offset)s''',{'run':run_id,'limit':limit,'offset':offset})
 
     def result_count(self,run_id):
-        return self.repo.batch('SELECT count(*) total FROM jobs j JOIN rules q ON q.id=j.rule_id LEFT JOIN observations o ON o.job_id=j.id WHERE j.run_id=%(run)s AND '+RESULT_VISIBLE,{'run':run_id})[0]['total']
+        from .monthly import RESULT_FROM
+        return self.repo.batch('SELECT count(*) total '+RESULT_FROM+' WHERE j.run_id=%(run)s AND '+RESULT_VISIBLE,{'run':run_id})[0]['total']
 
     def export_products(self,query='',source='',brand='',selected=False):
         rows=[];offset=0

@@ -66,6 +66,7 @@ STATUS_LABELS = {
     "rate_limited": "Лимит запросов", "source_stopped": "Источник остановлен", "network_error": "Сетевая ошибка",
     "http_error": "Ошибка HTTP", "parse_error": "Изменилась страница", "cancelled": "Отменено",
     "pending": "В очереди", "processing": "Обрабатывается",
+    "already_collected": "Уже собрано в этом месяце",
 }
 AVAILABILITY_LABELS = {
     "in_stock": "В наличии", "out_of_stock": "Нет в наличии", "on_order": "Под заказ",
