@@ -99,7 +99,8 @@ def settings_from_file(path):
 def connect(settings):
     import psycopg
     from psycopg.rows import dict_row
-    return psycopg.connect(**settings, connect_timeout=10, autocommit=True,
+    from .db_settings import connection_settings
+    return psycopg.connect(**connection_settings(settings), connect_timeout=10, autocommit=True, prepare_threshold=None,
                            cursor_factory=psycopg.ClientCursor, row_factory=dict_row)
 
 

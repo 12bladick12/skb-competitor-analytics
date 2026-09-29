@@ -1,5 +1,6 @@
 # Unified news and price analytics, Python 3.13.
 # Reboot the Streamlit process after upgrading to reload both background workers.
+# Catalog performance update: 2026-09-29, reusable connections and progressive collection.
 -c requirements-cloud-lock.txt
 streamlit[auth]==1.64.0
 requests==2.34.2

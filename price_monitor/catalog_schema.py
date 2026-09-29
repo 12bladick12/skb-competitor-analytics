@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS catalog_pages (
  UNIQUE(run_id,source,url)
 );
 CREATE INDEX IF NOT EXISTS catalog_queue ON catalog_pages(run_id,source,state,kind);
+CREATE INDEX IF NOT EXISTS catalog_queue_url ON catalog_pages(run_id,source,state,kind,url);
 CREATE TABLE IF NOT EXISTS product_documents (
  fingerprint TEXT PRIMARY KEY, details_json TEXT NOT NULL
 );

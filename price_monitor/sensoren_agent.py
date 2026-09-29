@@ -16,7 +16,7 @@ import uuid
 from .adapters import ADAPTERS
 from .cloud import CancellationProbe
 from .models import Observation, Rule, STATUS_LABELS
-from .sensoren_local import ROOT, connect, settings_from_file
+from .sensoren_local import ROOT, settings_from_file
 from .transport import FetchError, SourceClient
 
 DDL = """CREATE TABLE IF NOT EXISTS price_monitor.external_sources (
@@ -33,22 +33,8 @@ class AgentStore:
         self.settings = settings
 
     def batch(self, sql, params=None):
-        # One safe, parameter-bound SQL batch on a short-lived connection. Keep
-        # the advisory lock in a separate statement for a fresh subsequent snapshot.
-        query = ("BEGIN; SET LOCAL statement_timeout='20s'; SET LOCAL lock_timeout='10s'; "
-                 "SET LOCAL idle_in_transaction_session_timeout='30s'; "
-                 "SELECT pg_advisory_xact_lock(6743928101); " + sql + "; COMMIT;")
-        result = []
-        with connect(self.settings) as connection:
-            cursor = connection.execute(query, params)
-            while True:
-                if cursor.description:
-                    rows = cursor.fetchall()
-                    if cursor.description[0].name != 'pg_advisory_xact_lock':
-                        result = rows
-                if not cursor.nextset():
-                    break
-        return result
+        from .db_batches import batch
+        return batch(self.settings,sql,params)
 
     def configure(self, enabled):
         rows = self.batch(DDL + """

@@ -1,0 +1,55 @@
+"""Reusable PostgreSQL connections for atomic catalog and external-agent work."""
+import atexit
+import threading
+
+_pools = {}
+_guard = threading.Lock()
+
+
+def pool_for(settings):
+    from .db_settings import connection_settings
+    settings = connection_settings(settings)
+    key = tuple(sorted(settings.items()))
+    with _guard:
+        pool = _pools.get(key)
+        if pool is None:
+            import psycopg
+            from psycopg.rows import dict_row
+            from psycopg_pool import ConnectionPool
+            pool = ConnectionPool(
+                kwargs={**settings, 'connect_timeout':10, 'autocommit':True, 'prepare_threshold':None,
+                        'cursor_factory':psycopg.ClientCursor, 'row_factory':dict_row},
+                min_size=1, max_size=4, timeout=15, max_idle=60, max_lifetime=600,
+                check=ConnectionPool.check_connection, name='price-catalog', open=True)
+            _pools[key] = pool
+            atexit.register(pool.close)
+        return pool
+
+
+def read_statements(statements):
+    # Only fixed SELECT statements qualify. CTEs may write and remain locked.
+    return all(sql.lstrip().upper().startswith('SELECT ') for sql in statements)
+
+
+def batch(settings, statements, params=None):
+    if isinstance(statements, str):
+        statements = [statements]
+    read_only = read_statements(statements)
+    query = ('BEGIN READ ONLY; ' if read_only else 'BEGIN; ')
+    query += ("SET LOCAL search_path TO price_monitor; SET LOCAL statement_timeout='30s'; "
+              "SET LOCAL lock_timeout='10s'; SET LOCAL idle_in_transaction_session_timeout='40s'; ")
+    if not read_only:
+        # A separate statement gives following writes a fresh committed snapshot.
+        query += 'SELECT pg_advisory_xact_lock(6743928101); '
+    query += '; '.join(statements) + '; COMMIT;'
+    result = []
+    with pool_for(settings).connection() as connection:
+        cursor = connection.execute(query, params or {})
+        while True:
+            if cursor.description:
+                rows = cursor.fetchall()
+                if cursor.description[0].name != 'pg_advisory_xact_lock':
+                    result = rows
+            if not cursor.nextset():
+                break
+    return result

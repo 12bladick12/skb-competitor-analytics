@@ -22,26 +22,17 @@ class CatalogRepository:
         self.path=Path(path) if path else None
 
     def batch(self, statements, params=None):
+        from .db_batches import batch, read_statements
         if isinstance(statements,str):statements=[statements]
         params=params or {}
         if self.settings:
-            from .sensoren_local import connect
-            sql="BEGIN; SET LOCAL search_path TO price_monitor; SET LOCAL statement_timeout='30s'; SET LOCAL lock_timeout='10s'; SET LOCAL idle_in_transaction_session_timeout='40s'; SELECT pg_advisory_xact_lock(6743928101); "+'; '.join(statements)+'; COMMIT;'
-            result=[]
-            with connect(self.settings) as c:
-                cur=c.execute(sql,params)
-                while True:
-                    if cur.description:
-                        rows=cur.fetchall()
-                        if cur.description[0].name!='pg_advisory_xact_lock':result=rows
-                    if not cur.nextset():break
-            return result
+            return batch(self.settings,statements,params)
         c=sqlite3.connect(self.path,timeout=20)
         c.row_factory=sqlite3.Row
         c.create_function('lower',1,lambda x:str(x).casefold() if x is not None else None,deterministic=True)
         c.execute('PRAGMA foreign_keys=ON')
         try:
-            c.execute('BEGIN IMMEDIATE')
+            c.execute('BEGIN' if read_statements(statements) else 'BEGIN IMMEDIATE')
             result=[]
             for sql in statements:
                 cur=c.execute(re.sub(r'%\((\w+)\)s',r':\1',sql),params)
@@ -85,19 +76,25 @@ class CatalogRepository:
         from .catalog import page_id
         for offset in range(0,len(links),250):
             p=self.params(run_id,source,owner)
-            statements=[]
+            values=[]
             for index,(kind,url) in enumerate(links[offset:offset+250]):
                 p.update({f'id{index}':page_id(run_id,source,url),f'url{index}':url,f'kind{index}':kind})
-                statements.append(f'''INSERT INTO catalog_pages(id,run_id,source,url,kind)
-                    SELECT %(id{index})s,%(run)s,%(source)s,%(url{index})s,%(kind{index})s
-                    WHERE {self.allowed()} ON CONFLICT(run_id,source,url) DO NOTHING''')
-            if statements:self.batch(statements,p)
+                values.append(f'(%(id{index})s,%(url{index})s,%(kind{index})s)')
+            if values:self.batch(f'''WITH input(id,url,kind) AS (VALUES {','.join(values)})
+                INSERT INTO catalog_pages(id,run_id,source,url,kind)
+                SELECT id,%(run)s,%(source)s,url,kind FROM input
+                WHERE {self.allowed()} ON CONFLICT(run_id,source,url) DO NOTHING''',p)
 
-    def claim(self,run_id,source,owner):
-        rows=self.batch("""UPDATE catalog_pages SET state='processing' WHERE id=(
-            SELECT id FROM catalog_pages WHERE run_id=%(run)s AND source=%(source)s AND state='pending'
-            ORDER BY CASE kind WHEN 'sitemap' THEN 0 WHEN 'listing' THEN 1 ELSE 2 END,url LIMIT 1)
-            AND """+self.allowed()+" RETURNING *",self.params(run_id,source,owner))
+    def claim(self,run_id,source,owner,prefer_navigation=False):
+        kinds=('sitemap','listing','product') if prefer_navigation else ('product','listing','sitemap')
+        # Each candidate uses catalog_queue_url; only three rows need sorting.
+        candidates=[];choices=[]
+        for priority,kind in enumerate(kinds):
+            name=f'candidate_{priority}'
+            candidates.append(f"{name} AS (SELECT id FROM catalog_pages WHERE run_id=%(run)s AND source=%(source)s AND state='pending' AND kind='{kind}' ORDER BY url LIMIT 1)")
+            choices.append(f'SELECT id,{priority} priority FROM {name}')
+        query='WITH '+','.join(candidates)+" UPDATE catalog_pages SET state='processing' WHERE id=(SELECT id FROM ("+' UNION ALL '.join(choices)+') candidates ORDER BY priority LIMIT 1) AND '+self.allowed()+' RETURNING *'
+        rows=self.batch(query,self.params(run_id,source,owner))
         return rows[0] if rows else None
 
     def finish_page(self,page_id,owner,state,detail,http_status):
@@ -156,13 +153,24 @@ class CatalogRepository:
 
     def progress(self,run_id):
         return self.batch('''SELECT s.*,
-            (SELECT count(*) FROM catalog_pages p WHERE p.run_id=s.run_id AND p.source=s.source) pages,
-            (SELECT count(*) FROM catalog_pages p WHERE p.run_id=s.run_id AND p.source=s.source AND p.state IN ('done','skipped','failed')) visited,
-            (SELECT count(*) FROM catalog_pages p WHERE p.run_id=s.run_id AND p.source=s.source AND p.kind='product') cards,
-            (SELECT count(*) FROM catalog_pages p WHERE p.run_id=s.run_id AND p.source=s.source AND p.state='failed') failures,
-            (SELECT count(*) FROM jobs j JOIN rules q ON q.id=j.rule_id WHERE j.run_id=s.run_id AND q.source=s.source) positions,
-            (SELECT count(*) FROM catalog_pages p WHERE p.run_id=s.run_id AND p.source=s.source AND p.kind!='product' AND p.state IN ('pending','processing')) navigation_left
-            FROM catalog_sources s WHERE s.run_id=%(run)s ORDER BY s.source''',{'run':run_id})
+            COALESCE(p.pages,0) pages, COALESCE(p.visited,0) visited,
+            COALESCE(p.cards,0) cards, COALESCE(p.cards_visited,0) cards_visited,
+            COALESCE(p.failures,0) failures, COALESCE(j.positions,0) positions,
+            COALESCE(p.navigation_left,0) navigation_left, p.last_checked
+            FROM catalog_sources s LEFT JOIN (
+                SELECT source,count(*) pages,
+                    sum(CASE WHEN state IN ('done','skipped','failed') THEN 1 ELSE 0 END) visited,
+                    sum(CASE WHEN kind='product' THEN 1 ELSE 0 END) cards,
+                    sum(CASE WHEN kind='product' AND state IN ('done','skipped','failed') THEN 1 ELSE 0 END) cards_visited,
+                    sum(CASE WHEN state='failed' THEN 1 ELSE 0 END) failures,
+                    sum(CASE WHEN kind!='product' AND state IN ('pending','processing') THEN 1 ELSE 0 END) navigation_left,
+                    max(checked_at) last_checked
+                FROM catalog_pages WHERE run_id=%(run)s GROUP BY source
+            ) p ON p.source=s.source LEFT JOIN (
+                SELECT q.source,count(*) positions FROM jobs j JOIN rules q ON q.id=j.rule_id
+                WHERE j.run_id=%(run)s GROUP BY q.source
+            ) j ON j.source=s.source
+            WHERE s.run_id=%(run)s ORDER BY s.source''',{'run':run_id})
 
     def issues(self,run_id,limit=100):
         return self.batch("SELECT source,url,detail,http_status FROM catalog_pages WHERE run_id=%(run)s AND state='failed' ORDER BY source,url LIMIT %(limit)s",{'run':run_id,'limit':limit})

@@ -45,9 +45,11 @@ class Postgres:
         kwargs.setdefault("sslmode", "require")
         if kwargs["sslmode"] not in {"require", "verify-ca", "verify-full"}:
             raise ValueError("Облачная база требует SSL")
+        from .db_settings import connection_settings
+        kwargs = connection_settings(kwargs)
         self.settings = dict(kwargs)
         kwargs.update(connect_timeout=10, prepare_threshold=None, row_factory=row_factory)
-        self.pool = ConnectionPool(kwargs=kwargs, min_size=1, max_size=8, timeout=15, open=True)
+        self.pool = ConnectionPool(kwargs=kwargs, min_size=1, max_size=4, max_idle=60, timeout=15, open=True)
         try:
             self.pool.wait(timeout=15)
             with self.connect() as c:

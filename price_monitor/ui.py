@@ -101,10 +101,12 @@ def catalog_progress(run_id):
     for item in progress:
         view.append({'Источник':SOURCES[item['source']].label,'Производители':', '.join(json.loads(item['brands_json'])),
             'Состояние':CATALOG_STATES.get(item['state'],item['state']),'Страниц найдено':item['pages'],
-            'Обработано страниц':item['visited'],'Карточек найдено':item['cards'],'Позиций сохранено':item['positions'],
-            'Ошибок':item['failures'],'Примечание':item['detail']})
+            'Обработано страниц':item['visited'],'Карточек найдено':item['cards'],
+            'Карточек обработано':item['cards_visited'],'Позиций сохранено':item['positions'],
+            'Разделов осталось':item['navigation_left'],
+            'Ошибок':item['failures'],'Последняя обработка (UTC)':item['last_checked'],'Примечание':item['detail']})
     st.dataframe(view,hide_index=True,width='stretch')
-    st.caption('Число страниц увеличивается при обходе карт сайта и разделов. «Завершён» означает обработку обнаруженных разрешённых страниц; ошибки и ограничения показаны отдельно.')
+    st.caption('Найденные карточки обрабатываются сразу, поиск новых ссылок продолжается между ними. «Разделов осталось» включает карты сайта. Полный обход больших каталогов занимает часы; ошибки и ограничения показаны отдельно.')
     return True
 
 

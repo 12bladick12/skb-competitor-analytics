@@ -116,13 +116,17 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
     cancelled=CancellationProbe(lambda:repository.cancelled(run_id,source,owner),shutdown,ttl=3)
     client=client_factory(source,cancelled=cancelled)
     failures=0
+    claimed=0
     try:
         while not shutdown.is_set():
             if cancelled():return
-            page=repository.claim(run_id,source,owner)
+            # Start saving known products immediately; continue discovery every
+            # twentieth page so a large product queue cannot starve navigation.
+            page=repository.claim(run_id,source,owner,prefer_navigation=claimed>0 and claimed%20==0)
             if not page:
                 repository.finish_source(run_id,source,owner)
                 return
+            claimed+=1
             try:
                 url,code,body=client.fetch_document(page['url'],html_only=page['kind']=='product')
                 if code!=200:
