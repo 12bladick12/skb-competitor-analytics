@@ -6,6 +6,13 @@ _pools = {}
 _guard = threading.Lock()
 
 
+def check_connection(connection):
+    # Use an ordinary read over the transaction pooler, not an empty query.
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT 1')
+        cursor.fetchone()
+
+
 def pool_for(settings):
     from .db_settings import connection_settings
     settings = connection_settings(settings)
@@ -20,7 +27,7 @@ def pool_for(settings):
                 kwargs={**settings, 'connect_timeout':10, 'autocommit':True, 'prepare_threshold':None,
                         'cursor_factory':psycopg.ClientCursor, 'row_factory':dict_row},
                 min_size=1, max_size=4, timeout=15, max_idle=60, max_lifetime=600,
-                check=ConnectionPool.check_connection, name='price-catalog', open=True)
+                check=check_connection, name='price-catalog', open=True)
             _pools[key] = pool
             atexit.register(pool.close)
         return pool

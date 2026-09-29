@@ -277,8 +277,11 @@ def main():
                     message = str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__
                     print('Ожидание готовности Streamlit: '+message, flush=True)
                     stopping.wait(10)
+        agent = SensorenAgent(store)
         while not stopping.is_set():
-            agent = SensorenAgent(store)
+            # Recover with the same lease identity after a temporary disconnect.
+            # A failed release must not make us wait for our own 120-second lease.
+            agent.stopping.clear()
             try:
                 agent.run()
             except Exception as exc:
