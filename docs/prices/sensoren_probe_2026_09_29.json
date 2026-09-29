@@ -1,0 +1,152 @@
+{
+  "checked_at": "2026-09-29T06:27:20+00:00",
+  "scope": "One public product per six selected manufacturers; local computer; no production history writes",
+  "plain_http": {
+    "status": 503,
+    "outcome": "blocked",
+    "reason": "карточка: HTTP 503; https://sensoren.ru/product/datchik_potoka_ifm_electronic_si5000/; JavaScript-проверка RCPC; требуется разрешённый способ доступа, источник остановлен",
+    "seconds": 3.03
+  },
+  "browser_bootstrap": {
+    "documents": [
+      {
+        "url": "https://sensoren.ru/product/datchik_potoka_ifm_electronic_si5000/",
+        "status": 503
+      },
+      {
+        "url": "https://sensoren.ru/product/datchik_potoka_ifm_electronic_si5000/",
+        "status": 200
+      }
+    ],
+    "seconds": 10.94,
+    "manual_cookie_injection": false
+  },
+  "pause_seconds": 3,
+  "results": [
+    {
+      "manufacturer": "ifm",
+      "article": "SI5000",
+      "initial_http": 200,
+      "http": 200,
+      "transport": "session_http",
+      "browser_documents": [],
+      "challenge": false,
+      "products": 1,
+      "reason": "",
+      "seconds": 2.34,
+      "observations": [
+        {
+          "article": "SI5000",
+          "status": "priced",
+          "price": "29530.00",
+          "attributes": 23
+        }
+      ]
+    },
+    {
+      "manufacturer": "Autonics",
+      "article": "THD-R-T",
+      "initial_http": 200,
+      "http": 200,
+      "transport": "session_http",
+      "browser_documents": [],
+      "challenge": false,
+      "products": 1,
+      "reason": "",
+      "seconds": 2.11,
+      "observations": [
+        {
+          "article": "THD-R-T",
+          "status": "priced",
+          "price": "11140.00",
+          "attributes": 13
+        }
+      ]
+    },
+    {
+      "manufacturer": "Balluff",
+      "article": "BSP B600-EV003-A02A0B-S4",
+      "initial_http": 200,
+      "http": 200,
+      "transport": "session_http",
+      "browser_documents": [],
+      "challenge": false,
+      "products": 1,
+      "reason": "",
+      "seconds": 2.11,
+      "observations": [
+        {
+          "article": "BSP B600-EV003-A02A0B-S4",
+          "status": "priced",
+          "price": "41950.00",
+          "attributes": 17
+        }
+      ]
+    },
+    {
+      "manufacturer": "Pepperl+Fuchs",
+      "article": "RaDec-D",
+      "initial_http": 200,
+      "http": 200,
+      "transport": "session_http",
+      "browser_documents": [],
+      "challenge": false,
+      "products": 1,
+      "reason": "",
+      "seconds": 1.7,
+      "observations": [
+        {
+          "article": "RaDec-D",
+          "status": "priced",
+          "price": "36800.00",
+          "attributes": 13
+        }
+      ]
+    },
+    {
+      "manufacturer": "LANBAO",
+      "article": "DPG-10TN",
+      "initial_http": 200,
+      "http": 200,
+      "transport": "session_http",
+      "browser_documents": [],
+      "challenge": false,
+      "products": 1,
+      "reason": "",
+      "seconds": 2.12,
+      "observations": [
+        {
+          "article": "DPG-10TN",
+          "status": "priced",
+          "price": "6660.00",
+          "attributes": 25
+        }
+      ]
+    },
+    {
+      "manufacturer": "SICK",
+      "article": "FTS-I100F14A",
+      "initial_http": 200,
+      "http": 200,
+      "transport": "session_http",
+      "browser_documents": [],
+      "challenge": false,
+      "products": 1,
+      "reason": "",
+      "seconds": 2.04,
+      "observations": [
+        {
+          "article": "FTS-I100F14A",
+          "status": "priced",
+          "price": "63160.00",
+          "attributes": 23
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Session lifetime and restart recovery not measured",
+    "Full catalogs and pagination not traversed in this experiment",
+    "Not activated in the production agent"
+  ]
+}
