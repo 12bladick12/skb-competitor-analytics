@@ -34,3 +34,23 @@ class CatalogOutbox:
 
     def acknowledge(self, page):
         self.path(page).unlink(missing_ok=True)
+
+    def save_navigation(self, page, links, offset=0):
+        target=self.path(page).with_suffix('.links.json')
+        payload={'page':{k:page[k] for k in ('id','run_id','source','url')},
+                 'links':links,'offset':offset}
+        temporary=target.with_suffix('.tmp')
+        temporary.write_text(json.dumps(payload,ensure_ascii=False),encoding='utf-8')
+        temporary.replace(target)
+
+    def load_navigation(self, page):
+        target=self.path(page).with_suffix('.links.json')
+        if not target.exists():return None
+        saved=json.loads(target.read_text(encoding='utf-8'))
+        if saved['page']!={k:page[k] for k in ('id','run_id','source','url')}:
+            raise ValueError('Navigation outbox identity mismatch')
+        if not 0<=saved['offset']<=len(saved['links']):raise ValueError('Invalid navigation offset')
+        return saved
+
+    def acknowledge_navigation(self, page):
+        self.path(page).with_suffix('.links.json').unlink(missing_ok=True)

@@ -121,6 +121,22 @@ def discover(source, kind, body, base, brands):
     return [(kind,url) for url,kind in found.items() if url!=base]
 
 
+def ingest_navigation(repository, page, owner, outbox, saved):
+    """Yield to products after a bounded chunk, retaining discovery on disk."""
+    from .runtime import phase
+    offset=saved['offset'];links=saved['links'];end=min(offset+64,len(links))
+    with phase('discover'):
+        repository.add_pages(page['run_id'],page['source'],links[offset:end],owner)
+        # A cancelled/expired writer must not advance past links it could not
+        # insert. All preceding successful batches are safe to replay.
+        if repository.cancelled(page['run_id'],page['source'],owner):return
+        if end<len(links):
+            outbox.save_navigation(page,links,end)
+            repository.finish_page(page['id'],owner,'pending','Добавление ссылок продолжается',200)
+        elif repository.finish_page(page['id'],owner,'done','',200):
+            outbox.acknowledge_navigation(page)
+
+
 def process_catalog(repository, run_id, source, owner, shutdown, client_factory=SourceClient, outbox=None):
     from .cloud import CancellationProbe
     from .runtime import context, phase, completed
@@ -149,6 +165,11 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
             claimed+=1
             context(run_id,page['url'])
             try:
+                navigation=outbox.load_navigation(page) if outbox and page['kind']!='product' else None
+                if navigation is not None:
+                    ingest_navigation(repository,page,owner,outbox,navigation)
+                    completed()
+                    continue
                 saved=outbox.load(page) if outbox and page['kind']=='product' else None
                 if saved:
                     with phase('save'):accepted=repository.record_products(run_id,source,page['id'],saved,owner)
@@ -172,8 +193,12 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                         repository.finish_page(page['id'],owner,'failed',detail,code)
                 else:
                     with phase('discover'):links=discover(source,page['kind'],body,url,brands)
-                    repository.add_pages(run_id,source,links,owner)
-                    repository.finish_page(page['id'],owner,'done','',code)
+                    if outbox:
+                        outbox.save_navigation(page,links)
+                        ingest_navigation(repository,page,owner,outbox,{'links':links,'offset':0})
+                    else:
+                        repository.add_pages(run_id,source,links,owner)
+                        repository.finish_page(page['id'],owner,'done','',code)
                 failures=0
                 completed()
             except FetchError as exc:

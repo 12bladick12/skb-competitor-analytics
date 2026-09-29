@@ -53,6 +53,47 @@ class RecoveryTests(unittest.TestCase):
             outbox.acknowledge(page)
             self.assertIsNone(outbox.load(page))
 
+    def test_large_sitemap_yields_to_products_without_refetching(self):
+        from price_monitor.catalog import seeds
+        with tempfile.TemporaryDirectory(dir=ROOT/'data') as directory:
+            store=Store(Path(directory)/'queue.db');run=store.enqueue_catalog({'sensoren':['ifm']})
+            owner='router2-test';store.acquire(owner);store.claim_run(owner)
+            repository=store.catalog;outbox=CatalogOutbox(Path(directory)/'outbox')
+            client=Mock();first_product_queued=[]
+            urls=[f'https://sensoren.ru/product/datchik_ifm_si5000_{n}/' for n in range(130)]
+            sitemap='<urlset>'+''.join('<url><loc>'+url+'</loc></url>' for url in urls)+'</urlset>'
+            def fetch(url,html_only=False):
+                if url in urls:
+                    if not first_product_queued:
+                        first_product_queued.append(repository.batch("SELECT count(*) n FROM catalog_pages WHERE kind='product'")[0]['n'])
+                    return url,200,HTML
+                return url,200,sitemap if url.endswith('.xml') else '<html></html>'
+            client.fetch_document.side_effect=fetch
+            process_catalog(repository,run,'sensoren',owner,threading.Event(),lambda *a,**k:client,outbox)
+            self.assertEqual(first_product_queued,[64])
+            self.assertEqual(len(store.results(run_id=run)),130)
+            self.assertEqual(sum(c.args[0].endswith('.xml') for c in client.fetch_document.call_args_list),1)
+            self.assertEqual(repository.source(run,'sensoren')['state'],'completed')
+            self.assertEqual(list(outbox.root.glob('*.links.json')),[])
+            store.close()
+
+    def test_navigation_checkpoint_survives_restart_and_cancel(self):
+        from price_monitor.catalog import ingest_navigation
+        with tempfile.TemporaryDirectory(dir=ROOT/'data') as directory:
+            page=dict(id=hashlib.sha256(b'sitemap').hexdigest(),run_id=3,source='sensoren',url='https://sensoren.ru/sitemap.xml')
+            links=[('product',URL+str(n)) for n in range(80)]
+            outbox=CatalogOutbox(directory);outbox.save_navigation(page,links)
+            repository=Mock();repository.cancelled.return_value=False
+            ingest_navigation(repository,page,'owner',outbox,outbox.load_navigation(page))
+            resumed=CatalogOutbox(directory)
+            self.assertEqual(resumed.load_navigation(page)['offset'],64)
+            repository.cancelled.return_value=True
+            ingest_navigation(repository,page,'owner',resumed,resumed.load_navigation(page))
+            self.assertEqual(resumed.load_navigation(page)['offset'],64)
+            repository.cancelled.return_value=False
+            ingest_navigation(repository,page,'owner',resumed,resumed.load_navigation(page))
+            self.assertIsNone(resumed.load_navigation(page))
+
     def test_resume_after_connection_loss_before_and_after_commit(self):
         for commit_reached in (False,True):
             with self.subTest(commit_reached=commit_reached),tempfile.TemporaryDirectory(dir=ROOT/'data') as directory:

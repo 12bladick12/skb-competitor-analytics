@@ -122,7 +122,7 @@ class CatalogRepository:
         if not rows:return
         p=self.params(rows[0]['run_id'],rows[0]['source'],owner)
         p.update(id=page_id,state=state,detail=detail,http=http_status)
-        self.batch('UPDATE catalog_pages SET state=%(state)s,detail=%(detail)s,http_status=%(http)s,checked_at=%(now)s WHERE id=%(id)s AND '+self.allowed(),p)
+        return bool(self.batch('UPDATE catalog_pages SET state=%(state)s,detail=%(detail)s,http_status=%(http)s,checked_at=%(now)s WHERE id=%(id)s AND '+self.allowed()+' RETURNING id',p))
 
     def block_source(self,run_id,source,owner,detail):
         p=self.params(run_id,source,owner);p['detail']=detail
