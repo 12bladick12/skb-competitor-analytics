@@ -30,6 +30,10 @@ CREATE TABLE IF NOT EXISTS comparison_items (
  our_price TEXT, our_currency TEXT NOT NULL DEFAULT 'RUB',
  note TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS product_scope (
+ rule_id INTEGER PRIMARY KEY REFERENCES rules(id), manufacturer TEXT NOT NULL,
+ state TEXT NOT NULL, details_hash TEXT NOT NULL, checked_at TEXT NOT NULL
+);
 """
 
 
@@ -55,4 +59,11 @@ def index_product(connection, job_id, observation):
         attributes_count=excluded.attributes_count,updated_at=excluded.updated_at''',
         (observation.title,payload.get('category',''),observation.title+' '+payload.get('category',''),
          fingerprint,len(payload.get('attributes',[])),observation.checked_at,job_id))
+    from .details import manufacturer_from_details
+    brand=manufacturer_from_details(payload)
+    connection.execute('''INSERT INTO product_scope(rule_id,manufacturer,state,details_hash,checked_at)
+        SELECT q.id,?,?,?,? FROM rules q JOIN jobs j ON j.rule_id=q.id WHERE j.id=? AND q.source='teko'
+        ON CONFLICT(rule_id) DO UPDATE SET manufacturer=excluded.manufacturer,state=excluded.state,
+        details_hash=excluded.details_hash,checked_at=excluded.checked_at''',
+        (brand,'confirmed' if brand=='ТЕКО' else ('excluded' if brand else 'unverified'),fingerprint,observation.checked_at,job_id))
     return json.dumps({'ref':fingerprint})

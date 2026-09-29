@@ -21,6 +21,14 @@ SEEDS = {
     'teko': [('sitemap','https://teko-com.ru/sitemap/sitemap.xml'),('listing','https://teko-com.ru/catalog/')],
     'sensor': [('sitemap','https://sensor-com.ru/sitemap/main.xml'),('listing','https://sensor-com.ru/')],
 }
+SENSOREN_BRAND_PATHS={'Autonics':'autonics','Balluff':'balluff','Pepperl+Fuchs':'pepperl_fuchs',
+    'ifm':'ifm_electronic','LANBAO':'lanbao','SICK':'sick'}
+
+def seeds(source,brands):
+    if source=='sensoren':
+        return [('listing','https://sensoren.ru/brands/'+SENSOREN_BRAND_PATHS[b]+'/')
+                for b in brands if b in SENSOREN_BRAND_PATHS]+[SEEDS['sensoren'][0]]
+    return SEEDS[source]
 # Brand names observed in Sensoren's public manufacturer navigation. Known
 # unselected brands can be excluded before fetching. Unknown URLs are inspected.
 OTHER_SENSOR_BRANDS = (
@@ -72,10 +80,17 @@ def selected_sensoren_url(url, brands):
 
 def classify(source, url, brands):
     path=urlsplit(url).path
+    if source=='sensoren' and path.startswith('/brands/'):
+        return 'listing' if path.strip('/').split('/')[-1] in {SENSOREN_BRAND_PATHS[b] for b in brands if b in SENSOREN_BRAND_PATHS} else None
     if re.search(r'sitemap[^/]*\.xml(?:\.gz)?$',path,re.I) or (source=='sensor' and path.startswith('/sitemap/') and path.endswith('.xml')):
         return 'sitemap'
     if product_url(source,url):
         return 'product' if source!='sensoren' or selected_sensoren_url(url,brands) else None
+    if source=='sensoren':
+        # Brand landing pages show only top products. Their brand_<slug>
+        # category links, pagination and the sitemap provide full discovery.
+        selected={'brand_'+SENSOREN_BRAND_PATHS[b] for b in brands if b in SENSOREN_BRAND_PATHS}
+        return 'listing' if path.startswith('/catalog/') and selected.intersection(path.strip('/').split('/')) else None
     prefixes=('/categories/','/catalog') if source=='megak' else ('/catalog/',)
     if any(path.startswith(prefix) for prefix in prefixes):return 'listing'
     return None
@@ -112,7 +127,7 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
     if not info or info['state'] not in ('pending','running'):return
     brands=json.loads(info['brands_json'])
     if not repository.start(run_id,source,owner):return
-    repository.add_pages(run_id,source,SEEDS[source],owner)
+    repository.add_pages(run_id,source,seeds(source,brands),owner)
     cancelled=CancellationProbe(lambda:repository.cancelled(run_id,source,owner),shutdown,ttl=3)
     client=client_factory(source,cancelled=cancelled)
     failures=0

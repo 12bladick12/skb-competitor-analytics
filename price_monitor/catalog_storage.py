@@ -142,6 +142,15 @@ class CatalogRepository:
                     SELECT {qid},{v('title')},{v('category')},{v('search')},{v('fingerprint')},{v('attributes_count')},{v('checked_at')}
                     WHERE {self.allowed()} ON CONFLICT(rule_id) DO UPDATE SET title=excluded.title,category=excluded.category,
                     search_text=excluded.search_text,details_hash=excluded.details_hash,attributes_count=excluded.attributes_count,updated_at=excluded.updated_at''']
+                if source=='teko':
+                    from .details import manufacturer_from_details
+                    detected=manufacturer_from_details(details)
+                    p[prefix+'detected']=detected
+                    p[prefix+'scope_state']='confirmed' if detected=='ТЕКО' else ('excluded' if detected else 'unverified')
+                    sql.append(f'''INSERT INTO product_scope(rule_id,manufacturer,state,details_hash,checked_at)
+                        SELECT {qid},{v('detected')},{v('scope_state')},{v('fingerprint')},{v('checked_at')}
+                        WHERE {self.allowed()} ON CONFLICT(rule_id) DO UPDATE SET manufacturer=excluded.manufacturer,
+                        state=excluded.state,details_hash=excluded.details_hash,checked_at=excluded.checked_at''')
             fields=['status','url','title','price','currency','availability','price_text','availability_text','detail','checked_at','http_status','response_hash']
             sql += [f'''INSERT INTO observations(job_id,{','.join(fields)},details_json)
                 SELECT {jid},{','.join(v(k) for k in fields)},{v('ref')} WHERE {self.allowed()}
@@ -155,6 +164,7 @@ class CatalogRepository:
         self.batch(sql,p)
 
     def progress(self,run_id):
+        from .scope import VISIBLE
         return self.batch('''SELECT s.*,
             COALESCE(p.pages,0) pages, COALESCE(p.visited,0) visited,
             COALESCE(p.cards,0) cards, COALESCE(p.cards_visited,0) cards_visited,
@@ -171,7 +181,7 @@ class CatalogRepository:
                 FROM catalog_pages WHERE run_id=%(run)s GROUP BY source
             ) p ON p.source=s.source LEFT JOIN (
                 SELECT q.source,count(*) positions FROM jobs j JOIN rules q ON q.id=j.rule_id
-                WHERE j.run_id=%(run)s GROUP BY q.source
+                WHERE j.run_id=%(run)s AND '''+VISIBLE+''' GROUP BY q.source
             ) j ON j.source=s.source
             WHERE s.run_id=%(run)s ORDER BY s.source''',{'run':run_id})
 

@@ -68,7 +68,13 @@ class Adapter:
         if not h1 or not root:
             result.detail = "Не найден основной блок карточки; нужна проверка адаптера"
             return result
-        from .details import offers, extract_details
+        from .details import offers, extract_details, manufacturer
+        if self.spec.id=='teko':
+            detected=manufacturer('teko',soup)
+            if detected!='ТЕКО':
+                result.status='identity_mismatch'
+                result.detail='Бренд карточки: '+(detected or 'не подтверждён')+'; разрешена только продукция ТЕКО'
+                return result
         variant = None
         if self.spec.id == "beskonta":
             selected = node_text(root.select_one(".rs-product-barcode"))

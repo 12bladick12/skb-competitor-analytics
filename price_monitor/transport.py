@@ -29,7 +29,8 @@ def check_public_host(host):
 def challenge(body: str) -> bool:
     title = re.search(r"<title[^>]*>(.*?)</title>", body, re.I | re.S)
     title = title.group(1).lower() if title else ""
-    return bool(re.search(r"just a moment|access denied|checking your browser|verify.*human|captcha|доступ ограничен|проверка браузера|подтвердите.*человек", title) or "cf-chl-" in body[:20000])
+    return bool(re.search(r"just a moment|access denied|checking your browser|verify.*human|captcha|доступ ограничен|проверка браузера|подтвердите.*человек", title) or "cf-chl-" in body[:20000]
+        or re.search(r'document\.cookie\s*=\s*[\x22\x27]RCPC=',body[:20000],re.I))
 
 
 class SourceClient:
@@ -101,7 +102,8 @@ class SourceClient:
         if status == 403:
             raise FetchError("blocked", f"{context}; сервер отказал в доступе с адреса сборщика. Причина запрета сервером не уточнена", status, True)
         if challenge(body):
-            raise FetchError("blocked", f"{context}; получена страница проверки браузера/CAPTCHA, источник остановлен", status, True)
+            kind='JavaScript-проверка RCPC' if re.search(r'RCPC=',body[:20000],re.I) else 'проверка браузера/CAPTCHA'
+            raise FetchError("blocked", f"{context}; {kind}; требуется разрешённый способ доступа, источник остановлен", status, True)
 
     def policy(self, url):
         host = urlsplit(url).hostname

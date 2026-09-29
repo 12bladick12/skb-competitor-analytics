@@ -24,11 +24,13 @@ st.html(CSS)
 
 
 @st.cache_resource
-def services(cloud_mode,version='catalog-v2'):
-    if not cloud_mode:return Store(),None
+def services(cloud_mode,version='catalog-v3-brand-scope'):
+    from price_monitor.scope import refresh_scope
+    if not cloud_mode:
+        store=Store();refresh_scope(store.catalog);return store,None
     from price_monitor.cloud import EmbeddedWorker
     settings=dict(st.secrets['database'])
-    store=Store(postgres=settings);worker=EmbeddedWorker(store)
+    store=Store(postgres=settings);refresh_scope(store.catalog);worker=EmbeddedWorker(store)
     atexit.register(worker.close)
     return store,worker
 
@@ -40,7 +42,7 @@ except Exception as exc:
 catalog=db.catalog
 library=Library(catalog)
 PAGES={'collect':'Сбор цен','products':'База товаров','compare':'Сравнение цен','runs':'Запуски'}
-CATALOG_STATES={'pending':'В очереди','running':'Сбор идёт','completed':'Завершён','partial':'Завершён с пропусками','blocked':'Доступ ограничен','cancelled':'Остановлен'}
+CATALOG_STATES={'pending':'В очереди','running':'Сбор идёт','completed':'Завершён','partial':'Завершён с пропусками','blocked':'Источник остановлен: см. причину','cancelled':'Остановлен'}
 
 
 def go(section,model=None):
@@ -79,9 +81,12 @@ def page_number(total,size,key):
 
 def downloads(rows,key,name='prices'):
     if not rows:return
+    from price_monitor.product_exports import export_tables
+    rows,properties=export_tables(library.with_specifications(rows))
     a,b=st.columns(2)
-    a.download_button('Скачать XLSX',xlsx_bytes(rows,list(rows[0])),file_name=name+'.xlsx',key=key+'xlsx')
-    b.download_button('Скачать CSV',csv_bytes(rows,list(rows[0])),file_name=name+'.csv',key=key+'csv')
+    a.download_button('Скачать XLSX',xlsx_bytes(rows,extra_sheets={'Характеристики':properties}),file_name=name+'.xlsx',key=key+'xlsx')
+    b.download_button('Скачать CSV',csv_bytes(rows),file_name=name+'.csv',key=key+'csv')
+    st.caption('Характеристики включены отдельными столбцами; в XLSX также есть лист «Характеристики».')
 
 
 def source_connection():
@@ -293,7 +298,7 @@ def runs_page():
     ids=[r['id'] for r in runs];chosen=st.session_state.get('selected_run',ids[0])
     run_id=st.selectbox('Запуск',ids,index=ids.index(chosen) if chosen in ids else 0,format_func=lambda value:next(f"№{r['id']} · {r['created_at']} · {RUN_LABELS[r['state']]}" for r in runs if r['id']==value))
     run=next(r for r in runs if r['id']==run_id)
-    a,b=st.columns(2);a.metric('Сохранено позиций',run['finished']);b.metric('Заданий',run['total'])
+    a,b=st.columns(2);a.metric('Обработано заданий',run['finished']);b.metric('Всего заданий',run['total'])
     is_catalog=catalog_progress(run_id)
     if is_catalog and run['state'] in ('cancelled','completed_with_errors'):
         if st.button('Продолжить необработанные страницы'):
@@ -303,7 +308,10 @@ def runs_page():
         issues=catalog.issues(run_id)
         if issues:
             with st.expander('Ошибки страниц (первые 100)'):st.dataframe(issues,hide_index=True,width='stretch')
-    offset=page_number(run['total'],100,f'run_page_{run_id}')
+    visible_total=library.result_count(run_id)
+    if visible_total<run['total']:
+        st.caption(f"Из результатов исключено {run['total']-visible_total} позиций без подтверждения производителя ТЕКО. Исходная история сохранена.")
+    offset=page_number(visible_total,100,f'run_page_{run_id}')
     rows=library.result_page(run_id,offset)
     if rows:result_table(rows);downloads(rows,f'run_{run_id}_{offset}',f'run_{run_id}_page_{offset//100+1}')
     else:st.info('Очередь страниц формируется. Позиции появятся после обработки карточек.')
@@ -334,8 +342,8 @@ def sources_page():
     heading('Источники','Сбор публичных страниц с соблюдением правил сайтов.')
     st.dataframe([{'Источник':s.label,'Сайт':'https://'+s.host,'Производители':', '.join(s.brands),'Данные':'Карты сайта, каталог, карточки и характеристики'} for s in SOURCES.values()],hide_index=True,width='stretch')
     source_connection()
-    st.info('При CAPTCHA, HTTP 403/429 или запрете robots.txt источник останавливается. Пропущенные страницы остаются в журнале. Для Sensoren компьютер с внешним сборщиком должен быть включён.')
-    for name,label in [('CATALOGS.md','Полные каталоги и характеристики'),('SENSOREN.md','Подключение Sensoren'),('AUDIT.md','Аудит источников')]:
+    st.info('При проверке браузера/CAPTCHA, HTTP 403/429 или запрете robots.txt источник останавливается. Подключение сборщика не означает, что сайт разрешил доступ. Причина отказа сохраняется в журнале.')
+    for name,label in [('AUDIT_2026_09_29.md','Sensoren, ТЕКО и характеристики: аудит 29.09.2026'),('CATALOGS.md','Полные каталоги и характеристики'),('SENSOREN.md','Подключение Sensoren'),('AUDIT.md','Первичный аудит источников')]:
         path=ROOT/'docs'/'prices'/name
         if path.exists():
             with st.expander(label):st.markdown(path.read_text(encoding='utf-8'))

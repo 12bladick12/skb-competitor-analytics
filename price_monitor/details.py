@@ -38,13 +38,28 @@ def offers(soup):
 
 def manufacturer(source, soup):
     from .sources import SOURCES
+    if source=='teko':
+        values=attributes(source,soup)
+        return manufacturer_from_details({'attributes':values})
     if source!='sensoren':
         return SOURCES[source].brands[0]
-    value = text(soup.select_one('.product-info__brand-name')) or text(soup.h1)
+    explicit = text(soup.select_one('.product-info__brand-name'))
+    value = explicit or text(soup.h1)
     for brand, pattern in BRAND_PATTERNS.items():
         if re.search(r'(?<![a-z])'+pattern+r'(?![a-z])', value, re.I):
             return brand
-    return ''
+    return explicit
+
+
+def manufacturer_from_details(details):
+    """TEKO is also a dealer: only an explicit product brand is evidence."""
+    for row in details.get('attributes',[]):
+        if str(row.get('name','')).strip().rstrip(':').casefold() in ('бренд','производитель','manufacturer','brand'):
+            value=str(row.get('value') or '').strip()
+            if re.fullmatch(r'(?:(?:АО\s+)?НПК\s+)?[«"\s]*(?:ТЕКО|TEKO)[»"\s]*',value,re.I):
+                return 'ТЕКО'
+            return value
+    return str(details.get('manufacturer') or '').strip()
 
 
 def attributes(source, soup, variant=None):
@@ -56,7 +71,12 @@ def attributes(source, soup, variant=None):
     if source=='sensoren':
         for row in soup.select('.characteristics-all li'):
             value = row.find('span')
-            add(' '.join(str(x) for x in row.find_all(string=True,recursive=False)),text(value))
+            if not value:continue
+            # The label can be wrapped in a nested element; exclude the value.
+            label=BeautifulSoup(str(row),'html.parser')
+            first=label.find('span')
+            if first:first.decompose()
+            add(text(label),text(value))
     elif source=='beskonta':
         for row in soup.select('tr.tab-content_table_character-text, table.p-p-table-mini-h tr'):
             if row.find_parent('tbody',class_='rs-offer-property'):
@@ -79,7 +99,11 @@ def attributes(source, soup, variant=None):
     elif source=='teko':
         for row in soup.select('.product-item-detail-properties .one_prop'):
             add(text(row.select_one('.name')),text(row.select_one('.value')))
-    elif source=='sensor':
+    # Product-scoped structured properties complement visible site selectors.
+    for row in soup.select('[itemtype$="/Product"] [itemprop="additionalProperty"]'):
+        name=row.select_one('[itemprop="name"]');value=row.select_one('[itemprop="value"]')
+        if name and value:add(name.get('content') or text(name),value.get('content') or text(value))
+    if source=='sensor':
         for row in soup.select('.product-page__tab-item--char .char-table__item'):
             group=row.find_parent(class_='group_param')
             add(text(row.select_one('.char-table__name')),text(row.select_one('.char-table__value')),
@@ -144,6 +168,7 @@ def extract_details(source, soup, url, variant=None):
         image=safe_link(url,meta.get('content'))
         if image:images.append(image)
     return {'attributes':props,'description':'\n\n'.join(descriptions),'category':' / '.join(crumbs),
+        'manufacturer':manufacturer(source,soup),
         'documents':documents,'images':images,'variant_id':variant['id'] if variant else '',
         'specification_state':'collected' if props else 'not_published_or_unrecognized',
         'evidence':'public_html'}
@@ -157,8 +182,8 @@ def parse_catalog_product(source, html, url, selected_brands):
     if not soup.h1 or not soup.select_one(SOURCES[source].scope):
         return [], 'Не распознана карточка товара'
     brand=manufacturer(source,soup)
-    if source=='sensoren' and not brand:
-        return [], 'outside_scope'
+    if source in ('sensoren','teko') and not brand:
+        return [], 'Производитель не подтверждён в карточке; товар не включён в базу'
     if brand not in selected_brands:
         return [], 'outside_scope'
     variants=offers(soup) if source=='beskonta' else []

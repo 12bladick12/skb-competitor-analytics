@@ -129,7 +129,7 @@ def safe_cell(value):
 
 
 def csv_bytes(rows: list[dict], columns: list[str] | None = None) -> bytes:
-    columns = columns or (list(rows[0]) if rows else COLUMNS)
+    columns = columns or (list(dict.fromkeys(k for row in rows for k in row)) if rows else COLUMNS)
     out = StringIO(newline="")
     writer = csv.DictWriter(out, fieldnames=columns, delimiter=";", extrasaction="ignore")
     writer.writeheader()
@@ -138,8 +138,8 @@ def csv_bytes(rows: list[dict], columns: list[str] | None = None) -> bytes:
     return out.getvalue().encode("utf-8-sig")
 
 
-def xlsx_bytes(rows: list[dict], columns: list[str] | None = None, sheet_name="Результаты") -> bytes:
-    columns = columns or (list(rows[0]) if rows else COLUMNS)
+def xlsx_bytes(rows: list[dict], columns: list[str] | None = None, sheet_name="Результаты", extra_sheets=None) -> bytes:
+    columns = columns or (list(dict.fromkeys(k for row in rows for k in row)) if rows else COLUMNS)
     wb = Workbook()
     ws = wb.active
     ws.title = sheet_name
@@ -150,6 +150,14 @@ def xlsx_bytes(rows: list[dict], columns: list[str] | None = None, sheet_name="�
     ws.auto_filter.ref = ws.dimensions
     for col in ws.columns:
         ws.column_dimensions[col[0].column_letter].width = min(65, max(18, len(str(col[0].value or "")) + 3))
+    for title,items in (extra_sheets or {}).items():
+        sheet=wb.create_sheet(title)
+        fields=list(dict.fromkeys(k for row in items for k in row))
+        if not fields:fields=['Характеристика','Значение']
+        sheet.append(fields)
+        for row in items:sheet.append([safe_cell(row.get(c)) for c in fields])
+        sheet.freeze_panes='A2';sheet.auto_filter.ref=sheet.dimensions
+        for col in sheet.columns:sheet.column_dimensions[col[0].column_letter].width=28
     out = BytesIO()
     wb.save(out)
     return out.getvalue()

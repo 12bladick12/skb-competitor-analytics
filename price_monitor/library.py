@@ -6,6 +6,7 @@ from decimal import Decimal, InvalidOperation
 
 from .models import utcnow
 from .sources import SOURCES
+from .scope import VISIBLE,RESULT_VISIBLE
 
 
 PRODUCT_SELECT="""SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.product_url,
@@ -39,15 +40,47 @@ def price_value(value):
 class Library:
     def __init__(self,repository):self.repo=repository
 
+    def with_specifications(self,rows):
+        """Resolve observation hashes in batches, preserving historical snapshots."""
+        output=[]
+        for offset in range(0,len(rows),100):
+            page=[dict(x) for x in rows[offset:offset+100]]
+            references=set();current=[]
+            for row in page:
+                if '_specifications' in row:continue
+                if 'details_json' not in row:
+                    if row.get('rule_id') is not None:current.append(row['rule_id'])
+                    continue
+                try:payload=json.loads(row.get('details_json') or '{}')
+                except (ValueError,TypeError):payload={}
+                row['_specifications']=payload if 'ref' not in payload else {}
+                if payload.get('ref'):references.add(payload['ref']);row['_details_ref']=payload['ref']
+            docs={}
+            if references:
+                params={f'h{i}':h for i,h in enumerate(references)}
+                found=self.repo.batch('SELECT fingerprint,details_json FROM product_documents WHERE fingerprint IN ('+','.join(f'%(h{i})s' for i in range(len(params)))+')',params)
+                docs={x['fingerprint']:json.loads(x['details_json']) for x in found}
+            latest={}
+            if current:
+                params={f'id{i}':rid for i,rid in enumerate(current)}
+                found=self.repo.batch('SELECT i.rule_id,d.details_json FROM product_index i JOIN product_documents d ON d.fingerprint=i.details_hash WHERE i.rule_id IN ('+','.join(f'%(id{i})s' for i in range(len(params)))+')',params)
+                latest={x['rule_id']:json.loads(x['details_json']) for x in found}
+            for row in page:
+                ref=row.pop('_details_ref',None)
+                if ref:row['_specifications']=docs.get(ref,{})
+                elif 'details_json' not in row and '_specifications' not in row:row['_specifications']=latest.get(row.get('rule_id'),{})
+                output.append(row)
+        return output
+
     def summary(self):
-        return self.repo.batch("""SELECT (SELECT count(*) FROM rules) products,
-            (SELECT count(*) FROM product_index WHERE attributes_count>0) with_specs,
-            (SELECT count(*) FROM comparison_items) selected,
+        return self.repo.batch(f"""SELECT (SELECT count(*) FROM rules q WHERE {VISIBLE}) products,
+            (SELECT count(*) FROM product_index i JOIN rules q ON q.id=i.rule_id WHERE attributes_count>0 AND {VISIBLE}) with_specs,
+            (SELECT count(*) FROM comparison_items c JOIN rules q ON q.id=c.rule_id WHERE {VISIBLE}) selected,
             (SELECT max(checked_at) FROM observations) checked_at""")[0]
 
     def products(self,query='',source='',brand='',selected=False,offset=0,limit=50,rule_id=None):
         p={'offset':max(0,int(offset)),'limit':min(1000,max(1,int(limit)))}
-        where=['1=1']
+        where=[VISIBLE]
         if query.strip():
             for n,word in enumerate(query.casefold().split()[:8]):
                 where.append(f"lower(q.article||' '||q.manufacturer||' '||COALESCE(i.title,'')||' '||COALESCE(i.category,'')) LIKE %(word{n})s ESCAPE '!' ")
@@ -92,7 +125,7 @@ class Library:
     def history(self,rule_ids,start=None,end=None):
         if not rule_ids:return []
         p={f'id{i}':int(x) for i,x in enumerate(rule_ids)}
-        conditions=['j.rule_id IN ('+','.join(f'%(id{i})s' for i in range(len(rule_ids)))+')']
+        conditions=[VISIBLE,'j.rule_id IN ('+','.join(f'%(id{i})s' for i in range(len(rule_ids)))+')']
         if start:conditions.append('o.checked_at>=%(start)s');p['start']=str(start)
         if end:conditions.append('o.checked_at<%(end)s');p['end']=str(end)
         return self.repo.batch('''SELECT j.rule_id,j.run_id,q.source,q.manufacturer,q.article,q.product_url,o.*
@@ -112,7 +145,7 @@ class Library:
             for i,row in enumerate(subset):
                 params.update({f's{i}':row['source'],f'b{i}':row['manufacturer'],f'a{i}':row['article'].casefold()})
                 conditions.append(f'(q.source=%(s{i})s AND q.manufacturer=%(b{i})s AND lower(q.article)=%(a{i})s)')
-            options=self.repo.batch('SELECT q.* FROM rules q WHERE '+' OR '.join(conditions),params) if conditions else []
+            options=self.repo.batch('SELECT q.* FROM rules q WHERE '+VISIBLE+' AND ('+' OR '.join(conditions)+')',params) if conditions else []
             for row in subset:
                 candidates=[q for q in options if q['source']==row['source'] and q['manufacturer']==row['manufacturer'] and q['article'].casefold()==row['article'].casefold() and (not row.get('product_url') or q['product_url'].rstrip('/')==row['product_url'].rstrip('/'))]
                 if len(candidates)!=1:
@@ -128,22 +161,15 @@ class Library:
             COALESCE(o.status,j.state) status,o.price,o.currency,o.availability,o.checked_at,o.http_status,o.detail,
             o.url,o.title,o.price_text,o.availability_text,o.response_hash,o.details_json
             FROM jobs j JOIN rules q ON q.id=j.rule_id LEFT JOIN observations o ON o.job_id=j.id
-            WHERE j.run_id=%(run)s ORDER BY j.id LIMIT %(limit)s OFFSET %(offset)s''',{'run':run_id,'limit':limit,'offset':offset})
+            WHERE j.run_id=%(run)s AND '''+RESULT_VISIBLE+''' ORDER BY j.id LIMIT %(limit)s OFFSET %(offset)s''',{'run':run_id,'limit':limit,'offset':offset})
+
+    def result_count(self,run_id):
+        return self.repo.batch('SELECT count(*) total FROM jobs j JOIN rules q ON q.id=j.rule_id LEFT JOIN observations o ON o.job_id=j.id WHERE j.run_id=%(run)s AND '+RESULT_VISIBLE,{'run':run_id})[0]['total']
 
     def export_products(self,query='',source='',brand='',selected=False):
         rows=[];offset=0
         while True:
             total,page=self.products(query,source,brand,selected,offset,1000)
-            if page:
-                params={f'id{i}':row['rule_id'] for i,row in enumerate(page)}
-                documents=self.repo.batch('''SELECT i.rule_id,d.details_json FROM product_index i
-                    JOIN product_documents d ON d.fingerprint=i.details_hash WHERE i.rule_id IN ('''+','.join(f'%(id{i})s' for i in range(len(page)))+')',params)
-                by_id={row['rule_id']:json.loads(row['details_json']) for row in documents}
-                for row in page:
-                    detail=by_id.get(row['rule_id'],{})
-                    row['characteristics_json']=json.dumps(detail.get('attributes',[]),ensure_ascii=False)
-                    row['description']=detail.get('description','')
-                    row['documents_json']=json.dumps(detail.get('documents',[]),ensure_ascii=False)
-            rows.extend(page);offset+=len(page)
+            rows.extend(self.with_specifications(page));offset+=len(page)
             if offset>=total or not page:break
         return rows
