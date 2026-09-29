@@ -33,7 +33,7 @@ def seeds(source,brands):
 # unselected brands can be excluded before fetching. Unknown URLs are inspected.
 OTHER_SENSOR_BRANDS = (
     'autrol','banner','baumer','carlo_gavazzi','contrinex','cyndar','datalogic','datasensor',
-    'delta_electronics','ege','ema_electronic','endress_hauser','festo','innocont','innolevel',
+    'datasensing','delta_electronics','ege','ema_electronic','endress_hauser','festo','innocont','innolevel',
     'innovert','keyence','leuze','lovato','mega_k','micro_detectors','microsonic','temposonics',
     'neftim','nivelco','omron','raventek','schmersal','sensopart','sentec','sentinel','siemens',
     'skb_induktsiya','teko','telco','telemecanique','turck','vega','watts','wenglor','wika','yaskawa',
@@ -121,12 +121,15 @@ def discover(source, kind, body, base, brands):
     return [(kind,url) for url,kind in found.items() if url!=base]
 
 
-def ingest_navigation(repository, page, owner, outbox, saved):
+def ingest_navigation(repository, page, owner, outbox, saved, brands=None):
     """Yield to products after a bounded chunk, retaining discovery on disk."""
     from .runtime import phase
     offset=saved['offset'];links=saved['links'];end=min(offset+64,len(links))
     with phase('discover'):
-        repository.add_pages(page['run_id'],page['source'],links[offset:end],owner)
+        portion=links[offset:end]
+        if page['source']=='sensoren' and brands is not None:
+            portion=[(kind,url) for kind,url in portion if kind!='product' or selected_sensoren_url(url,brands)]
+        repository.add_pages(page['run_id'],page['source'],portion,owner)
         # A cancelled/expired writer must not advance past links it could not
         # insert. All preceding successful batches are safe to replay.
         if repository.cancelled(page['run_id'],page['source'],owner):return
@@ -145,6 +148,7 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
     if not info or info['state'] not in ('pending','running'):return
     brands=json.loads(info['brands_json'])
     if not repository.start(run_id,source,owner):return
+    if source=='sensoren':repository.skip_unselected_sensoren_pages(run_id,brands,owner)
     from .monthly import MonthlyMemory
     MonthlyMemory(repository).backfill_pages(source)
     repository.skip_remembered_pages(run_id,source,owner)
@@ -167,7 +171,7 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
             try:
                 navigation=outbox.load_navigation(page) if outbox and page['kind']!='product' else None
                 if navigation is not None:
-                    ingest_navigation(repository,page,owner,outbox,navigation)
+                    ingest_navigation(repository,page,owner,outbox,navigation,brands)
                     completed()
                     continue
                 saved=outbox.load(page) if outbox and page['kind']=='product' else None
@@ -195,7 +199,7 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                     with phase('discover'):links=discover(source,page['kind'],body,url,brands)
                     if outbox:
                         outbox.save_navigation(page,links)
-                        ingest_navigation(repository,page,owner,outbox,{'links':links,'offset':0})
+                        ingest_navigation(repository,page,owner,outbox,{'links':links,'offset':0},brands)
                     else:
                         repository.add_pages(run_id,source,links,owner)
                         repository.finish_page(page['id'],owner,'done','',code)

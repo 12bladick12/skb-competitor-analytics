@@ -109,13 +109,40 @@ class CatalogRepository:
         kinds=('sitemap','listing','product') if prefer_navigation else ('product','listing','sitemap')
         # Each candidate uses catalog_queue_url; only three rows need sorting.
         candidates=[];choices=[]
+        params=self.params(run_id,source,owner)
+        product_order='url'
+        if source=='sensoren':
+            # Known selected-brand URLs come before unknown manufacturers.
+            # Their parsed manufacturer is still checked before saving.
+            hints=('autonics','balluff','pepperl','ifm','lanbao','sick')
+            params.update({f'hint_{i}':'%'+brand+'%' for i,brand in enumerate(hints)})
+            product_order='CASE WHEN '+' OR '.join(f'url LIKE %(hint_{i})s' for i in range(len(hints)))+' THEN 0 ELSE 1 END,url'
         for priority,kind in enumerate(kinds):
             name=f'candidate_{priority}'
-            candidates.append(f"{name} AS (SELECT id FROM catalog_pages WHERE run_id=%(run)s AND source=%(source)s AND state='pending' AND kind='{kind}' ORDER BY url LIMIT 1)")
+            order=product_order if kind=='product' else 'url'
+            candidates.append(f"{name} AS (SELECT id FROM catalog_pages WHERE run_id=%(run)s AND source=%(source)s AND state='pending' AND kind='{kind}' ORDER BY {order} LIMIT 1)")
             choices.append(f'SELECT id,{priority} priority FROM {name}')
         query='WITH '+','.join(candidates)+" UPDATE catalog_pages SET state='processing' WHERE id=(SELECT id FROM ("+' UNION ALL '.join(choices)+') candidates ORDER BY priority LIMIT 1) AND '+self.allowed()+' RETURNING *'
-        rows=self.batch(query,self.params(run_id,source,owner))
+        rows=self.batch(query,params)
         return rows[0] if rows else None
+
+    def skip_unselected_sensoren_pages(self,run_id,brands,owner):
+        from .catalog import OTHER_SENSOR_BRANDS,SENSOREN_BRAND_PATHS
+        excluded=list(OTHER_SENSOR_BRANDS)+[slug for brand,slug in SENSOREN_BRAND_PATHS.items() if brand not in brands]
+        selected=[SENSOREN_BRAND_PATHS[brand] for brand in brands if brand in SENSOREN_BRAND_PATHS]
+        def literal(value):return value.replace('!','!!').replace('_','!_').replace('%','!%')
+        for offset in range(0,len(excluded),8):
+            params=self.params(run_id,'sensoren',owner);conditions=[];keep=[]
+            for i,slug in enumerate(excluded[offset:offset+8]):
+                for j,ending in enumerate(('!_','/')):
+                    key=f'ex{i}_{j}';params[key]='%!_'+literal(slug)+ending+'%'
+                    conditions.append(f"lower(url) LIKE %({key})s ESCAPE '!'")
+            for i,slug in enumerate(selected):
+                key=f'keep{i}';params[key]='%'+literal(slug)+'%'
+                keep.append(f"lower(url) LIKE %({key})s ESCAPE '!'")
+            guard=' AND NOT ('+' OR '.join(keep)+')' if keep else ''
+            self.batch("UPDATE catalog_pages SET state='skipped',detail='Другой производитель: адрес карточки',checked_at=%(now)s "
+                "WHERE run_id=%(run)s AND source='sensoren' AND kind='product' AND state='pending' AND ("+' OR '.join(conditions)+')'+guard+' AND '+self.allowed(),params)
 
     def finish_page(self,page_id,owner,state,detail,http_status):
         rows=self.batch('SELECT run_id,source FROM catalog_pages WHERE id=%(id)s',{'id':page_id})

@@ -94,6 +94,21 @@ class RecoveryTests(unittest.TestCase):
             ingest_navigation(repository,page,'owner',resumed,resumed.load_navigation(page))
             self.assertIsNone(resumed.load_navigation(page))
 
+    def test_known_other_brands_skip_without_http_and_selected_products_go_first(self):
+        with tempfile.TemporaryDirectory(dir=ROOT/'data') as directory:
+            store=Store(Path(directory)/'queue.db');run=store.enqueue_catalog({'sensoren':['LANBAO']})
+            owner='router2-test';store.acquire(owner);store.claim_run(owner);repo=store.catalog
+            repo.start(run,'sensoren',owner)
+            foreign='https://sensoren.ru/product/a_datchik_datasensing_12/'
+            unknown='https://sensoren.ru/product/a_unknown_12/'
+            selected='https://sensoren.ru/product/z_datchik_lanbao_12/'
+            repo.add_pages(run,'sensoren',[('product',url) for url in (foreign,unknown,selected)],owner)
+            repo.skip_unselected_sensoren_pages(run,['LANBAO'],owner)
+            self.assertEqual(repo.batch('SELECT state FROM catalog_pages WHERE url=%(url)s',{'url':foreign})[0]['state'],'skipped')
+            self.assertEqual(repo.claim(run,'sensoren',owner)['url'],selected)
+            self.assertEqual(repo.claim(run,'sensoren',owner)['url'],unknown)
+            store.close()
+
     def test_resume_after_connection_loss_before_and_after_commit(self):
         for commit_reached in (False,True):
             with self.subTest(commit_reached=commit_reached),tempfile.TemporaryDirectory(dir=ROOT/'data') as directory:
