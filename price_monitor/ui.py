@@ -24,7 +24,7 @@ st.html(CSS)
 
 
 @st.cache_resource
-def services(cloud_mode,version='collector-site-recovery-v3'):
+def services(cloud_mode,version='collector-site-recovery-v4'):
     from price_monitor.scope import refresh_scope
     if not cloud_mode:
         store=Store();refresh_scope(store.catalog);return store,None
@@ -323,7 +323,7 @@ def sources_page():
         st.dataframe([{'Источник':s.label,'Сайт':'https://'+s.host,'Производители':', '.join(s.brands),'Данные':'Карты сайта, каталог, карточки и характеристики'} for s in SOURCES.values()],hide_index=True,width='stretch')
         source_connection()
         st.info('При проверке браузера/CAPTCHA, HTTP 403/429 или запрете robots.txt источник останавливается. Причина отказа сохраняется в журнале.')
-        for name,label in [('SENSOREN_RECOVERY_2026_09_29.md','Sensoren: устранение зависания и проверка восстановления'),('MONTHLY_COLLECTION.md','Память сбора и обновление по месяцам'),('AUDIT_2026_09_29.md','Sensoren, ТЕКО и характеристики: аудит 29.09.2026'),('CATALOGS.md','Полные каталоги и характеристики'),('SENSOREN.md','Подключение Sensoren'),('AUDIT.md','Первичный аудит источников')]:
+        for name,label in [('AUDIT_2026_09_30.md','BESKONTA, СЕНСОР и ТЕКО: исправления 30.09.2026'),('SENSOREN_RECOVERY_2026_09_29.md','Sensoren: устранение зависания и проверка восстановления'),('MONTHLY_COLLECTION.md','Память сбора и обновление по месяцам'),('AUDIT_2026_09_29.md','Sensoren, ТЕКО и характеристики: аудит 29.09.2026'),('CATALOGS.md','Полные каталоги и характеристики'),('SENSOREN.md','Подключение Sensoren'),('AUDIT.md','Первичный аудит источников')]:
             path=ROOT/'docs'/'prices'/name
             if path.exists():
                 with st.expander(label):st.markdown(path.read_text(encoding='utf-8'))

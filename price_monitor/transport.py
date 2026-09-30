@@ -7,6 +7,7 @@ import time
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import requests
+from requests.structures import CaseInsensitiveDict
 
 from .robots import Robots
 from .sources import SOURCES, validate_url
@@ -18,6 +19,12 @@ class FetchError(Exception):
     def __init__(self, status, message, http_status=None, stop_source=False):
         super().__init__(message)
         self.status, self.http_status, self.stop_source = status, http_status, stop_source
+
+    @property
+    def source_failure(self):
+        """Only transport/server failures count toward the source circuit breaker."""
+        return self.status == 'network_error' or (self.status == 'http_error' and
+            (self.http_status is None or self.http_status >= 500))
 
 
 def check_public_host(host):
@@ -84,7 +91,9 @@ class SourceClient:
                 r._content_consumed = True
                 if not r.encoding or r.encoding.lower() == "iso-8859-1":
                     r.encoding = r.apparent_encoding or "utf-8"
-                return r.status_code, dict(r.headers), r.text
+                # HTTP field names are case-insensitive. BESKONTA sends lower-case
+                # `location`; a plain dict loses requests' case-insensitive lookup.
+                return r.status_code, CaseInsensitiveDict(r.headers), r.text
         except (requests.RequestException, OSError) as e:
             raise FetchError("network_error", "Не удалось получить ответ источника: " + type(e).__name__) from e
         except ValueError as e:

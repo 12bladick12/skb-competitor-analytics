@@ -11,12 +11,37 @@ from price_monitor.catalog_outbox import CatalogOutbox
 from price_monitor.details import manufacturer,parse_catalog_product
 from price_monitor.storage import Store
 from price_monitor.worker import Worker
-from price_monitor.transport import FetchError
+from price_monitor.transport import FetchError,SourceClient
 
 ROOT=Path(__file__).resolve().parents[1]
 
 
 class SiteCatalogTests(unittest.TestCase):
+    def test_http_headers_keep_case_insensitive_redirects_and_content_type(self):
+        client=SourceClient('beskonta');client.policy=Mock();client.wait=Mock()
+        responses=[]
+        for code,headers,body in [(301,{'location':'/product/current/'},b''),
+                                  (200,{'content-type':'text/html; charset=utf-8'},b'<h1>Current</h1>')]:
+            response=Mock();response.status_code=code;response.headers=headers
+            response.encoding='utf-8';response.text=body.decode();response.iter_content.return_value=[body]
+            manager=Mock();manager.__enter__=Mock(return_value=response);manager.__exit__=Mock(return_value=False)
+            responses.append(manager)
+        try:
+            with patch('price_monitor.transport.check_public_host'),patch.object(client.session,'get',side_effect=responses) as request:
+                url,code,body=client.fetch('https://beskonta.ru/product/old/')
+            self.assertEqual((url,code),('https://beskonta.ru/product/current/',200))
+            self.assertEqual(client.policy.call_count,2)
+            self.assertTrue(all(not c.kwargs['allow_redirects'] for c in request.call_args_list))
+        finally:client.close()
+
+    def test_only_transport_and_server_errors_trip_source_circuit_breaker(self):
+        for code in (301,302,404,410):
+            self.assertFalse(FetchError('http_error','page problem',code).source_failure)
+        for code in (None,500,502,503,504):
+            self.assertTrue(FetchError('http_error','server problem',code).source_failure)
+        self.assertTrue(FetchError('network_error','timeout').source_failure)
+        self.assertFalse(FetchError('robots_denied','denied').source_failure)
+
     def test_individual_entry_points_and_forbidden_navigation(self):
         self.assertEqual(seeds('beskonta',['BESKONTA'])[0],('sitemap','https://beskonta.ru/sitemap-1.xml'))
         self.assertEqual(seeds('sensor',['СЕНСОР']),[('sitemap','https://sensor-com.ru/sitemap/main.xml')])

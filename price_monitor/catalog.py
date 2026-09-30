@@ -225,7 +225,7 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                 if shutdown.is_set() or exc.status=='cancelled':return
                 repository.finish_page(page['id'],owner,'skipped' if exc.status=='robots_denied' else 'failed',str(exc),exc.http_status)
                 completed()
-                failures=failures+1 if exc.status in ('network_error','http_error') else 0
+                failures=failures+1 if exc.source_failure else 0
                 if exc.stop_source or failures>=3:
                     repository.block_source(run_id,source,owner,str(exc))
                     return
