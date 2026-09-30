@@ -1,6 +1,7 @@
 import json
 import tempfile
 import time
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import Mock,patch
@@ -97,6 +98,22 @@ class PassportTests(unittest.TestCase):
     def test_only_document_jobs_are_supported(self):
         with self.assertRaises(ValueError):self.docs.enqueue(self.rid,'recognize',{})
         with self.assertRaises(ValueError):self.docs.claim('recognize','one')
+
+    def test_hot_reload_stops_previous_document_worker_only(self):
+        from price_monitor.passport_worker import PassportWorker,stop_previous_downloads
+        def wait(worker):worker.shutdown.wait(5)
+        legacy=type('PassportWorker',(),{'__module__':PassportWorker.__module__,'run':wait})()
+        unrelated=type('OtherWorker',(),{'__module__':'elsewhere','run':wait})()
+        legacy.shutdown=threading.Event();unrelated.shutdown=threading.Event()
+        threads=[threading.Thread(target=w.run,name='passport-downloads',daemon=True) for w in (legacy,unrelated)]
+        for thread in threads:thread.start()
+        try:
+            stop_previous_downloads()
+            self.assertFalse(threads[0].is_alive())
+            self.assertFalse(unrelated.shutdown.is_set())
+        finally:
+            for worker in (legacy,unrelated):worker.shutdown.set()
+            for thread in threads:thread.join(timeout=2)
 
     def test_image_only_pdf_remains_without_invented_text(self):
         import pymupdf

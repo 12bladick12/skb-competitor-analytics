@@ -80,12 +80,27 @@ class PassportWorker:
 class EmbeddedDownloads:
     def __init__(self, repository, settings):
         self.files=SupabaseFiles(settings);self.files.ensure()
+        stop_previous_downloads()
         self.worker=PassportWorker(repository,self.files)
         self.thread=threading.Thread(target=self.worker.run,name='passport-downloads',daemon=True)
         self.thread.start()
 
     def close(self):
         self.worker.shutdown.set();self.thread.join(timeout=3)
+
+
+def stop_previous_downloads():
+    """Streamlit hot reload can retain threads created by the previous release."""
+    previous=[]
+    for thread in threading.enumerate():
+        if thread.name!='passport-downloads' or thread is threading.current_thread():continue
+        # Legacy releases did not keep a public worker registry. The bound
+        # target identifies only this module's document worker, never prices.
+        worker=getattr(getattr(thread,'_target',None),'__self__',None)
+        if (worker is not None and type(worker).__module__==__name__
+                and type(worker).__name__=='PassportWorker'):
+            worker.shutdown.set();previous.append(thread)
+    for thread in previous:thread.join(timeout=3)
 
 
 def main():
