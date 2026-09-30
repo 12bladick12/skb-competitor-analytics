@@ -1,6 +1,7 @@
 # Unified news and price analytics, Python 3.13.
 # Reboot the Streamlit process after upgrading to reload both background workers.
 # Collector release 2026-09-30 v4: preserve case-insensitive HTTP redirect headers.
+# Passport release 2026-09-30 v2: restart workers after removing image recognition.
 -c requirements-cloud-lock.txt
 streamlit[auth]==1.64.0
 requests==2.34.2
