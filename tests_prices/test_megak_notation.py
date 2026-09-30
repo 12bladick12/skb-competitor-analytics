@@ -61,6 +61,10 @@ class DesignationChecks(unittest.TestCase):
         p=product('PS2-33-15N11-K')
         self.assertEqual(p.values['body_type'],'rectangular')
         for name in ('diameter','length','material'):self.assertNotIn(name,p.values)
+        p=product('PS2-46-15N11-K')
+        self.assertTrue(p.decoding['complete']);self.assertTrue(p.decoding['requires_review'])
+        self.assertEqual(p.decoding['extras']['Номер корпуса'],'46')
+        for name in ('body_type','diameter','length','material'):self.assertNotIn(name,p.values)
 
     def test_unknown_suffix_blocks_defaults_but_keeps_explicit_data(self):
         for model in ('PS2-18M68-8N11-K-T9','PS2-18M68-8N11-C99','PS2Q-18M68-8N11-K'):

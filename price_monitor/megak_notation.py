@@ -79,9 +79,10 @@ def decode(model):
         add('body_type',{'M':'threaded','G':'pipe-threaded','D':'smooth'}[body['thread']],parts[1],'2.2')
         add('length',float(body['length']),parts[1],'2.5')
         if body['material']:add('material',{'A':'aluminium','S':'steel'}[body['material']],body['material'],'2.4')
-    elif parts[1] in BODY_CODES:
+    elif re.fullmatch(r'\d{2}',parts[1]) and 31<=int(parts[1])<=70:
         # A housing number is not a diameter or length (33 also has variants).
-        add('body_type','rectangular',parts[1],'2.3')
+        if parts[1] in BODY_CODES:add('body_type','rectangular',parts[1],'2.3')
+        else:issue('Номер специального корпуса распознан; его геометрия требует карточки или чертежа.')
         result['extras']['Номер корпуса']=parts[1]
     else:
         body=None;understood=False;issue('Группа корпуса не распознана однозначно; диаметр, длина и материал не угадываются.')
