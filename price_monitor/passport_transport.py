@@ -164,7 +164,10 @@ class SupabaseFiles:
 
     def ensure(self):
         r = self.session.get(f'{self.url}/storage/v1/bucket/{quote(self.bucket, safe="")}', timeout=25,allow_redirects=False)
-        if r.status_code == 404:
+        try:response=r.json()
+        except ValueError:response={}
+        missing=r.status_code==404 or (r.status_code==400 and any(str(response.get(k,'')).lower()=='bucket not found' for k in ('error','message')))
+        if missing:
             r = self.session.post(self.url + '/storage/v1/bucket', json={
                 'id': self.bucket, 'name': self.bucket, 'public': False,
                 'file_size_limit': MAX_BYTES, 'allowed_mime_types': ['application/pdf']}, timeout=25,allow_redirects=False)

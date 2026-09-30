@@ -195,7 +195,10 @@ class ProductState:
             if code==200 and found:
                 params['target'] = found.url
                 params['restored_state']='discontinued' if found.availability=='discontinued' else 'active'
-                self.repo.batch(["""UPDATE product_lifecycle SET state=%(restored_state)s,checked_at=%(now)s,last_seen=%(now)s,
+                self.repo.batch(['''INSERT INTO product_events(id,rule_id,kind,detail,created_at)
+                    SELECT %(event)s,%(id)s,'restored',%(target)s,%(now)s FROM product_lifecycle
+                    WHERE rule_id=%(id)s AND state='archived' AND '''+self.repo.allowed()+''' ON CONFLICT(id) DO NOTHING''',
+                    """UPDATE product_lifecycle SET state=%(restored_state)s,checked_at=%(now)s,last_seen=%(now)s,
                     missing_count=0,missing_kind='',missing_since=NULL,last_missing_check=NULL,current_url=%(target)s,
                     note='Карточка доступна; ссылка отсутствует в перечне каталога' WHERE rule_id=%(id)s AND """+self.repo.allowed(),
                     '''INSERT INTO product_aliases(source,url,article,rule_id) SELECT source,%(target)s,article,id FROM rules

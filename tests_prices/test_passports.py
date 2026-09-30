@@ -11,7 +11,7 @@ from price_monitor.models import Rule,Observation,utcnow
 from price_monitor.passports import Passports
 from price_monitor.product_state import ProductState
 from price_monitor.passport_sources import candidates,classify_pdf,exact_model_in_text,revision_date,VERSION
-from price_monitor.passport_transport import Download,DocumentClient,LocalFiles
+from price_monitor.passport_transport import Download,DocumentClient,LocalFiles,SupabaseFiles
 from price_monitor.passport_processing import download_job
 from price_monitor.passport_recognition import validate,LocalRecognizer
 from price_monitor.passport_review import approve,confirmed
@@ -81,6 +81,17 @@ class PassportTests(unittest.TestCase):
     def test_revision_is_explicit_and_never_download_or_manufacture_date(self):
         self.assertEqual(revision_date('Manufactured 2026-09-30; Downloaded 2026-10-01'),'')
         self.assertEqual(revision_date('Revision date: 2025-11-03; дата редакции: 15.02.2026'),'2026-02-15')
+
+    def test_storage_400_missing_bucket_creates_private_bucket(self):
+        storage=SupabaseFiles({'url':'https://example.supabase.co','service_key':'sb_secret_test'})
+        self.assertNotIn('Authorization',storage.session.headers)
+        storage.session=Mock()
+        storage.session.get.return_value=Mock(status_code=400,json=lambda:{'error':'Bucket not found'})
+        storage.session.post.return_value=Mock(status_code=200,ok=True,json=lambda:{'public':False})
+        storage.ensure()
+        self.assertFalse(storage.session.post.call_args.kwargs['json']['public'])
+        storage.session.get.return_value=Mock(status_code=200,ok=True,json=lambda:{'public':True})
+        with self.assertRaises(ValueError):storage.ensure()
 
     def test_global_recognition_serializes_different_documents(self):
         self.save()
