@@ -1,8 +1,7 @@
-"""Independent download/recognition worker; only the latter needs a local Ollama."""
+"""Independent worker for downloading and verifying public technical PDFs."""
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import signal
 import threading
@@ -14,38 +13,20 @@ from pathlib import Path
 from .models import utcnow
 from .passports import Passports
 from .passport_processing import download_job
-from .passport_recognition import LocalRecognizer, VERSION, validate
 from .passport_transport import LocalFiles, SupabaseFiles
 
 log=logging.getLogger('price_monitor.passports')
 
 
 class PassportWorker:
-    def __init__(self, repository, files, kind='download', recognizer=None):
-        if kind not in ('download','recognize'):raise ValueError('Unknown worker queue')
+    def __init__(self, repository, files, kind='download'):
+        if kind!='download':raise ValueError('Unknown worker queue')
         self.passports=Passports(repository);self.files=files;self.kind=kind
-        self.recognizer=recognizer;self.owner='passports1-'+kind+'-'+str(uuid.uuid4())
+        self.owner='passports2-'+kind+'-'+str(uuid.uuid4())
         self.shutdown=threading.Event()
 
     def work(self, job):
-        if self.kind=='download':
-            download_job(self.passports,self.files,job,self.owner)
-            return
-        payload=json.loads(job['payload_json']);fp=payload['fingerprint']
-        raw=self.files.get(fp)
-        result=self.recognizer(raw)
-        pages=self.passports.repo.batch('SELECT page_count FROM passport_files WHERE fingerprint=%(fp)s',{'fp':fp})
-        result=validate(result,pages[0]['page_count'])
-        job['_metrics']={'requests':0,'bytes':0,'pages':pages[0]['page_count']}
-        self.passports.repo.batch('''INSERT INTO passport_geometry(fingerprint,version,result_json,updated_at)
-            SELECT %(fp)s,%(version)s,%(result)s,%(now)s WHERE '''+self.passports.guard()+'''
-            ON CONFLICT(fingerprint,version) DO UPDATE SET result_json=excluded.result_json,
-            state='review',updated_at=excluded.updated_at''',
-            {'fp':fp,'version':VERSION,'result':json.dumps(result,ensure_ascii=False),'now':utcnow(),
-             'job':job['id'],'owner':self.owner,'time':int(time.time())})
-        # Existing reviewed values remain tied to the same file and their reviewer;
-        # a repeat proposal cannot silently overwrite them.
-        self.passports.finish(job['id'],self.owner)
+        download_job(self.passports,self.files,job,self.owner)
 
     def run(self, once=False, limit=None):
         while not self.shutdown.is_set():
@@ -108,10 +89,10 @@ class EmbeddedDownloads:
 
 
 def main():
-    parser=argparse.ArgumentParser(description='Паспорта: независимая очередь загрузки или локального распознавания')
+    parser=argparse.ArgumentParser(description='Паспорта: независимая очередь загрузки')
     parser.add_argument('--settings',default='.streamlit/secrets.toml')
     parser.add_argument('--db',help='Локальная SQLite для испытаний')
-    parser.add_argument('--queue',choices=['download','recognize'],default='recognize')
+    parser.add_argument('--queue',choices=['download'],default='download')
     parser.add_argument('--once',action='store_true');parser.add_argument('--limit',type=int)
     parser.add_argument('--offline-files',help='Локальные файлы: только испытания без общей публикации')
     args=parser.parse_args()
@@ -129,7 +110,6 @@ def main():
     else:
         files=SupabaseFiles(config.get('passports',{}),cache);files.ensure()
     worker=PassportWorker(repository,files,args.queue)
-    if args.queue=='recognize':worker.recognizer=LocalRecognizer(cancelled=worker.shutdown.is_set)
     for sig in (signal.SIGINT,signal.SIGTERM):signal.signal(sig,lambda *_:worker.shutdown.set())
     logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
     worker.run(args.once,args.limit)

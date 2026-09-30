@@ -79,6 +79,8 @@ def exact_model_in_text(model, text):
 
 def classify_pdf(text, article, title=''):
     """Series-name similarity is never proof of variant applicability."""
+    if not text.strip():
+        return {'accepted':False,'reason':'В PDF нет достаточного текстового слоя для проверки типа документа и применимости к модели'}
     header = text[:1800]
     technical = bool(re.search(r'техническ|характеристик|technical|specification|datasheet|data\s+sheet|паспорт|dimensions|габарит', text, re.I))
     cert_heading=re.search(r'сертификат\s+соответствия|declaration\s+of\s+conformity|certificate\s+of',header,re.I)

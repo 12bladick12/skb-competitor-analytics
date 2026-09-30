@@ -6,7 +6,8 @@ import pandas as pd
 import streamlit as st
 from .passports import Passports
 from .passport_transport import SupabaseFiles,MAX_BYTES
-from .passport_recognition import FIELDS,inspect_pdf,pdf_module
+from .passport_fields import FIELDS
+from .passport_pdf import inspect_pdf,pdf_module
 from .passport_review import approve
 from .passport_sources import classify_pdf
 
@@ -21,17 +22,18 @@ def settings():
 
 
 def render_progress(repository):
-    st.caption('Сбор карточек и распознавание паспортов завершаются независимо. Выключение локального обработчика не останавливает цены.')
+    st.caption('Сбор карточек и получение паспортов выполняются независимо. Геометрию заполняет и подтверждает сотрудник по документу.')
     queue=Passports(repository).progress()
     if queue:
-        labels={'download':'Получение паспортов','recognize':'Распознавание','manual':'Ручное прикрепление'}
+        labels={'download':'Получение паспортов','manual':'Ручное прикрепление'}
         states={'pending':'В очереди','processing':'Обрабатывается','done':'Завершено','retry':'Ожидает повторной попытки'}
         display=[{**r,'kind':labels.get(r['kind'],r['kind']),'state':states.get(r['state'],r['state'])} for r in queue]
         st.dataframe(pd.DataFrame(display).rename(columns={'kind':'Очередь','state':'Состояние','total':'Заданий'}),hide_index=True,width='stretch')
     workers=repository.batch('SELECT state,detail,heartbeat FROM passport_workers WHERE heartbeat>%(after)s',{'after':int(time.time())-120})
     if not workers:st.caption('Обработчики паспортов сейчас не подключены. Задания сохраняются в базе.')
     metrics=repository.batch('''SELECT j.kind,count(*) attempts,sum(m.requests) requests,sum(m.received_bytes) received_bytes,
-        sum(m.pages) pages,sum(m.seconds) seconds FROM passport_job_metrics m JOIN passport_jobs j ON j.id=m.job_id GROUP BY j.kind''')
+        sum(m.pages) pages,sum(m.seconds) seconds FROM passport_job_metrics m JOIN passport_jobs j ON j.id=m.job_id
+        WHERE j.kind IN ('download','manual') GROUP BY j.kind''')
     if metrics:
         with st.expander('Затраты на обработку'):st.dataframe(metrics,hide_index=True,width='stretch')
 
@@ -62,7 +64,7 @@ def render_document(repository,rule_id):
         if files:
             if st.button('Открыть паспорт',key=f'passport_open_{rule_id}'):
                 st.link_button('Просмотреть PDF — ссылка действует 10 минут',files.signed_url(chosen))
-            if st.toggle('Показать чертёж и извлечённые характеристики',key=f'passport_preview_{rule_id}'):
+            if st.toggle('Показать паспорт и заполнить характеристики',key=f'passport_preview_{rule_id}'):
                 raw=files.get(chosen)
                 page=st.number_input('Страница',min_value=1,max_value=selected['page_count'],value=1,key=f'passport_page_{rule_id}')
                 fitz=pdf_module()
@@ -72,8 +74,6 @@ def render_document(repository,rule_id):
                 st.image(image,width='stretch')
                 render_review(repository,rule_id,chosen,fp,selected)
         else:render_review(repository,rule_id,chosen,fp,selected)
-        if st.button('Повторно распознать выбранный паспорт',key=f'recognize_{rule_id}'):
-            passports.reprocess(rule_id,chosen);st.success('Задание сохранено. Его выполнит локальный обработчик.')
     if files:
         with st.expander('Прикрепить паспорт вручную'):
             uploaded=st.file_uploader('Технический паспорт PDF',type=['pdf'],key=f'upload_passport_{rule_id}')
@@ -97,13 +97,10 @@ def render_document(repository,rule_id):
 
 
 def render_review(repository,rule_id,fp,current,selected):
-    rows=repository.batch('SELECT result_json FROM passport_geometry WHERE fingerprint=%(fp)s ORDER BY updated_at DESC LIMIT 1',{'fp':fp})
-    result=json.loads(rows[0]['result_json']) if rows else {'fields':[],'notes':''}
-    if result.get('notes'):st.caption(result['notes'])
     if fp!=current:st.caption('Историческая редакция: подтверждать значения можно для текущего паспорта.');return
     saved=repository.batch('SELECT fields_json,reviewer FROM passport_field_reviews WHERE rule_id=%(id)s AND fingerprint=%(fp)s',{'id':rule_id,'fp':fp})
-    fields=json.loads(saved[0]['fields_json']) if saved else result['fields']
-    if not fields:st.info('Распознавание ещё не предложило геометрию. Можно заполнить подтверждённые значения вручную с указанием страницы и области.')
+    fields=json.loads(saved[0]['fields_json']) if saved else []
+    if not fields:st.info('Заполните проверенные значения по паспорту с указанием страницы и области чертежа.')
     table=[{**f,'Подтвердить':bool(saved),'bbox':json.dumps(f['bbox'])} for f in fields]
     if not table:table=[{'Подтвердить':False,'name':'active_length_mm','value':'','unit':'mm','page':1,'bbox':'[0, 0, 1, 1]','evidence':'','model':'','datum':''}]
     for row in table:

@@ -11,7 +11,7 @@ def main():
     storage=SupabaseFiles(config.get('passports',{}));storage.ensure()
     result={'private_bucket':True}
     if args.public_pdf:
-        from price_monitor.passport_recognition import inspect_pdf
+        from price_monitor.passport_pdf import inspect_pdf
         import requests
         raw=args.public_pdf.read_bytes();inspect_pdf(raw)
         fp,key=storage.put(raw)

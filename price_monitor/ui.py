@@ -25,7 +25,7 @@ st.html(CSS)
 
 
 @st.cache_resource
-def services(cloud_mode,version='analytics-passports-2026-09-30-v1'):
+def services(cloud_mode,version='analytics-passports-manual-2026-09-30-v2'):
     from price_monitor.scope import refresh_scope
     if not cloud_mode:
         store=Store();refresh_scope(store.catalog);return store,None

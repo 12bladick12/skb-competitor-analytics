@@ -1,6 +1,0 @@
-# Local worker; Ollama and Tesseract are separate native programs.
-PyMuPDF==1.28.2
-requests==2.34.2
-beautifulsoup4==4.15.0
-psycopg[binary]==3.3.6
-psycopg-pool==3.3.3

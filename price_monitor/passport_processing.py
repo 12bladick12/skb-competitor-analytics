@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from .passport_sources import (candidates, audited_candidates, official_pages, official_seeds,
     classify_pdf, valid_url, exact_model_in_text, TECH, REJECT, VERSION)
 from .passport_transport import DocumentClient
-from .passport_recognition import inspect_pdf
+from .passport_pdf import inspect_pdf
 from .transport import FetchError
 from .models import utcnow
 

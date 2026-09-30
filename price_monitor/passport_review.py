@@ -2,7 +2,7 @@
 import json
 import uuid
 from .models import utcnow
-from .passport_recognition import validate
+from .passport_fields import validate
 
 
 def approve(repository, rule_id, fingerprint, fields, reviewer, applicability_confirmed=False):

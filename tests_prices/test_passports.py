@@ -13,7 +13,8 @@ from price_monitor.product_state import ProductState
 from price_monitor.passport_sources import candidates,classify_pdf,exact_model_in_text,revision_date,VERSION
 from price_monitor.passport_transport import Download,DocumentClient,LocalFiles,SupabaseFiles
 from price_monitor.passport_processing import download_job
-from price_monitor.passport_recognition import validate,LocalRecognizer
+from price_monitor.passport_fields import validate
+from price_monitor.passport_pdf import inspect_pdf
 from price_monitor.passport_review import approve,confirmed
 from price_monitor.library import Library
 from price_monitor.matching_normalize import normalize_sensor
@@ -93,13 +94,18 @@ class PassportTests(unittest.TestCase):
         storage.session.get.return_value=Mock(status_code=200,ok=True,json=lambda:{'public':True})
         with self.assertRaises(ValueError):storage.ensure()
 
-    def test_global_recognition_serializes_different_documents(self):
-        self.save()
-        first=self.docs.claim('recognize','one')
-        self.docs.enqueue(self.rid,'recognize',{'fingerprint':'b'*64})
-        self.assertIsNone(self.docs.claim('recognize','two'))
-        self.docs.finish(first['id'],'one')
-        self.assertIsNotNone(self.docs.claim('recognize','two'))
+    def test_only_document_jobs_are_supported(self):
+        with self.assertRaises(ValueError):self.docs.enqueue(self.rid,'recognize',{})
+        with self.assertRaises(ValueError):self.docs.claim('recognize','one')
+
+    def test_image_only_pdf_remains_without_invented_text(self):
+        import pymupdf
+        with pymupdf.open() as pdf:
+            page=pdf.new_page();page.draw_rect((10,10,80,80))
+            result=inspect_pdf(pdf.tobytes())
+        self.assertEqual(result['pages'],1)
+        self.assertEqual(result['text'],'')
+        self.assertFalse(classify_pdf(result['text'],ARTICLE)['accepted'])
 
     def test_new_url_must_be_verified_before_merging(self):
         url='https://mega-k.com/products/moved'
@@ -134,11 +140,11 @@ class PassportTests(unittest.TestCase):
         self.docs.finish(new['id'],'second')
         self.assertEqual(self.repo.batch('SELECT state FROM passport_jobs')[0]['state'],'done')
 
-    def test_file_dedup_and_recognition_once(self):
+    def test_file_dedup_does_not_schedule_image_processing(self):
         fp=self.save();raw=self.files.get(fp)
         self.assertEqual(self.files.put(raw)[0],fp)
         self.assertEqual(len(list(self.files.root.glob('*.pdf'))),1)
-        self.assertEqual(self.repo.batch("SELECT count(*) n FROM passport_jobs WHERE kind='recognize'")[0]['n'],1)
+        self.assertEqual(self.repo.batch("SELECT count(*) n FROM passport_jobs WHERE kind NOT IN ('download','manual')")[0]['n'],0)
 
     def test_download_304_uses_file_and_keeps_revision(self):
         fp=self.save();self.repo.batch("UPDATE passport_products SET checked_at='2026-01-01'")
@@ -185,11 +191,9 @@ class PassportTests(unittest.TestCase):
         approve(self.repo,self.rid,fp,[field,other],'Engineer',True)
         self.assertEqual([v['value'] for v in confirmed(self.repo,[self.rid])[self.rid]['fields']],[12,40])
 
-    def test_invalid_geometry_and_remote_recognition_are_rejected(self):
+    def test_invalid_manual_geometry_is_rejected(self):
         for change in ({'bbox':[0,0,2,1]},{'page':2},{'datum':''},{'value':float('nan')}):
             with self.assertRaises(ValueError):validate({'fields':[{**self.field(),**change}],'notes':''},1)
-        with self.assertRaises(ValueError):LocalRecognizer('https://external.example')
-        with self.assertRaises(ValueError):LocalRecognizer(model='cloud-model')
 
     def test_incomplete_manifest_and_errors_never_archive(self):
         state=ProductState(self.repo)

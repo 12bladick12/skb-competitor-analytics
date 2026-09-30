@@ -1,11 +1,9 @@
-"""Durable, independent document queues. No network or model calls in transactions."""
+"""Durable, independent document queues. No network calls in transactions."""
 from __future__ import annotations
 
 import hashlib
 import json
 import time
-import uuid
-from datetime import datetime, timezone, timedelta
 
 from .models import utcnow
 from .passport_sources import VERSION
@@ -30,6 +28,7 @@ class Passports:
         return rows[0] if rows else None
 
     def enqueue(self, rule_id, kind, payload, key=None):
+        if kind not in ('download','manual'):raise ValueError('Поддерживается только получение паспортов')
         job = digest([kind, key if key is not None else [rule_id, payload]])
         self.repo.batch('''INSERT INTO passport_jobs(id,rule_id,kind,payload_json,created_at,updated_at)
             VALUES(%(job)s,%(id)s,%(kind)s,%(payload)s,%(now)s,%(now)s) ON CONFLICT(id) DO NOTHING''',
@@ -68,14 +67,12 @@ class Passports:
         return len(rows)
 
     def claim(self, kind, owner, lease=900, rule_id=None):
+        if kind not in ('download','manual'):raise ValueError('Поддерживается только получение паспортов')
         # UPDATE ... RETURNING + predicate recheck protects both SQLite and PG
         # against two workers claiming the same task after a competing commit.
         now = int(time.time())
         eligible = "kind=%(kind)s AND ((state IN ('pending','retry') AND not_before<=%(time)s) OR (state='processing' AND lease_until<%(time)s))"
         eligible += " AND (%(rule)s IS NULL OR rule_id=%(rule)s)"
-        # Repository write transactions are serialized in both supported stores.
-        # Even two local processes may only run one vision task at a time.
-        eligible += " AND (%(kind)s<>'recognize' OR NOT EXISTS(SELECT 1 FROM passport_jobs busy WHERE busy.kind='recognize' AND busy.state='processing' AND busy.lease_until>=%(time)s))"
         rows = self.repo.batch(f'''UPDATE passport_jobs SET state='processing',owner=%(owner)s,
             lease_until=%(lease)s,attempts=attempts+1,updated_at=%(now)s
             WHERE id=(SELECT id FROM passport_jobs WHERE {eligible} ORDER BY created_at,id LIMIT 1)
@@ -131,23 +128,10 @@ class Passports:
         if not rows: return False
         self.state(job, owner, 'downloaded' if p['applies'] == 'confirmed' else 'review', p['reason'],
                    current_fingerprint=fingerprint, source_url=url, etag=etag, last_modified=modified)
-        # Recognition is shared by the content hash; review/application is per product.
-        from .passport_recognition import VERSION as recognition_version
-        product = self.product(job['rule_id'])
-        scope = (product.get('category') or '') + ' ' + (product.get('title') or '')
-        import re
-        if re.search(r'индуктив|[её]мкост|inductive|capacitive', scope, re.I):
-            self.enqueue(job['rule_id'], 'recognize', {'fingerprint': fingerprint, 'version': recognition_version},
-                         key=[fingerprint, recognition_version])
         return True
 
-    def reprocess(self, rule_id, fingerprint):
-        if not self.repo.batch('SELECT 1 FROM passport_links WHERE rule_id=%(id)s AND fingerprint=%(fp)s', {'id': rule_id, 'fp': fingerprint}):
-            raise ValueError('Документ не связан с товаром')
-        return self.enqueue(rule_id, 'recognize', {'fingerprint': fingerprint}, key=str(uuid.uuid4()))
-
     def progress(self):
-        return self.repo.batch('SELECT kind,state,count(*) total FROM passport_jobs GROUP BY kind,state ORDER BY kind,state')
+        return self.repo.batch("SELECT kind,state,count(*) total FROM passport_jobs WHERE kind IN ('download','manual') GROUP BY kind,state ORDER BY kind,state")
 
     def heartbeat(self, owner, state, detail=''):
         self.repo.batch('''INSERT INTO passport_workers(owner,heartbeat,state,detail) VALUES(%(owner)s,%(time)s,%(state)s,%(detail)s)

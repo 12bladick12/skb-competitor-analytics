@@ -67,12 +67,6 @@ CREATE TABLE IF NOT EXISTS passport_job_metrics (
  pages INTEGER NOT NULL DEFAULT 0,seconds REAL NOT NULL,created_at TEXT NOT NULL,
  PRIMARY KEY(job_id,attempt)
 );
-CREATE TABLE IF NOT EXISTS passport_geometry (
- fingerprint TEXT NOT NULL REFERENCES passport_files(fingerprint), version TEXT NOT NULL,
- result_json TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'review', reviewed_json TEXT NOT NULL DEFAULT '{}',
- reviewer TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL,
- PRIMARY KEY(fingerprint,version)
-);
 CREATE TABLE IF NOT EXISTS passport_field_reviews (
  rule_id INTEGER NOT NULL REFERENCES rules(id), fingerprint TEXT NOT NULL,
  fields_json TEXT NOT NULL, reviewer TEXT NOT NULL, updated_at TEXT NOT NULL,
