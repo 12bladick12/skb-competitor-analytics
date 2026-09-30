@@ -29,11 +29,14 @@ def main():
         raise RuntimeError('Checkpoint the active run before migration')
     evidence="SELECT count(*) n,md5(string_agg(id::text||':'||status||':'||checked_at||':'||coalesce(price,'')||':'||details_json,'|' ORDER BY id)) checksum FROM observations"
     before=repo.batch(evidence)
+    baseline=folder/'history_before.json'
+    if baseline.exists():before=json.loads(baseline.read_text(encoding='utf-8'))
+    else:baseline.write_text(json.dumps(before),encoding='utf-8')
     statements=[s for s in schema_sql(SCHEMA).split(';') if s.strip()]+TRANSFER_SCHEMA
     for index,sql in enumerate(statements):
         # These are exclusively idempotent CREATE/REPLACE statements.
         for attempt in range(3):
-            try:repo.batch(sql);break
+            try:repo.batch(sql.replace('%','%%'));break
             except DatabaseIOTimeout:
                 if attempt==2:raise
         print('Schema',index+1,'/',len(statements),flush=True)
