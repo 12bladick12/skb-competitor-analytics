@@ -117,12 +117,18 @@ def main():
     args=parser.parse_args()
     config=tomllib.loads(Path(args.settings).read_text(encoding='utf-8-sig')) if Path(args.settings).exists() else {}
     from .storage import Store
-    store=Store(args.db) if args.db else Store(postgres=config['database'])
+    if args.db:repository=Store(args.db).catalog
+    else:
+        # Cloud deployment owns additive schema migration. Local workers must
+        # not repeat DDL and hold catalog locks each time the PC reconnects.
+        from .catalog_storage import CatalogRepository
+        repository=CatalogRepository(settings={**config['database'],'reuse_connections':False})
+        repository.batch('SELECT count(*) FROM passport_jobs')
     cache=LocalFiles(Path(__file__).resolve().parents[1]/'data'/'passports')
     if args.offline_files:files=LocalFiles(args.offline_files)
     else:
         files=SupabaseFiles(config.get('passports',{}),cache);files.ensure()
-    worker=PassportWorker(store.catalog,files,args.queue)
+    worker=PassportWorker(repository,files,args.queue)
     if args.queue=='recognize':worker.recognizer=LocalRecognizer(cancelled=worker.shutdown.is_set)
     for sig in (signal.SIGINT,signal.SIGTERM):signal.signal(sig,lambda *_:worker.shutdown.set())
     logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
