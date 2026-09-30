@@ -135,6 +135,43 @@ class NormalizationChecks(unittest.TestCase):
         p=normalize_sensor({'category':'Индуктивные','props':{'Тип датчика':'Ёмкостный'}})
         self.assertEqual(p.family,'capacitive')
 
+    def test_immersible_and_standard_cannot_match_in_either_direction(self):
+        for record in (
+            {'title':'Индуктивный погружной датчик'},
+            {'category':'Индуктивные', 'props':{'Материал погружной части':'Фторопласт'}},
+            {'category':'Индуктивные', 'props':{'Погружное исполнение':'Да'}},
+            {'category':'Индуктивные', 'props':{'Способ установки':'Не встраиваемый. Погружной'}},
+            {'category':'Inductive submersible sensors'},
+        ):
+            with self.subTest(record=record):
+                immersed=normalize_sensor(record)
+                self.assertIn('immersible',immersed.special)
+                immersed.values=sensor().values.copy()
+                self.assertEqual(evaluate(immersed,sensor()).status,'incompatible')
+                self.assertEqual(evaluate(sensor(),immersed).status,'incompatible')
+                self.assertEqual(evaluate(immersed,immersed).status,'review')
+
+    def test_ip_flush_and_negated_immersion_do_not_mark_process_immersion(self):
+        for title,props in (
+            ('Индуктивный встраиваемый датчик',{'Степень защиты IP':'IP68','Способ установки':'Встраиваемый'}),
+            ('Индуктивный датчик для временного погружения при испытании IP67',{}),
+            ('Индуктивный непогружной датчик',{}),
+            ('Индуктивный не погружной датчик',{}),
+            ('Inductive non-submersible sensor',{}),
+            ('Индуктивный датчик',{'Погружное исполнение':'Нет','Материал погружной части':'—'}),
+        ):
+            with self.subTest(title=title,props=props):
+                self.assertNotIn('immersible',normalize_sensor({'title':title,'props':props}).special)
+
+    def test_pressure_unit_aliases_block_standard_matching(self):
+        for field in ('Максимальное рабочее давление, МПа','Максимальное рабочее давление, кПа','Рабочее давление, МПа'):
+            with self.subTest(field=field):
+                p=normalize_sensor({'category':'Индуктивные','props':{field:'0,15'}})
+                self.assertIn('pressure',p.special)
+                p.values=sensor().values.copy()
+                self.assertEqual(evaluate(p,sensor()).status,'incompatible')
+                self.assertNotIn('pressure',normalize_sensor({'category':'Индуктивные','props':{field:'0,0'}}).special)
+
     def test_packaging_not_housing_and_connector_not_body(self):
         p=normalize_sensor({'category':'Индуктивные','props':{'Размеры упаковки':'M30x1,5','Соединение':'Разъем M12'}})
         self.assertNotIn('diameter',p.values);self.assertEqual(p.values['connection'],'connector')

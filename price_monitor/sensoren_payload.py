@@ -20,6 +20,26 @@ CREATE TABLE IF NOT EXISTS sensoren_payload_parts (
 REVOKE ALL ON sensoren_payloads,sensoren_payload_parts FROM PUBLIC;
 '''
 
+SAVE_LIFECYCLE = '''CREATE OR REPLACE FUNCTION sensoren_write_lifecycle(qid BIGINT,item JSONB)
+RETURNS VOID LANGUAGE plpgsql SECURITY INVOKER SET search_path=price_monitor,pg_temp AS $fn$
+DECLARE o JSONB:=item->'observation'; stamp TEXT:=o->>'checked_at'; fp TEXT:=item->>'fingerprint';
+BEGIN
+ IF o->>'status' NOT IN ('priced','on_request','no_price') OR o->>'http_status' IS DISTINCT FROM '200' THEN RETURN; END IF;
+ INSERT INTO product_events(id,rule_id,kind,detail,created_at)
+ SELECT md5('seen:'||qid::text||':'||stamp),qid,CASE WHEN l.state='archived' THEN 'restored' ELSE 'discovered' END,o->>'url',stamp
+ FROM rules q LEFT JOIN product_lifecycle l ON l.rule_id=q.id WHERE q.id=qid AND (l.rule_id IS NULL OR l.state='archived')
+ ON CONFLICT(id) DO NOTHING;
+ INSERT INTO product_lifecycle(rule_id,state,first_seen,last_seen,checked_at,current_url)
+ VALUES(qid,CASE WHEN o->>'availability'='discontinued' THEN 'discontinued' ELSE 'active' END,stamp,stamp,stamp,o->>'url')
+ ON CONFLICT(rule_id) DO UPDATE SET state=excluded.state,last_seen=excluded.last_seen,checked_at=excluded.checked_at,
+ current_url=excluded.current_url,missing_since=NULL,last_missing_check=NULL,missing_count=0,missing_kind='',note='';
+ INSERT INTO product_aliases(source,url,article,rule_id)
+ SELECT source,o->>'url',article,id FROM rules WHERE id=qid ON CONFLICT(source,url,article) DO NOTHING;
+ INSERT INTO product_events(id,rule_id,kind,detail,created_at)
+ VALUES(md5('spec:'||qid::text||':'||coalesce(fp,'')),qid,'specifications',o->>'url',stamp) ON CONFLICT(id) DO NOTHING;
+END $fn$;
+REVOKE ALL ON FUNCTION sensoren_write_lifecycle(BIGINT,JSONB) FROM PUBLIC;'''
+
 SAVE_OBSERVATION = '''CREATE OR REPLACE FUNCTION sensoren_write_observation(jid BIGINT,item JSONB)
 RETURNS VOID LANGUAGE plpgsql SECURITY INVOKER SET search_path=price_monitor,pg_temp AS $fn$
 DECLARE qid BIGINT; o JSONB:=item->'observation'; doc TEXT:=item->>'document';
@@ -47,6 +67,7 @@ BEGIN
   checked_at=excluded.checked_at,http_status=excluded.http_status,response_hash=excluded.response_hash,
   details_json=excluded.details_json WHERE observations.status NOT IN ('priced','on_request','no_price');
  UPDATE jobs SET state='done' WHERE id=jid;
+ PERFORM sensoren_write_lifecycle(qid,item);
 END $fn$;
 REVOKE ALL ON FUNCTION sensoren_write_observation(BIGINT,JSONB) FROM PUBLIC;'''
 
@@ -68,7 +89,8 @@ BEGIN
   SELECT id INTO qid FROM rules WHERE rule_key=item->>'key';
   IF qid IS NOT NULL AND EXISTS(SELECT 1 FROM jobs j JOIN observations o ON o.job_id=j.id
    WHERE j.rule_id=qid AND o.status IN ('priced','on_request','no_price') AND o.http_status=200
-   AND o.details_json<>'{}' AND o.checked_at>=month_start AND o.checked_at<month_end) THEN CONTINUE; END IF;
+   AND o.details_json<>'{}' AND o.checked_at>=month_start AND o.checked_at<month_end) THEN
+    PERFORM sensoren_write_lifecycle(qid,item);CONTINUE; END IF;
   INSERT INTO rules(rule_key,source,manufacturer,article,product_url,url_template,created_at)
    VALUES(item->>'key','sensoren',brand,item->'rule'->>'article',item->'rule'->>'product_url',
     item->'rule'->>'url_template',data->>'now') ON CONFLICT(rule_key) DO NOTHING;
@@ -121,7 +143,7 @@ BEGIN
 END $fn$;
 REVOKE ALL ON FUNCTION sensoren_apply_payload(TEXT) FROM PUBLIC;'''
 
-SCHEMA=[TABLES,SAVE_OBSERVATION,SAVE_CATALOG,APPLY_PAYLOAD]
+SCHEMA=[TABLES,SAVE_LIFECYCLE,SAVE_OBSERVATION,SAVE_CATALOG,APPLY_PAYLOAD]
 
 
 def utf8_parts(value, maximum=2200):

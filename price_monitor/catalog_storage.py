@@ -106,7 +106,7 @@ class CatalogRepository:
             AND EXISTS(SELECT 1 FROM monthly_page_memory m WHERE {match}) AND {self.allowed()}''',p)
 
     def claim(self,run_id,source,owner,prefer_navigation=False):
-        kinds=('sitemap','listing','product') if prefer_navigation else ('product','listing','sitemap')
+        kinds=('sitemap','listing','product','verify') if prefer_navigation else ('product','listing','sitemap','verify')
         # Each candidate uses catalog_queue_url; only three rows need sorting.
         candidates=[];choices=[]
         params=self.params(run_id,source,owner)
@@ -175,11 +175,16 @@ class CatalogRepository:
             AND """+self.allowed(),self.params(run_id,source,owner))
 
     def record_products(self,run_id,source,page_id,results,owner):
+        from .product_state import ProductState
+        lifecycle=ProductState(self)
+        origin=self.batch('SELECT url FROM catalog_pages WHERE id=%(page)s',{'page':page_id})
+        results=lifecycle.identities(results,origin[0]['url'] if origin else '')
         if source=='sensoren' and self.settings and not self.settings.get('reuse_connections',True):
             from .sensoren_payload import save_catalog
             pages=self.batch('SELECT url FROM catalog_pages WHERE id=%(page)s',{'page':page_id})
             if not pages:return False
-            return save_catalog(self.settings,run_id,page_id,results,owner,pages[0]['url'])
+            accepted=save_catalog(self.settings,run_id,page_id,results,owner,pages[0]['url'])
+            return accepted
         p=self.params(run_id,source,owner);p['page']=page_id
         # A partly completed multi-execution page may need fetching again, but
         # executions already obtained this month must not create history points.
@@ -233,8 +238,11 @@ class CatalogRepository:
             for index,url in enumerate(sorted(urls)):
                 statement,values=page_memory_statement(source,url,stamp,f'm{index}_',self.allowed())
                 sql.append(statement);p.update(values)
+        lifecycle_sql,lifecycle_params=lifecycle.capture(run_id,source,page_id,results,owner,defer=True)
+        sql.extend(lifecycle_sql);p.update(lifecycle_params)
         sql.append('UPDATE catalog_pages SET state=%(page_state)s,detail=%(page_detail)s,http_status=200,checked_at=%(now)s WHERE id=%(page)s AND '+self.allowed()+' RETURNING id')
-        return bool(self.batch(sql,p))
+        accepted=bool(self.batch(sql,p))
+        return accepted
 
     def progress(self,run_id):
         from .scope import VISIBLE

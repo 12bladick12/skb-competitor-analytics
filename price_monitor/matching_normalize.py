@@ -165,7 +165,11 @@ ALIASES={
     'wire_count':('Количество проводов (pin)','Кол-во проводов','Количество проводов'),
     'connector':('Тип разъёма','Тип разъема','Резьба разъема','Тип разъёма (2-х проводные на постоянное напряжение 15-30В)'),
     'pin_count':('Количество контактов','Число контактов'),
-    'special_pressure':('Рабочее давление','Рабочее давление, бар','Максимальное рабочее давление, бар','Давление, бар'),
+    'special_pressure':('Рабочее давление','Рабочее давление, бар','Максимальное рабочее давление, бар','Давление, бар',
+                        'Максимальное рабочее давление, МПа','Максимальное рабочее давление, кПа',
+                        'Рабочее давление, МПа','Рабочее давление, кПа'),
+    'special_immersible':('Материал погружной части','Длина погружной части, мм','Глубина погружения, мм',
+                          'Погружное исполнение','Погружной','Submersible','Immersible'),
     'special_analog':('Аналоговый выход по напряжению, В','Аналоговый выход по току, мА'),
     'special_speed':('Диапазон измерения частоты, Гц','Диапазон частоты воздействия, fo, Гц'),
     'special_ex':('Маркировка взрывозащиты','Взрывозащита'),
@@ -188,7 +192,7 @@ ALIASES['diameter']=('Диаметр корпуса, мм','Диаметр ци�
 ALIAS_KEYS={name:tuple(key(alias) for alias in aliases) for name,aliases in ALIASES.items()}
 PREFIXES={'length':'_Длина корпуса','diameter':'_Диаметр цилиндрического корпуса','tmin':'_Рабочая температура окружающей среды мин.',
           'tmax':'_Рабочая температура окружающей среды макс.','body_type':'_Тип корпуса'}
-SPECIAL_LABELS={'speed':'Контроль минимальной скорости','pressure':'Высокое давление','namur':'NAMUR','slot':'Щелевые','ex':'Взрывозащищённые','analog':'Аналоговый выход'}
+SPECIAL_LABELS={'speed':'Контроль минимальной скорости','pressure':'Работа под давлением','immersible':'Погружное исполнение','namur':'NAMUR','slot':'Щелевые','ex':'Взрывозащищённые','analog':'Аналоговый выход'}
 
 
 def normalize_sensor(record):
@@ -267,12 +271,31 @@ def normalize_sensor(record):
     if 'щелев' in text or sensor.values.get('body_type')=='slot':flags.append('slot')
     if 'взрывозащи' in text or re.search(r'\bex\s*[miad]',text) or 'exm' in model.casefold():flags.append('ex')
     if 'аналогов' in text:flags.append('analog')
+    # Mounting flush into metal and an IP immersion test do not describe a
+    # process-contact execution. Only explicit execution or dedicated fields do.
+    immersion_text=text+' '+key(' '.join(v for _,v in values('mount')))
+    immersion_text=re.sub(r'\b(?:не\s*(?:является\s+)?погружн\w*|(?:non[- ]|not\s+)(?:submersible|immersible))\b','',immersion_text)
+    if re.search(r'\b(?:погружн\w*|submersible|immersible)\b',immersion_text):flags.append('immersible')
     # Dedicated properties also identify special execution, even when its name
     # is absent from the broad catalog category. Placeholder values do not.
-    for attr,flag in (('special_pressure','pressure'),('special_analog','analog'),('special_speed','speed'),('special_ex','ex')):
-        if any(key(v) not in ('-','—','нет','no','не применяется','0','') for _,v in values(attr)):
+    for attr,flag in (('special_pressure','pressure'),('special_immersible','immersible'),('special_analog','analog'),('special_speed','speed'),('special_ex','ex')):
+        if any(key(v) not in ('-','—','нет','no','false','не применяется','не предусмотрено','0','') and number(v)!=0 for _,v in values(attr)):
             flags.append(flag)
     sensor.special=tuple(sorted(set(flags)))
     if 'низких температур' in text or 'низкотемператур' in text:sensor.profile='cold'
     elif 'высоких температур' in text or 'высокотемператур' in text:sensor.profile='hot'
-    return enrich(sensor,record)
+    sensor=enrich(sensor,record)
+    verified=record.get('_confirmed_geometry') or {}
+    for item in verified.get('fields',[]):
+        source=f"Паспорт {verified.get('fingerprint','')[:12]}, стр. {item['page']}; проверил {verified.get('reviewer','')}"
+        name=item['name'];value=item['value']
+        if name in ('active_length_mm','immersion_length_mm','tip_diameter_mm','tip_shape','connection_shape','connector_shape','thread'):
+            add(name,value,source,str(value))
+        elif name=='body_length_mm':add('length',value,source,str(value))
+        elif name=='body_shape':add('body_type',body_type(value),source,str(value))
+        elif name=='installation':
+            add('installation',value,source,value)
+            if value=='immersible':sensor.special=tuple(sorted(set(sensor.special)|{'immersible'}))
+            elif value=='standard' and 'immersible' in sensor.special:
+                sensor.conflicts.add('installation')
+    return sensor

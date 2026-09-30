@@ -181,7 +181,7 @@ class SensorenAgent:
             client_factory = SensorenBrowserClient
         self.client_factory = client_factory
         self.store = store
-        self.owner = 'sensoren-monthly1-io2-' + str(uuid.uuid4())
+        self.owner = 'sensoren-monthly1-doc1-' + str(uuid.uuid4())
         from .runtime import RuntimeProgress
         self.progress = RuntimeProgress()
         self.stopping = threading.Event()

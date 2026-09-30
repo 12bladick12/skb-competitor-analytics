@@ -161,6 +161,9 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
     client=client_factory(source,cancelled=cancelled)
     failures=0
     claimed=0
+    from .product_state import ProductState
+    lifecycle=ProductState(repository)
+    lifecycle.bootstrap(source)
     try:
         while not shutdown.is_set():
             if cancelled():return
@@ -168,6 +171,7 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
             # twentieth page so a large product queue cannot starve navigation.
             page=repository.claim(run_id,source,owner,prefer_navigation=(claimed==0 and strategy_for(source).navigation_first) or claimed>0 and claimed%20==0)
             if not page:
+                if lifecycle.manifest(run_id,source,owner,brands):continue
                 repository.finish_source(run_id,source,owner)
                 return
             claimed+=1
@@ -181,7 +185,7 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                     repository.finish_page(page['id'],owner,'skipped','Карта не относится к каталогу товаров',None)
                     completed()
                     continue
-                navigation=outbox.load_navigation(page) if outbox and page['kind']!='product' else None
+                navigation=outbox.load_navigation(page) if outbox and page['kind'] in ('listing','sitemap') else None
                 if navigation is not None:
                     ingest_navigation(repository,page,owner,outbox,navigation,brands)
                     completed()
@@ -193,7 +197,15 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                     completed()
                     continue
                 with phase('download'):
-                    url,code,body=client.fetch_document(page['url'],html_only=page['kind']=='product')
+                    url,code,body=client.fetch_document(page['url'],html_only=page['kind'] in ('product','verify'))
+                if page['kind']=='verify':
+                    results=[]
+                    if code==200 and product_url(source,url):
+                        with phase('parse'):results,_=parse_catalog_product(source,body,url,brands)
+                    lifecycle.verify(run_id,source,page['url'],code,results,owner)
+                    repository.finish_page(page['id'],owner,'done' if code in (200,404,410) else 'failed','Проверка состояния карточки',code)
+                    completed()
+                    continue
                 if code!=200:
                     repository.finish_page(page['id'],owner,'failed',f'HTTP {code}',code)
                     continue
@@ -206,6 +218,7 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                     if detail=='outside_scope':
                         repository.finish_page(page['id'],owner,'skipped','Другой производитель',code)
                     elif results:
+                        with phase('parse'):results=lifecycle.relocated(results,page['url'],client)
                         if outbox:outbox.save(page,results)
                         with phase('save'):accepted=repository.record_products(run_id,source,page['id'],results,owner)
                         if outbox and accepted:outbox.acknowledge(page)

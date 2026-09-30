@@ -33,10 +33,17 @@ class SensorenPersistenceTests(unittest.TestCase):
             cls.settings=settings_from_file(Path(os.environ['PRICE_TEST_SECRETS']))
             from price_monitor.db_settings import connection_settings
             cls.settings=connection_settings(cls.settings)
-        cls.sql('CREATE SCHEMA '+cls.schema)
-        for statement in schema_sql(APP_SCHEMA).split(';'):
-            if statement.strip():cls.sql(statement)
-        for statement in SCHEMA:cls.sql(statement.replace('price_monitor,pg_temp',cls.schema+',pg_temp'))
+        cls.addClassCleanup(cls.cleanup_schema)
+        # Only fixture DDL is retried; test mutations retain their real failures.
+        from price_monitor.db_connection import DatabaseIOTimeout
+        statements=['CREATE SCHEMA IF NOT EXISTS '+cls.schema]
+        statements += [s for s in schema_sql(APP_SCHEMA).split(';') if s.strip()]
+        statements += [s.replace('price_monitor,pg_temp',cls.schema+',pg_temp') for s in SCHEMA]
+        for statement in statements:
+            for attempt in range(3):
+                try:cls.sql(statement);break
+                except DatabaseIOTimeout:
+                    if attempt==2:raise
 
     @classmethod
     def sql(cls,query,params=None):
@@ -57,9 +64,9 @@ class SensorenPersistenceTests(unittest.TestCase):
             return result
 
     @classmethod
-    def tearDownClass(cls):
+    def cleanup_schema(cls):
         if not re.fullmatch(r'price_io_test_[a-f0-9]{12}',cls.schema):raise ValueError('Unsafe test schema')
-        cls.sql('DROP SCHEMA '+cls.schema+' CASCADE')
+        cls.sql('DROP SCHEMA IF EXISTS '+cls.schema+' CASCADE')
 
     def setUp(self):
         self.sql('TRUNCATE rules,runs,external_sources,monthly_page_memory,product_documents,sensoren_payloads CASCADE')
@@ -96,6 +103,7 @@ class SensorenPersistenceTests(unittest.TestCase):
         self.assertGreater(self.sql('SELECT octet_length(details_json) n FROM product_documents')[0]['n'],20000)
         self.assertEqual(self.sql('SELECT price,checked_at FROM observations')[0],{'price':'12.50','checked_at':self.now})
         self.assertEqual(self.sql('SELECT attributes_count FROM product_index')[0]['attributes_count'],1)
+        self.assertEqual(self.sql('SELECT state FROM product_lifecycle')[0]['state'],'active')
 
     def test_same_month_does_not_add_observation(self):
         self.assertTrue(self.apply(self.stage(self.payload())))

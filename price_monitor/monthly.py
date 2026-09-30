@@ -68,12 +68,12 @@ class MonthlyMemory:
         """Do not let a still-running old cloud process ignore monthly memory."""
         import time
         rows=self.repo.batch("SELECT owner,heartbeat FROM worker_lease WHERE id=1")
-        if rows and rows[0]['heartbeat']>time.time()-120 and not rows[0]['owner'].startswith('router2-monthly1-'):
-            raise ValueError('Сборщик ещё работает без памяти по месяцам. В Streamlit откройте Manage app → ⋮ → Reboot app, затем повторите запуск.')
+        if rows and rows[0]['heartbeat']>time.time()-120 and not rows[0]['owner'].startswith('router2-monthly1-sites5-'):
+            raise ValueError('Сборщик ещё работает по прежним правилам каталога. В Streamlit откройте Manage app → ⋮ → Reboot app, затем повторите запуск.')
         if 'sensoren' in sources:
             rows=self.repo.batch("SELECT owner,heartbeat FROM external_sources WHERE source='sensoren' AND enabled=1")
-            if rows and rows[0]['heartbeat']>time.time()-120 and not rows[0]['owner'].startswith('sensoren-monthly1-'):
-                raise ValueError('Обновите и перезапустите внешний сборщик Sensoren: работающая версия ещё не поддерживает память по месяцам.')
+            if rows and rows[0]['heartbeat']>time.time()-120 and not rows[0]['owner'].startswith('sensoren-monthly1-doc1-'):
+                raise ValueError('Обновите и перезапустите внешний сборщик Sensoren: работающая версия ещё не поддерживает состояния товаров и паспорта.')
 
     def backfill_pages(self, source):
         """Use existing successful observations; BESKONTA requires a complete page."""

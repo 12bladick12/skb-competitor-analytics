@@ -22,7 +22,7 @@ log = logging.getLogger("price_monitor")
 class Worker:
     def __init__(self, store: Store, client_factory=SourceClient):
         self.store, self.client_factory = store, client_factory
-        self.owner = "router2-monthly1-sites4-" + str(uuid.uuid4())
+        self.owner = "router2-monthly1-sites5-" + str(uuid.uuid4())
         self.shutdown = threading.Event()
         self.progress = {}
         self.progress_lock = threading.Lock()

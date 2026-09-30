@@ -19,3 +19,5 @@ tmp*/
 *.db-*
 *.sqlite*
 *.session*
+analysis/
+.venv-passports/

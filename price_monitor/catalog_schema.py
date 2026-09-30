@@ -44,6 +44,8 @@ from .monthly import SCHEMA as MONTHLY_SCHEMA
 SCHEMA += MONTHLY_SCHEMA
 from .runtime import SCHEMA as RUNTIME_SCHEMA
 SCHEMA += RUNTIME_SCHEMA
+from .passport_schema import SCHEMA as PASSPORT_SCHEMA
+SCHEMA += PASSPORT_SCHEMA
 
 
 def document(details_json):

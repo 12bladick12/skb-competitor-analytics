@@ -209,12 +209,8 @@ def extract_details(source, soup, url, variant=None):
     crumbs=list(dict.fromkeys(x for x in crumbs if x and x.casefold() not in ('главная','каталог','каталог товаров','домой','home')))
     title=text(soup.h1)
     crumbs=[x for x in crumbs if normalize(x)!=normalize(title)]
-    documents=[]
-    for a in soup.select('a[href]'):
-        href=safe_link(url,a['href'])
-        if href and (re.search(r'\.(?:pdf|docx?|xlsx?|dxf|dwg|stp|step|igs|iges|zip)(?:$|[?#])',href,re.I) or (source=='teko' and '/local/ajax/file_download.php?' in href)):
-            item={'name':text(a) or urlsplit(href).path.rsplit('/',1)[-1],'url':href}
-            if not any(x['url']==href for x in documents):documents.append(item)
+    from .passport_sources import candidates, VERSION as document_version
+    documents=candidates(source,soup,url,manufacturer(source,soup))
     images=[]
     meta=soup.select_one('meta[property="og:image"]')
     if meta:
@@ -224,7 +220,7 @@ def extract_details(source, soup, url, variant=None):
     price_terms=parse_terms(text(price_node.parent) if price_node else '')
     return {'attributes':props,'description':'\n\n'.join(descriptions),'category':' / '.join(crumbs), 'price_terms':price_terms,
         'manufacturer':manufacturer(source,soup),
-        'documents':documents,'images':images,'variant_id':variant['id'] if variant else '',
+        'documents':documents,'document_parser_version':document_version,'images':images,'variant_id':variant['id'] if variant else '',
         'specification_state':'collected' if props else 'not_published_or_unrecognized',
         'evidence':'public_html'}
 
@@ -258,6 +254,7 @@ def parse_catalog_product(source, html, url, selected_brands):
                 {'name':str(pair[0]),'value':str(pair[1]),'group':'Характеристики исполнения'}
                 for pair in variant['attributes'] if isinstance(pair,list) and len(pair)==2]
             detail={**common,'attributes':props,'variant_id':variant['id'],
+                    'variant_set_complete':len(variants)==len(soup.select('input[data-offer-id][data-change-cost]')),
                     'specification_state':'collected' if props else 'not_published_or_unrecognized'}
             price=parse_money(variant['price'])
             empty_price=not variant['price'].strip() or bool(re.fullmatch(r'0(?:[.,]0+)?',variant['price'].strip()))

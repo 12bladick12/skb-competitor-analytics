@@ -16,6 +16,8 @@ PRODUCT_SELECT="""SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.produc
     o.url,o.price_text,o.availability_text,o.http_status,o.response_hash,i.updated_at specifications_checked_at,
     p.price last_price,p.currency last_currency,p.checked_at price_checked_at,
     c.our_article,c.our_price,c.our_currency,c.note,c.updated_at our_price_updated_at,
+    COALESCE(l.state,'active') product_state,l.note product_state_note,l.checked_at lifecycle_checked_at,
+    pp.state document_state,pp.checked_at document_checked_at,
     CASE WHEN c.rule_id IS NULL THEN 0 ELSE 1 END selected
     FROM rules q LEFT JOIN product_index i ON i.rule_id=q.id
     LEFT JOIN observations o ON o.id=(SELECT oo.id FROM observations oo JOIN jobs j ON j.id=oo.job_id
@@ -23,7 +25,8 @@ PRODUCT_SELECT="""SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.produc
     LEFT JOIN observations p ON p.id=(SELECT oo.id FROM observations oo JOIN jobs j ON j.id=oo.job_id
         WHERE j.rule_id=q.id AND oo.status='priced' AND oo.price IS NOT NULL
         ORDER BY oo.checked_at DESC,oo.id DESC LIMIT 1)
-    LEFT JOIN comparison_items c ON c.rule_id=q.id"""
+    LEFT JOIN comparison_items c ON c.rule_id=q.id
+    LEFT JOIN product_lifecycle l ON l.rule_id=q.id LEFT JOIN passport_products pp ON pp.rule_id=q.id"""
 
 
 def price_value(value):
@@ -65,10 +68,13 @@ class Library:
                 params={f'id{i}':rid for i,rid in enumerate(current)}
                 found=self.repo.batch('SELECT i.rule_id,d.details_json FROM product_index i JOIN product_documents d ON d.fingerprint=i.details_hash WHERE i.rule_id IN ('+','.join(f'%(id{i})s' for i in range(len(params)))+')',params)
                 latest={x['rule_id']:json.loads(x['details_json']) for x in found}
+            from .passport_review import confirmed
+            geometry=confirmed(self.repo,[r['rule_id'] for r in page if 'details_json' not in r and r.get('rule_id') is not None])
             for row in page:
                 ref=row.pop('_details_ref',None)
                 if ref:row['_specifications']=docs.get(ref,{})
                 elif 'details_json' not in row and '_specifications' not in row:row['_specifications']=latest.get(row.get('rule_id'),{})
+                if row.get('rule_id') in geometry and 'details_json' not in row:row['_confirmed_geometry']=geometry[row['rule_id']]
                 output.append(row)
         return output
 
