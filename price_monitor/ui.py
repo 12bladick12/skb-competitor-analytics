@@ -68,7 +68,7 @@ st.sidebar.divider()
 st.sidebar.markdown('[Источники и правила сбора](?workspace=prices&price_section=sources)')
 st.sidebar.caption('Общая база и список сравнения. Изменения видны всем посетителям.')
 st.sidebar.caption('Время — UTC. Валюты и условия цены сохраняются как у источника.')
-st.sidebar.caption('Подбор индуктивных датчиков · версия 1')
+st.sidebar.caption('Подбор индуктивных датчиков · МЕГА-К: расшифровка обозначений')
 
 
 def page_number(total,size,key):
@@ -145,8 +145,12 @@ def active_progress():
 
 def details_panel(rule_id):
     details=library.details(rule_id)
+    from price_monitor.matching_normalize import normalize_sensor
+    from price_monitor.notation_ui import render_decoding
+    rows=library.products(rule_id=rule_id)[1]
+    if rows:render_decoding(normalize_sensor({**rows[0],'_specifications':details}))
     if not details:
-        st.info('Характеристики появятся после повторного сбора этой карточки. Исторические цены уже сохранены.');return
+        st.info('Исходные характеристики карточки появятся после её повторного сбора. Расшифровка обозначения показана отдельно, если она доступна. Исторические цены уже сохранены.');return
     if details.get('description'):st.write(details['description'])
     if details.get('attributes'):
         st.dataframe(pd.DataFrame(details['attributes']).rename(columns={'name':'Характеристика','value':'Значение','group':'Группа'}),hide_index=True,width='stretch')

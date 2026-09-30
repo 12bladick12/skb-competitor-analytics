@@ -93,6 +93,11 @@ def attributes(source, soup, variant=None):
                 cells=row.find_all('td',recursive=False)
                 if len(cells)==2:add(text(cells[0]),text(cells[1]),'Характеристики исполнения')
     elif source=='megak':
+        # The summary beside the price has only a few properties. The product's
+        # full tab contains frequency, material, IP and load; read both, preserve
+        # contradictory values and deduplicate identical pairs.
+        for row in soup.select('#properties .properties-item-row'):
+            add(text(row.select_one('.properties-item-name')),text(row.select_one('.properties-item-value')))
         for name in soup.select('.details-param-name'):
             row=name.parent
             add(text(name),text(row.select_one('.details-param-value')))

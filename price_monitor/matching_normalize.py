@@ -1,6 +1,7 @@
 """Typed sensor characteristics with explicit missing/conflicting values.
 
-Names and units are normalized, never inferred from model digits or price.
+Names and units are normalized. Only a manufacturer-specific documented decoder
+may supply absent values; price never enters normalization.
 """
 from __future__ import annotations
 
@@ -8,6 +9,8 @@ from dataclasses import dataclass, field
 import math
 import re
 import unicodedata
+
+from .megak_notation import enrich, is_megak
 
 
 def key(value):
@@ -113,6 +116,12 @@ def ip(value):
     return tuple(values) if values else None
 
 
+def connector(value):
+    text=key(value)
+    # Normalize visually identical Cyrillic/Latin M; retain any thread pitch.
+    return re.sub(r'^[мm](?=\d)','m',text) or None
+
+
 @dataclass
 class Sensor:
     id: str
@@ -126,6 +135,7 @@ class Sensor:
     profile: str='general'
     source_row: int|None=None
     article: str=''
+    decoding: dict=field(default_factory=dict)
 
 
 # The list is also consumed by the bundled-catalog builder, preserving provenance.
@@ -167,7 +177,8 @@ def normalize_sensor(record):
     else:entries=[(a.get('name',''),a.get('value')) for a in raw_attrs if isinstance(a,dict)]
     props={}
     for name,value in entries:
-        if value not in (None,''):props.setdefault(key(name),[]).append((str(name),str(value)))
+        if value not in (None,'') and key(value) not in ('-','—','не указано','нет данных','н/д','n/a'):
+            props.setdefault(key(name),[]).append((str(name),str(value)))
     category=str(record.get('category') or details.get('category') or '')
     model=str(record.get('model') or record.get('article') or '')
     sensor=Sensor(str(record.get('code') or record.get('rule_id') or model),model,category,source_row=record.get('row'),article=str(record.get('article') or ''))
@@ -186,8 +197,11 @@ def normalize_sensor(record):
                 if n.startswith(key(PREFIXES[name])):yield from vals
     for name,parser in [('length',number),('sn',number),('output',output),('function',switching),('mount',mounting),
                         ('material',material),('connection',connection),('ip',ip),('tmin',number),('tmax',number),
-                        ('wire_count',number),('pin_count',number),('connector',key),('diameter',number),('body_type',body_type),('voltage_type',supply_type)]:
+                        ('wire_count',number),('pin_count',number),('connector',connector),('diameter',number),('body_type',body_type),('voltage_type',supply_type)]:
         for field_name,raw in values(name):add(name,parser(raw),field_name,raw)
+    if is_megak(record):
+        for field_name,raw in props.get(key('Длина'),[]):
+            if re.search(r'\b(?:мм|mm)\b',raw,re.I):add('length',number(raw),field_name,raw)
     for field_name,raw in values('body'):
         add('body_type',body_type(raw),field_name,raw)
         m=re.search(r'[MМmм]\s*(\d+(?:[.,]\d+)?)(?:\s*[xх×XХ]\s*(\d+(?:[.,]\d+)?))?',raw)
@@ -237,4 +251,4 @@ def normalize_sensor(record):
     sensor.special=tuple(sorted(set(flags)))
     if 'низких температур' in text or 'низкотемператур' in text:sensor.profile='cold'
     elif 'высоких температур' in text or 'высокотемператур' in text:sensor.profile='hot'
-    return sensor
+    return enrich(sensor,record)

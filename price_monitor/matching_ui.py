@@ -10,6 +10,7 @@ from .comparison import series, metrics
 from .exchange import xlsx_bytes, csv_bytes
 from .matching import VERSION, STATUS_LABELS, FIELD_LABELS, display, load_catalog, evaluate, matching_export
 from .matching_normalize import normalize_sensor
+from .notation_ui import render_decoding
 from .presentation import heading, money, metric_html, price_chart
 from .sources import SOURCES
 from .models import STATUS_LABELS as PRICE_STATES
@@ -73,6 +74,7 @@ def comparison_row(item,reference,match,options,history,profile,library,matcher)
             if proposed:st.caption('Сопоставление ещё не сохранено')
             if item.get('our_price') and price is None:st.caption('Прежний ориентир: '+money(item['our_price'],currency_ours)+' · к другой или непроверенной модели')
         with st.expander('Характеристики и варианты подбора',expanded=False):
+            render_decoding(reference)
             if match:
                 for note in match.notices:st.info(note)
                 st.caption('Назначение: '+PROFILES.get(match.profile,match.profile)+'. Результат относится к сравнению цен; для установки нужны условия применения.')
@@ -133,7 +135,7 @@ def render_comparison(library,import_comparisons,downloads):
         prepared=[]
         for item in items:
             # Prices and history are deliberately excluded from matching inputs.
-            record={k:item.get(k) for k in ('rule_id','article','title','category','_specifications')}
+            record={k:item.get(k) for k in ('rule_id','article','title','category','source','manufacturer','_specifications')}
             reference,options=suggestions(record,profile)
             saved=matcher.resolve(item.get('our_article'))
             match=next((m for m in options if saved and m.candidate.id==saved.id),None)

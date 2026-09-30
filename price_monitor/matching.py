@@ -10,8 +10,9 @@ import gzip
 import math
 
 from .matching_normalize import Sensor, normalize_sensor, model_key, SPECIAL_LABELS
+from .megak_notation import field_source
 
-VERSION='inductive-2026-09-29-v1'
+VERSION='inductive-2026-09-30-v2'
 STATUS_LABELS={'direct':'Прямой аналог','close':'Близкий аналог','review':'Требует проверки','incompatible':'Не подходит','unsupported':'Алгоритм ещё не добавлен'}
 FIELD_LABELS={'body_type':'Форма корпуса','diameter':'Диаметр корпуса, мм','pitch':'Шаг резьбы, мм','output':'Схема выхода',
               'function':'Функция выхода','voltage_type':'Тип питания','vmin':'Минимальное питание, В','vmax':'Максимальное питание, В',
@@ -19,6 +20,7 @@ FIELD_LABELS={'body_type':'Форма корпуса','diameter':'Диаметр
               'material':'Материал корпуса (группа)','connection':'Способ подключения','ip':'Защита IP','load':'Максимальный ток нагрузки, мА',
               'frequency':'Частота переключения, Гц','length':'Длина корпуса, мм','wire_count':'Число проводов','connector':'Разъём','pin_count':'Число контактов'}
 VALUE_LABELS={'threaded':'Цилиндрический резьбовой','smooth':'Цилиндрический гладкий','rectangular':'Прямоугольный','slot':'Щелевой',
+              'pipe-threaded':'Цилиндрический с трубной резьбой','analog-current':'Аналоговый токовый выход',
               'brass':'Латунь','stainless':'Нержавеющая сталь','plastic':'Пластик','aluminium':'Алюминиевый сплав','steel':'Сталь',
               'flush':'Встраиваемый','non-flush':'Невстраиваемый','cable':'Кабель','connector':'Разъём','cable+connector':'Кабель с разъёмом',
               'terminals':'Клеммник','2-wire':'2-проводный','relay':'Реле','changeover':'Переключающий'}
@@ -57,7 +59,8 @@ class Match:
     def rows(self):
         return [{'Группа':x['group'],'Характеристика':FIELD_LABELS[x['key']],
                  'Конкурент':display(x['reference'],x['key']),'Наша модель':display(x['candidate'],x['key']),
-                 'Оценка':OUTCOME_LABELS[x['outcome']],'Пояснение':x['reason']} for x in self.fields]
+                 'Оценка':OUTCOME_LABELS[x['outcome']],'Источник конкурента':x.get('reference_source',''),
+                 'Пояснение':x['reason']} for x in self.fields]
 
 
 def evaluate(reference:Sensor,candidate:Sensor,profile='auto',max_length=None):
@@ -68,6 +71,9 @@ def evaluate(reference:Sensor,candidate:Sensor,profile='auto',max_length=None):
     if reference.family not in (None,'inductive') or candidate.family!='inductive':
         return Match(candidate,'unsupported',[],profile,['Для этого типа продукции алгоритм ещё не добавлен.'])
     if reference.family is None:forced_review=True;notices.append('Тип датчика конкурента не подтверждён характеристиками.')
+    if reference.decoding.get('supported') and reference.decoding.get('requires_review'):
+        forced_review=True
+        notices.append('Расшифровка МЕГА-К требует проверки: есть противоречие с карточкой, неизвестная опция или особое исполнение. Подробности — в блоке расшифровки.')
     if reference.special!=candidate.special:
         incompatible=True;notices.append('Разные специальные исполнения: '+(', '.join(SPECIAL_LABELS[s] for s in reference.special) or 'стандартное')+' → '+(', '.join(SPECIAL_LABELS[s] for s in candidate.special) or 'стандартное')+'.')
     elif reference.special:
@@ -113,7 +119,7 @@ def evaluate(reference:Sensor,candidate:Sensor,profile='auto',max_length=None):
             if result in ('secondary','missing'):forced_review=True;reason+=' Требуется проверка подключения.'
         if name=='length' and max_length is not None and c is not None and c>max_length:
             result='incompatible';reason=f'Длина превышает монтажное ограничение {display(max_length)} мм.'
-        fields.append(dict(key=name,reference=r,candidate=c,group=group,outcome=result,reason=reason))
+        fields.append(dict(key=name,reference=r,candidate=c,group=group,outcome=result,reason=reason,reference_source=field_source(reference,name)))
     if incompatible or any(x['outcome']=='incompatible' for x in fields):status='incompatible'
     elif forced_review or any(x['outcome']=='missing' and x['group']!='Второстепенные' for x in fields):status='review'
     elif any(x['outcome']=='difference' for x in fields):status='close'
@@ -191,4 +197,6 @@ def load_catalog():
 
 def matching_export(reference,match):
     return [{'Артикул конкурента':reference.model,'Наша модель':match.candidate.model,'Статус':STATUS_LABELS[match.status],
-             'Приоритет':match.priority,'Назначение':match.profile,'Версия правил':VERSION,**row} for row in match.rows()]
+             'Приоритет':match.priority,'Назначение':match.profile,'Версия правил':VERSION,
+             'Версия расшифровки':reference.decoding.get('version',''),
+             'Источник расшифровки':reference.decoding.get('source_url',''),**row} for row in match.rows()]

@@ -12,7 +12,7 @@ ALGORITHMS={'inductive':{'label':'Индуктивные датчики','versio
 # standard algorithm. This registry can gain capacitive/reed/optical algorithms.
 NODES=[
     ('input',310,40,430,68,'start',['Модель конкурента','Характеристики и назначение']),
-    ('normalize',310,145,430,80,'process',['Нормализовать поля и единицы','Сохранить пропуски и противоречия']),
+    ('normalize',310,145,430,80,'process',['Нормализовать поля и единицы','МЕГА-К: дополнить из обозначения','Сохранить источники и противоречия']),
     ('family',330,265,390,96,'decision',['Индуктивный датчик?']),
     ('other',810,275,280,76,'muted',['Другой тип / тип неизвестен','Отдельный алгоритм / проверка']),
     ('special',330,405,390,96,'decision',['Стандартное исполнение?']),
@@ -91,6 +91,12 @@ def render_algorithms():
     a.download_button('Скачать блок-схему SVG',svg.encode('utf-8'),file_name='inductive_matching.svg',mime='image/svg+xml',key='matching_flow_download')
     b.caption('Версия '+spec['version']+' · та же логика используется в сравнении цен.')
     st.markdown('**Прямые аналоги** — подтверждены обязательные и важные свойства. **Близкие аналоги** — есть объяснимые отличия. **Требуют проверки** — не хватает характеристик или нужны правила специального исполнения.')
+    with st.expander('МЕГА-К: проверка обозначения'):
+        from .matching_normalize import normalize_sensor
+        from .notation_ui import render_decoding
+        st.caption('Введите обозначение индуктивного датчика PS2/VB2. Это проверка расшифровки; товары и цены не изменяются.')
+        model=st.text_input('Обозначение МЕГА-К',value='PS2-18M68-8N11-C4-T3',key='megak_notation_example')
+        render_decoding(normalize_sensor({'manufacturer':'МЕГА-К','article':model}),expanded=None)
     st.table([
         {'Правило':'Резьба','Как применяется':'Диаметр и шаг отдельно; по одному M18 шаг не угадывается.'},
         {'Правило':'Холодный климат','Как применяется':'После достаточности Tmin выбираем ближайшую длину: В (−60…+70 °C, +5 мм) перед А (−45…+85 °C, +15 мм).'},
