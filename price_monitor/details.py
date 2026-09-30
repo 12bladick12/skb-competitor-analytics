@@ -209,8 +209,6 @@ def extract_details(source, soup, url, variant=None):
     crumbs=list(dict.fromkeys(x for x in crumbs if x and x.casefold() not in ('главная','каталог','каталог товаров','домой','home')))
     title=text(soup.h1)
     crumbs=[x for x in crumbs if normalize(x)!=normalize(title)]
-    from .passport_sources import candidates, VERSION as document_version
-    documents=candidates(source,soup,url,manufacturer(source,soup))
     images=[]
     meta=soup.select_one('meta[property="og:image"]')
     if meta:
@@ -220,7 +218,7 @@ def extract_details(source, soup, url, variant=None):
     price_terms=parse_terms(text(price_node.parent) if price_node else '')
     return {'attributes':props,'description':'\n\n'.join(descriptions),'category':' / '.join(crumbs), 'price_terms':price_terms,
         'manufacturer':manufacturer(source,soup),
-        'documents':documents,'document_parser_version':document_version,'images':images,'variant_id':variant['id'] if variant else '',
+        'images':images,'variant_id':variant['id'] if variant else '',
         'specification_state':'collected' if props else 'not_published_or_unrecognized',
         'evidence':'public_html'}
 

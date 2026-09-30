@@ -25,23 +25,16 @@ st.html(CSS)
 
 
 @st.cache_resource
-def services(cloud_mode,version='analytics-passports-manual-2026-09-30-v3'):
+def services(cloud_mode,version='analytics-no-passports-2026-09-30-v1'):
     from price_monitor.scope import refresh_scope
+    from price_monitor.retired_documents import disable_document_jobs,stop_document_threads
+    stop_document_threads()
     if not cloud_mode:
-        store=Store();refresh_scope(store.catalog);return store,None
+        store=Store();disable_document_jobs(store.catalog);refresh_scope(store.catalog);return store,None
     from price_monitor.cloud import EmbeddedWorker
     settings=dict(st.secrets['database'])
-    store=Store(postgres=settings);refresh_scope(store.catalog);worker=EmbeddedWorker(store)
+    store=Store(postgres=settings);disable_document_jobs(store.catalog);refresh_scope(store.catalog);worker=EmbeddedWorker(store)
     atexit.register(worker.close)
-    from price_monitor.passport_ui import settings as passport_settings
-    from price_monitor.passport_worker import EmbeddedDownloads
-    document_settings=passport_settings()
-    if document_settings.get('service_key') and document_settings.get('url'):
-        try:
-            downloader=EmbeddedDownloads(store.catalog,document_settings)
-            atexit.register(downloader.close)
-        except Exception as exc:
-            logging.getLogger('price_monitor').warning('Passport downloader unavailable (%s)',type(exc).__name__)
     return store,worker
 
 
@@ -53,7 +46,7 @@ except Exception as exc:
         st.error('Не удалось подключиться к базе. Владельцу нужно проверить настройки подключения в Streamlit.');st.stop()
 catalog=db.catalog if db else None
 library=Library(catalog) if catalog else None
-PAGES={'collect':'Сбор цен','products':'База товаров','compare':'Сравнение цен','runs':'Запуски','passports':'Паспорта'}
+PAGES={'collect':'Сбор цен','products':'База товаров','compare':'Сравнение цен','runs':'Запуски'}
 CATALOG_STATES={'pending':'В очереди','running':'Сбор идёт','completed':'Завершён','partial':'Завершён с пропусками','blocked':'Источник остановлен: см. причину','cancelled':'Остановлен'}
 
 
@@ -155,8 +148,6 @@ def active_progress():
 
 
 def details_panel(rule_id):
-    from price_monitor.passport_ui import render_document
-    render_document(catalog,rule_id)
     details=library.details(rule_id)
     from price_monitor.matching_normalize import normalize_sensor
     from price_monitor.notation_ui import render_decoding
@@ -171,8 +162,6 @@ def details_panel(rule_id):
     if details.get('attributes'):
         st.dataframe(pd.DataFrame(details['attributes']).rename(columns={'name':'Характеристика','value':'Значение','group':'Группа'}),hide_index=True,width='stretch')
     else:st.caption('Характеристики не опубликованы в распознанном блоке страницы или блок требует обновления адаптера.')
-    if details.get('documents'):
-        for doc in details['documents']:st.link_button(doc['name'],doc['url'])
     st.download_button('Характеристики JSON',json.dumps(details,ensure_ascii=False,indent=2),file_name=f'product_{rule_id}.json',key=f'details_{rule_id}')
 
 
@@ -238,7 +227,7 @@ def products_page():
             'Последняя цена':float(row['last_price']) if row['last_price'] else None,'Валюта':row['last_currency'],
             'Дата цены (UTC)':row['price_checked_at'],'Последняя проверка':STATUS_LABELS.get(row['status'],row['status']),
             'Состояние товара':{'active':'Активен','review':'Требует проверки','archived':'Архив','discontinued':'Снят с производства'}.get(row['product_state'],row['product_state']),
-            'Проверка карточки':row['specifications_checked_at'],'Проверка паспорта':row['document_checked_at'],
+            'Проверка карточки':row['specifications_checked_at'],
             'Характеристик':row['attributes_count'],'В сравнении':'Да' if row['selected'] else '',
             'История':f"?workspace=prices&price_section=history&model={row['rule_id']}"})
     edited=st.data_editor(view,hide_index=True,width='stretch',disabled=[x for x in view[0] if x!='Выбрать'],key=f'products_{query}_{source}_{brand}_{offset}',
@@ -343,9 +332,9 @@ def sources_page():
     default='Алгоритмы подбора' if st.query_params.get('source_tab')=='algorithms' else 'Источники и правила сбора'
     sources,algorithms=st.tabs(['Источники и правила сбора','Алгоритмы подбора'],default=default)
     with sources:
-        passport_rules=ROOT/'docs'/'prices'/'PASSPORTS.md'
-        if passport_rules.exists():
-            with st.expander('Постоянная база, паспорта и проверка чертежей'):st.markdown(passport_rules.read_text(encoding='utf-8'))
+        collection_rules=ROOT/'docs'/'prices'/'PRODUCT_UPDATES.md'
+        if collection_rules.exists():
+            with st.expander('Постоянная база и обновление товаров'):st.markdown(collection_rules.read_text(encoding='utf-8'))
         st.dataframe([{'Источник':s.label,'Сайт':'https://'+s.host,'Производители':', '.join(s.brands),'Данные':'Карты сайта, каталог, карточки и характеристики'} for s in SOURCES.values()],hide_index=True,width='stretch')
         source_connection()
         st.info('При проверке браузера/CAPTCHA, HTTP 403/429 или запрете robots.txt источник останавливается. Причина отказа сохраняется в журнале.')
@@ -361,8 +350,7 @@ def sources_page():
 
 
 try:
-    from price_monitor.passport_ui import render_page as passports_page
-    {'collect':collect_page,'products':products_page,'compare':compare_page,'runs':runs_page,'history':history_page,'sources':sources_page,'passports':lambda:passports_page(catalog)}[section]()
+    {'collect':collect_page,'products':products_page,'compare':compare_page,'runs':runs_page,'history':history_page,'sources':sources_page}[section]()
     sources_footer()
 except Exception:
     logging.getLogger('price_monitor').exception('Page failed: %s',section)

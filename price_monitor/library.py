@@ -17,7 +17,6 @@ PRODUCT_SELECT="""SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.produc
     p.price last_price,p.currency last_currency,p.checked_at price_checked_at,
     c.our_article,c.our_price,c.our_currency,c.note,c.updated_at our_price_updated_at,
     COALESCE(l.state,'active') product_state,l.note product_state_note,l.checked_at lifecycle_checked_at,
-    pp.state document_state,pp.checked_at document_checked_at,
     CASE WHEN c.rule_id IS NULL THEN 0 ELSE 1 END selected
     FROM rules q LEFT JOIN product_index i ON i.rule_id=q.id
     LEFT JOIN observations o ON o.id=(SELECT oo.id FROM observations oo JOIN jobs j ON j.id=oo.job_id
@@ -26,7 +25,7 @@ PRODUCT_SELECT="""SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.produc
         WHERE j.rule_id=q.id AND oo.status='priced' AND oo.price IS NOT NULL
         ORDER BY oo.checked_at DESC,oo.id DESC LIMIT 1)
     LEFT JOIN comparison_items c ON c.rule_id=q.id
-    LEFT JOIN product_lifecycle l ON l.rule_id=q.id LEFT JOIN passport_products pp ON pp.rule_id=q.id"""
+    LEFT JOIN product_lifecycle l ON l.rule_id=q.id"""
 
 
 def price_value(value):

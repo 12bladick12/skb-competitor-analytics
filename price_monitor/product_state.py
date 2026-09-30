@@ -4,9 +4,13 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import json
+import hashlib
 
 from .models import normalize, utcnow
-from .passports import digest
+
+
+def digest(value):
+    return hashlib.sha256(json.dumps(value,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
 
 class ProductState:

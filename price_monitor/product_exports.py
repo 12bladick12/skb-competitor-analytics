@@ -8,7 +8,6 @@ def export_tables(rows):
         row['Характеристик']=len(attrs)
         row['Статус характеристик']=('Получены' if attrs else 'Нет в сохранённом ответе')
         row['Описание']=detail.get('description','')
-        row['Документы']='\n'.join(f"{d.get('name','')}: {d.get('url','')}" for d in detail.get('documents',[]))
         for prop in attrs:
             name=str(prop.get('name','')).strip();value=str(prop.get('value',''))
             group=str(prop.get('group','')).strip()

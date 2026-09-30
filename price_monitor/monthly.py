@@ -73,7 +73,7 @@ class MonthlyMemory:
         if 'sensoren' in sources:
             rows=self.repo.batch("SELECT owner,heartbeat FROM external_sources WHERE source='sensoren' AND enabled=1")
             if rows and rows[0]['heartbeat']>time.time()-120 and not rows[0]['owner'].startswith('sensoren-monthly1-doc1-'):
-                raise ValueError('Обновите и перезапустите внешний сборщик Sensoren: работающая версия ещё не поддерживает состояния товаров и паспорта.')
+                raise ValueError('Обновите и перезапустите внешний сборщик Sensoren: работающая версия ещё не поддерживает состояния товаров.')
 
     def backfill_pages(self, source):
         """Use existing successful observations; BESKONTA requires a complete page."""
