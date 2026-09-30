@@ -13,6 +13,7 @@ from .details import BRAND_PATTERNS, parse_catalog_product
 from .models import utcnow
 from .sources import SOURCES, validate_url
 from .transport import FetchError, SourceClient
+from .catalog_strategies import strategy_for
 
 SEEDS = {
     'sensoren': [('sitemap','https://sensoren.ru/sitemap.xml'),('listing','https://sensoren.ru/catalog/')],
@@ -25,6 +26,8 @@ SENSOREN_BRAND_PATHS={'Autonics':'autonics','Balluff':'balluff','Pepperl+Fuchs':
     'ifm':'ifm_electronic','LANBAO':'lanbao','SICK':'sick'}
 
 def seeds(source,brands):
+    strategy=strategy_for(source)
+    if strategy.seeds():return strategy.seeds()
     if source=='sensoren':
         return [('listing','https://sensoren.ru/brands/'+SENSOREN_BRAND_PATHS[b]+'/')
                 for b in brands if b in SENSOREN_BRAND_PATHS]+[SEEDS['sensoren'][0]]
@@ -80,10 +83,11 @@ def selected_sensoren_url(url, brands):
 
 def classify(source, url, brands):
     path=urlsplit(url).path
+    strategy=strategy_for(source)
     if source=='sensoren' and path.startswith('/brands/'):
         return 'listing' if path.strip('/').split('/')[-1] in {SENSOREN_BRAND_PATHS[b] for b in brands if b in SENSOREN_BRAND_PATHS} else None
     if re.search(r'sitemap[^/]*\.xml(?:\.gz)?$',path,re.I) or (source=='sensor' and path.startswith('/sitemap/') and path.endswith('.xml')):
-        return 'sitemap'
+        return 'sitemap' if strategy.sitemap_allowed(url) else None
     if product_url(source,url):
         return 'product' if source!='sensoren' or selected_sensoren_url(url,brands) else None
     if source=='sensoren':
@@ -92,7 +96,7 @@ def classify(source, url, brands):
         selected={'brand_'+SENSOREN_BRAND_PATHS[b] for b in brands if b in SENSOREN_BRAND_PATHS}
         return 'listing' if path.startswith('/catalog/') and selected.intersection(path.strip('/').split('/')) else None
     prefixes=('/categories/','/catalog') if source=='megak' else ('/catalog/',)
-    if any(path.startswith(prefix) for prefix in prefixes):return 'listing'
+    if any(path.startswith(prefix) for prefix in prefixes) and strategy.listing_allowed(url):return 'listing'
     return None
 
 
@@ -109,7 +113,7 @@ def discover(source, kind, body, base, brands):
         for href in links:
             url=canonical_url(source,base,href)
             if not url:continue
-            category='sitemap' if root_name=='sitemapindex' else classify(source,url,brands)
+            category=('sitemap' if strategy_for(source).sitemap_allowed(url) else None) if root_name=='sitemapindex' else classify(source,url,brands)
             if category:found[url]=category
     else:
         soup=BeautifulSoup(body,'html.parser')
@@ -162,13 +166,21 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
             if cancelled():return
             # Start saving known products immediately; continue discovery every
             # twentieth page so a large product queue cannot starve navigation.
-            page=repository.claim(run_id,source,owner,prefer_navigation=claimed>0 and claimed%20==0)
+            page=repository.claim(run_id,source,owner,prefer_navigation=(claimed==0 and strategy_for(source).navigation_first) or claimed>0 and claimed%20==0)
             if not page:
                 repository.finish_source(run_id,source,owner)
                 return
             claimed+=1
             context(run_id,page['url'])
             try:
+                if page['kind']=='listing' and not strategy_for(source).listing_allowed(page['url']):
+                    repository.finish_page(page['id'],owner,'skipped','Исключено правилом обхода источника: служебная страница или запрещённая пагинация',None)
+                    completed()
+                    continue
+                if page['kind']=='sitemap' and not strategy_for(source).sitemap_allowed(page['url']):
+                    repository.finish_page(page['id'],owner,'skipped','Карта не относится к каталогу товаров',None)
+                    completed()
+                    continue
                 navigation=outbox.load_navigation(page) if outbox and page['kind']!='product' else None
                 if navigation is not None:
                     ingest_navigation(repository,page,owner,outbox,navigation,brands)
@@ -186,6 +198,10 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                     repository.finish_page(page['id'],owner,'failed',f'HTTP {code}',code)
                     continue
                 if page['kind']=='product':
+                    if not product_url(source,url):
+                        repository.finish_page(page['id'],owner,'skipped','Карточка перенаправлена на каталог или другую страницу',code)
+                        completed()
+                        continue
                     with phase('parse'):results,detail=parse_catalog_product(source,body,url,brands)
                     if detail=='outside_scope':
                         repository.finish_page(page['id'],owner,'skipped','Другой производитель',code)
@@ -207,7 +223,8 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                 completed()
             except FetchError as exc:
                 if shutdown.is_set() or exc.status=='cancelled':return
-                repository.finish_page(page['id'],owner,'failed',str(exc),exc.http_status)
+                repository.finish_page(page['id'],owner,'skipped' if exc.status=='robots_denied' else 'failed',str(exc),exc.http_status)
+                completed()
                 failures=failures+1 if exc.status in ('network_error','http_error') else 0
                 if exc.stop_source or failures>=3:
                     repository.block_source(run_id,source,owner,str(exc))

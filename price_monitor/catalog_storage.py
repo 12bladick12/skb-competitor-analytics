@@ -155,6 +155,18 @@ class CatalogRepository:
         p=self.params(run_id,source,owner);p['detail']=detail
         self.batch("UPDATE catalog_sources SET state='blocked',detail=%(detail)s,finished_at=%(now)s WHERE run_id=%(run)s AND source=%(source)s AND "+self.allowed(),p)
 
+    def report_health(self,source,owner,health):
+        p={**self.params(health['run_id'],source,owner),**health}
+        self.batch('''INSERT INTO collector_health(source,owner,run_id,phase,url,phase_started,activity_at,completed_at,recoveries,detail)
+            SELECT %(source)s,%(owner)s,%(run_id)s,%(phase)s,%(url)s,%(phase_started)s,%(activity_at)s,%(completed_at)s,%(recoveries)s,%(detail)s
+            WHERE '''+self.authority()+''' ON CONFLICT(source) DO UPDATE SET owner=excluded.owner,run_id=excluded.run_id,
+            phase=excluded.phase,url=excluded.url,phase_started=excluded.phase_started,activity_at=excluded.activity_at,
+            completed_at=excluded.completed_at,recoveries=excluded.recoveries,detail=excluded.detail''',p)
+
+    def recovery_note(self,run_id,source,owner,detail):
+        p={**self.params(run_id,source,owner),'detail':detail}
+        self.batch('UPDATE catalog_sources SET detail=%(detail)s WHERE run_id=%(run)s AND source=%(source)s AND '+self.allowed(),p)
+
     def finish_source(self,run_id,source,owner):
         self.batch("""UPDATE catalog_sources SET state=CASE WHEN EXISTS(SELECT 1 FROM catalog_pages p
                 WHERE p.run_id=%(run)s AND p.source=%(source)s AND p.state='failed') THEN 'partial' ELSE 'completed' END,

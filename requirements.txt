@@ -1,6 +1,6 @@
 # Unified news and price analytics, Python 3.13.
 # Reboot the Streamlit process after upgrading to reload both background workers.
-# Catalog audit update: 2026-09-29, verified manufacturers and specification exports.
+# Collector release 2026-09-30: source-specific catalog routes and isolated recovery.
 -c requirements-cloud-lock.txt
 streamlit[auth]==1.64.0
 requests==2.34.2

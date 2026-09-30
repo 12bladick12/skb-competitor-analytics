@@ -7,6 +7,9 @@ import logging
 import signal
 import threading
 import uuid
+from pathlib import Path
+import traceback
+import time
 
 from .adapters import ADAPTERS
 from .models import Observation
@@ -19,8 +22,10 @@ log = logging.getLogger("price_monitor")
 class Worker:
     def __init__(self, store: Store, client_factory=SourceClient):
         self.store, self.client_factory = store, client_factory
-        self.owner = "router2-monthly1-io2-" + str(uuid.uuid4())
+        self.owner = "router2-monthly1-sites3-" + str(uuid.uuid4())
         self.shutdown = threading.Event()
+        self.progress = {}
+        self.progress_lock = threading.Lock()
 
     def heartbeat_loop(self, finished):
         while not finished.wait(10):
@@ -29,6 +34,10 @@ class Worker:
                     log.error("Worker lease lost")
                     self.shutdown.set()
                     return
+                with self.progress_lock:progress=list(self.progress.items())
+                for source,tracker in progress:
+                    try:self.store.catalog.report_health(source,self.owner,tracker.snapshot())
+                    except Exception as exc:log.warning('Source progress update failed: %s',type(exc).__name__)
             except Exception:
                 log.exception("Worker heartbeat failed")
                 self.shutdown.set()
@@ -74,17 +83,53 @@ class Worker:
         finally:
             client.close()
 
+    def process_catalog_source(self,run_id,source):
+        from .catalog import process_catalog
+        from .catalog_outbox import CatalogOutbox
+        from .runtime import RuntimeProgress,activate,context
+        progress=RuntimeProgress();activate(progress);context(run_id)
+        with self.progress_lock:self.progress[source]=progress
+        root=Path(__file__).resolve().parents[1]/'data'/'catalog_outbox'
+        outbox=CatalogOutbox(root)
+        try:
+            for attempt in range(3):
+                if self.shutdown.is_set():return
+                try:
+                    process_catalog(self.store.catalog,run_id,source,self.owner,self.shutdown,self.client_factory,outbox)
+                    return
+                except Exception as exc:
+                    progress.recover(exc)
+                    trace=traceback.extract_tb(exc.__traceback__)
+                    location=next((f'{Path(f.filename).name}:{f.lineno}' for f in reversed(trace) if 'price_monitor' in f.filename),'worker')
+                    # Exception messages may contain connection credentials.
+                    note=f'Сбой сборщика: {type(exc).__name__} ({location}); восстановление {attempt+1}/3'
+                    progress.update(detail=note)
+                    log.warning('run=%s source=%s %s',run_id,source,note)
+                    try:
+                        self.store.catalog.recovery_note(run_id,source,self.owner,note)
+                        self.store.catalog.report_health(source,self.owner,progress.snapshot())
+                    except Exception:log.warning('Could not persist source recovery status')
+                    if attempt==2:
+                        try:self.store.catalog.block_source(run_id,source,self.owner,note)
+                        except Exception:log.warning('Could not persist stopped source status')
+                        return
+                    if self.shutdown.wait(5*(attempt+1)):return
+        finally:
+            progress.update(phase='idle',phase_started=time.time())
+            try:self.store.catalog.report_health(source,self.owner,progress.snapshot())
+            except Exception:pass
+            activate(None)
+
     def process_run(self, run_id):
         groups = defaultdict(list)
         for job in self.store.pending(run_id):
             groups[job[1].source].append(job)
         with ThreadPoolExecutor(max_workers=5, thread_name_prefix="source") as pool:
             futures = [pool.submit(self.process_source,run_id,source,jobs) for source,jobs in groups.items()]
-            from .catalog import process_catalog
             external={r['source'] for r in self.store.external_sources() if r['enabled']}
             for row in self.store.catalog.sources(run_id):
                 if row['source'] not in external and row['state'] in ('pending','running'):
-                    futures.append(pool.submit(process_catalog,self.store.catalog,run_id,row['source'],self.owner,self.shutdown,self.client_factory))
+                    futures.append(pool.submit(self.process_catalog_source,run_id,row['source']))
             for future in futures:
                 future.result()
         if not self.shutdown.is_set():

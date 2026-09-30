@@ -24,7 +24,7 @@ st.html(CSS)
 
 
 @st.cache_resource
-def services(cloud_mode,version='collector-io-deadline-v2'):
+def services(cloud_mode,version='collector-site-recovery-v3'):
     from price_monitor.scope import refresh_scope
     if not cloud_mode:
         store=Store();refresh_scope(store.catalog);return store,None

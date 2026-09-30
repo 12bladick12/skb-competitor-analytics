@@ -51,6 +51,29 @@ def manufacturer(source, soup):
     return explicit
 
 
+def main_structured_product(soup):
+    """Only JSON-LD matching the current heading; recommendation data is ignored."""
+    heading=text(soup.h1)
+    if not heading:return None
+    matches=[]
+    def visit(value):
+        if isinstance(value,list):
+            for item in value:visit(item)
+        elif isinstance(value,dict):
+            kind=value.get('@type',[])
+            if kind=='Product' or isinstance(kind,list) and 'Product' in kind:
+                name=str(value.get('name') or '').strip()
+                if name and re.search(r'(?<![\w-])'+re.escape(normalize(name))+r'(?![\w-])',normalize(heading)):
+                    matches.append(value)
+            if '@graph' in value:visit(value['@graph'])
+    for node in soup.select('script[type="application/ld+json"]'):
+        try:visit(json.loads(node.string or node.get_text()))
+        except (ValueError,TypeError):continue
+    # Conflicting structured products cannot establish manufacturer identity.
+    identities={json.dumps(p.get('brand'),ensure_ascii=False,sort_keys=True) for p in matches}
+    return matches[0] if matches and len(identities)==1 else None
+
+
 def manufacturer_from_details(details):
     """TEKO is also a dealer: only an explicit product brand is evidence."""
     for row in details.get('attributes',[]):
@@ -104,6 +127,12 @@ def attributes(source, soup, variant=None):
     elif source=='teko':
         for row in soup.select('.product-item-detail-properties .one_prop'):
             add(text(row.select_one('.name')),text(row.select_one('.value')))
+        if not any(row['name'].casefold() in ('бренд','производитель','brand','manufacturer') for row in rows):
+            product=main_structured_product(soup)
+            if product:
+                brand=product.get('brand')
+                if isinstance(brand,dict):brand=brand.get('name')
+                if isinstance(brand,str) and brand.strip():add('Бренд',brand)
     # Product-scoped structured properties complement visible site selectors.
     for row in soup.select('[itemtype$="/Product"] [itemprop="additionalProperty"]'):
         name=row.select_one('[itemprop="name"]');value=row.select_one('[itemprop="value"]')
