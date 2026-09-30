@@ -78,6 +78,19 @@ class Library:
             (SELECT count(*) FROM comparison_items c JOIN rules q ON q.id=c.rule_id WHERE {VISIBLE}) selected,
             (SELECT max(checked_at) FROM observations) checked_at""")[0]
 
+    def price_terms(self):
+        return {r['rule_id']:json.loads(r['terms_json']) for r in self.repo.batch('SELECT rule_id,terms_json FROM comparison_price_terms')}
+
+    def save_price_terms(self, rule_id, ours, competitor):
+        for term in (ours, competitor):
+            if term.get('basis') not in ('unknown', 'gross', 'net'): raise ValueError('Неизвестные условия НДС')
+            rate=term.get('rate')
+            if rate is not None and not 0 <= float(rate) <= 100: raise ValueError('Ставка НДС должна быть от 0 до 100%')
+            if term.get('unit') not in ('', 'piece'): raise ValueError('Неизвестная единица цены')
+        self.repo.batch('''INSERT INTO comparison_price_terms(rule_id,terms_json,updated_at) VALUES(%(id)s,%(terms)s,%(now)s)
+            ON CONFLICT(rule_id) DO UPDATE SET terms_json=excluded.terms_json,updated_at=excluded.updated_at''',
+            {'id':int(rule_id),'terms':json.dumps({'ours':ours,'competitor':competitor},ensure_ascii=False),'now':utcnow()})
+
     def products(self,query='',source='',brand='',selected=False,offset=0,limit=50,rule_id=None):
         p={'offset':max(0,int(offset)),'limit':min(1000,max(1,int(limit)))}
         where=[VISIBLE]
@@ -113,6 +126,8 @@ class Library:
             for i,row in enumerate(values[offset:offset+200]):
                 for key in ('rule_id','our_price','our_currency','our_article','note'):
                     p[f'{key}{i}']=row.get(key,'' if key not in ('our_price','rule_id') else None)
+                sql.append(f'''DELETE FROM comparison_price_terms WHERE rule_id=%(rule_id{i})s AND EXISTS
+                    (SELECT 1 FROM comparison_items c WHERE c.rule_id=%(rule_id{i})s AND c.our_article<>%(our_article{i})s)''')
                 sql.append(f'''INSERT INTO comparison_items(rule_id,our_price,our_currency,our_article,note,updated_at)
                     VALUES(%(rule_id{i})s,%(our_price{i})s,%(our_currency{i})s,%(our_article{i})s,%(note{i})s,%(now)s)
                     ON CONFLICT(rule_id) DO UPDATE SET our_price=excluded.our_price,our_currency=excluded.our_currency,

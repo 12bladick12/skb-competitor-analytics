@@ -25,7 +25,22 @@ class CloudScreenTests(unittest.TestCase):
             },
             "access": access or {"admin_emails": ["admin@example.com"], "viewer_emails": ["reader@example.com"]},
         })
+        app.query_params["workspace"] = "news"
         return app
+
+    def test_home_opens_navigation_without_identity_or_network(self):
+        app = self.application()
+        app.query_params.clear()
+        app.secrets.clear()
+        app.secrets["auth"] = {}
+        with patch("streamlit.user", None), patch("requests.Session") as network:
+            app.run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.title[0].value, "Конкурентная аналитика")
+        self.assertEqual({b.key for b in app.button if (b.key or "").startswith("portal_")},
+                         {"portal_open_news", "portal_open_prices"})
+        self.assertFalse(app.error)
+        network.assert_not_called()
 
     def user(self, email, logged_in=True, verified=True):
         user = MagicMock()
@@ -44,7 +59,7 @@ class CloudScreenTests(unittest.TestCase):
             app.run()
         self.assertEqual(len(app.exception), 0)
         self.assertIn("пока не настроен", app.info[0].value)
-        self.assertEqual(len(app.button), 0)
+        self.assertEqual({b.key for b in app.button}, {"workspace_home", "workspace_news", "workspace_prices"})
         network.assert_not_called()
 
     def test_anonymous_visitor_sees_only_login(self):
@@ -52,7 +67,7 @@ class CloudScreenTests(unittest.TestCase):
         with patch("streamlit.user", self.user("", False)):
             app.run()
         self.assertEqual(len(app.exception), 0)
-        self.assertEqual([b.label for b in app.button], ["Войти через Google"])
+        self.assertEqual([b.label for b in app.button if not (b.key or "").startswith("workspace_")], ["Войти через Google"])
 
     def test_public_documents_do_not_read_identity_or_connections(self):
         for page, title in [("privacy", "Политика конфиденциальности"), ("terms", "Условия использования")]:
@@ -79,7 +94,7 @@ class CloudScreenTests(unittest.TestCase):
         with patch("streamlit.user", self.user("", False)):
             app.run()
         self.assertEqual(len(app.exception), 0)
-        self.assertEqual([b.label for b in app.button], ["Войти через Google"])
+        self.assertEqual([b.label for b in app.button if not (b.key or "").startswith("workspace_")], ["Войти через Google"])
         self.assertFalse(app.header)
 
     def test_unknown_email_and_unverified_email_cannot_see_diagnostics(self):

@@ -81,7 +81,9 @@ class DesignationChecks(unittest.TestCase):
     def test_other_manufacturers_and_other_product_types_not_decoded(self):
         for row in ({'manufacturer':'ТЕКО','source':'megak'},{'manufacturer':'ifm'},{'source':'sensoren'},{}):
             p=normalize_sensor({'article':'PS2-18M68-8N11-K',**row})
-            self.assertEqual(p.values,{});self.assertEqual(p.decoding,{})
+            self.assertEqual(p.values,{})
+            self.assertFalse(p.decoding.get('supported',False))
+            self.assertFalse(p.decoding.get('fields',{}))
         self.assertTrue(is_megak({'source':'megak'}))
         self.assertTrue(is_megak({'manufacturer':'Mega-K','source':'sensoren'}))
         for prefix in ('PS1','PS3','VB5','PS9'):

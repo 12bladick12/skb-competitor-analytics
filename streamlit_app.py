@@ -12,6 +12,7 @@ from cloud.drive_store import StorageError
 from cloud.screens import load_library, render_library
 from cloud.presentation import apply_theme, brand, masthead, account
 from cloud.editor import dirty, discard_editor, render_guard
+from cloud.portal import render_home, render_prices_home
 
 
 TITLE = "Конкурентная аналитика СКБ ИНДУКЦИЯ"
@@ -154,13 +155,18 @@ def render_news():
     st.caption("Отключённый или отозванный доступ проверяется при каждом действии и обновлении страницы.")
 
 
-WORKSPACES = {"news": "Новости конкурентов", "prices": "Цены конкурентов"}
+WORKSPACES = {"home": "Главная", "news": "Новости", "prices": "Цены"}
 
 
-def select_workspace(workspace):
+def select_workspace(workspace, landing=False):
+    if workspace != 'news' and dirty():
+        st.session_state['pending_workspace'] = workspace
+        return
     st.session_state["workspace-tabs"] = WORKSPACES[workspace]
     st.session_state["_workspace_url"] = workspace
     st.query_params["workspace"] = workspace
+    if workspace == 'prices' and landing:
+        st.query_params['price_section'] = 'home'
 
 
 def workspace_changed():
@@ -175,8 +181,8 @@ def workspace_changed():
 
 def continue_to_prices():
     discard_editor()
-    st.session_state.pop("pending_workspace", None)
-    select_workspace("prices")
+    target = st.session_state.pop("pending_workspace", 'prices')
+    select_workspace(target)
 
 
 def stay_in_news():
@@ -187,40 +193,54 @@ def main():
     st.set_page_config(page_title=TITLE, page_icon="◈", layout="wide")
     apply_theme()
     masthead()
-    st.title("Конкурентная аналитика")
     if render_public_document(st.query_params.get("page", "")):
         public_links()
         st.stop()
     with st.sidebar:
         brand()
 
-    target = st.query_params.get("workspace", "news")
+    target = st.query_params.get("workspace", "news" if any(k in st.query_params for k in ('section', 'period')) else "home")
     if target not in WORKSPACES:
-        target = "news"
+        target = "home"
     if st.session_state.get("_workspace_url") != target:
-        if target == "prices" and dirty():
+        if target != "news" and dirty():
             st.session_state["pending_workspace"] = target
             target = "news"
         select_workspace(target)
 
-    news, prices = st.tabs(list(WORKSPACES.values()), key="workspace-tabs", on_change=workspace_changed)
-    if news.open:
-        with news:
-            if st.session_state.get("pending_workspace"):
-                st.warning("В новостной записке есть несохранённые правки. Сохраните их перед переходом к ценам или продолжите без сохранения.")
-                back, proceed = st.columns(2)
-                back.button("Остаться в новостях", on_click=stay_in_news, width="stretch")
-                proceed.button("Перейти к ценам без сохранения", on_click=continue_to_prices, width="stretch")
-            render_news()
-    if prices.open:
-        with prices:
-            render_guard()
-            if globals().get("PRICE_CLOUD_MODE", True) and not settings().get("database") and st.query_params.get("price_section") != "sources":
-                st.info("Вкладка цен подготовлена. Для подключения сохранённой истории владелец приложения должен добавить раздел [database] из настроек прежнего приложения цен в Secrets этого приложения.")
-                st.caption("Существующие разделы настроек Google, Neon и Drive нужно сохранить. После подключения здесь появятся сбор, база товаров и сравнение цен.")
-                return
-            runpy.run_path(str(Path(__file__).parent / "price_monitor" / "ui.py"),
-                           init_globals={"CLOUD_MODE": globals().get("PRICE_CLOUD_MODE", True)})
+    with st.sidebar:
+        st.html('<div class="sidebar-section-label">РАБОЧЕЕ ПРОСТРАНСТВО</div>')
+        with st.container(key='workspace_navigation'):
+            icons = {'home': ':material/space_dashboard:', 'news': ':material/article:', 'prices': ':material/monitoring:'}
+            for workspace, label in WORKSPACES.items():
+                st.button(label, key='workspace_' + workspace, on_click=select_workspace,
+                          args=(workspace, True), width='stretch', icon=icons[workspace],
+                          type='primary' if workspace == target else 'secondary')
+    if target == 'home':
+        st.title("Конкурентная аналитика", anchor=False)
+        render_home(lambda workspace: select_workspace(workspace, True))
+    elif target == 'news':
+        st.title('Новости', anchor=False)
+        if st.session_state.get('pending_workspace'):
+            st.warning('В новостной записке есть несохранённые правки. Сохраните их перед переходом или продолжите без сохранения.')
+            back, proceed = st.columns(2)
+            back.button('Остаться в новостях', on_click=stay_in_news, width='stretch')
+            proceed.button('Перейти без сохранения', on_click=continue_to_prices, width='stretch')
+        render_news()
+    elif target == 'prices':
+        render_guard()
+        def open_price_section(section):
+            st.query_params['price_section'] = section
+        if not st.query_params.get('price_section') or st.query_params.get('price_section') == 'home':
+            render_prices_home(open_price_section)
+            return
+        st.button('Все разделы цен', icon=':material/arrow_back:', key='price_back',
+                  on_click=open_price_section, args=('home',))
+        if globals().get('PRICE_CLOUD_MODE', True) and not settings().get('database') and st.query_params.get('price_section') != 'sources':
+            st.info('Для подключения сохранённой истории добавьте раздел [database] из настроек приложения цен в Streamlit Secrets.')
+            return
+        runpy.run_path(str(Path(__file__).parent / 'price_monitor' / 'ui.py'),
+                       init_globals={'CLOUD_MODE': globals().get('PRICE_CLOUD_MODE', True)})
 
 
 if __name__ == "__main__":

@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS product_scope (
  rule_id INTEGER PRIMARY KEY REFERENCES rules(id), manufacturer TEXT NOT NULL,
  state TEXT NOT NULL, details_hash TEXT NOT NULL, checked_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS comparison_price_terms (
+ rule_id INTEGER PRIMARY KEY REFERENCES rules(id), terms_json TEXT NOT NULL,
+ updated_at TEXT NOT NULL
+);
 """
 
 from .monthly import SCHEMA as MONTHLY_SCHEMA

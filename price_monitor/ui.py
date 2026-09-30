@@ -17,6 +17,7 @@ from price_monitor.models import STATUS_LABELS,RUN_LABELS
 from price_monitor.presentation import CSS,heading,money,metric_html,price_chart,result_table
 from price_monitor.sources import SOURCES
 from price_monitor.storage import Store
+from cloud.portal import sources_footer
 
 ROOT=Path(__file__).resolve().parent.parent
 CLOUD_MODE=globals().get('CLOUD_MODE',False)
@@ -24,7 +25,7 @@ st.html(CSS)
 
 
 @st.cache_resource
-def services(cloud_mode,version='collector-site-recovery-v4'):
+def services(cloud_mode,version='analytics-designation-2026-09-30-v1'):
     from price_monitor.scope import refresh_scope
     if not cloud_mode:
         store=Store();refresh_scope(store.catalog);return store,None
@@ -62,13 +63,14 @@ if section not in (*PAGES,'history','sources'):section='collect'
 if st.session_state.get('_price_navigation_section')!=section or 'price_navigation' not in st.session_state:
     st.session_state['price_navigation']=section if section in PAGES else 'compare'
     st.session_state['_price_navigation_section']=section
-st.sidebar.caption('10 производителей · 5 сайтов')
 st.sidebar.radio('МОНИТОРИНГ ЦЕН',list(PAGES),index=None,format_func=PAGES.get,key='price_navigation',on_change=navigation_changed)
+st.sidebar.caption('10 производителей · 5 сайтов')
 st.sidebar.divider()
 st.sidebar.markdown('[Источники и правила сбора](?workspace=prices&price_section=sources)')
-st.sidebar.caption('Общая база и список сравнения. Изменения видны всем посетителям.')
-st.sidebar.caption('Время — UTC. Валюты и условия цены сохраняются как у источника.')
-st.sidebar.caption('Подбор индуктивных датчиков · МЕГА-К: расшифровка обозначений')
+with st.sidebar.expander('О данных'):
+    st.caption('Общая база и список сравнения. Изменения видны всем посетителям.')
+    st.caption('Время — UTC. Валюты и условия цены сохраняются как у источника.')
+    st.caption('Подбор индуктивных датчиков · проверка обозначений производителей')
 
 
 def page_number(total,size,key):
@@ -204,11 +206,14 @@ def products_page():
     heading('База товаров','Поиск по артикулу, названию и категории. Отметьте позиции для сравнения цен.')
     summary=library.summary();a,b,c=st.columns(3)
     a.metric('Товаров в базе',summary['products']);b.metric('С характеристиками',summary['with_specs']);c.metric('В сравнении',summary['selected'])
-    a,b,c=st.columns([3,1.3,1.3])
-    query=a.text_input('Поиск номенклатуры',placeholder='Артикул, название или категория')
-    source=b.selectbox('Источник',['']+list(SOURCES),format_func=lambda x:SOURCES[x].label if x else 'Все источники')
-    brands=list(SOURCES[source].brands) if source else [x for s in SOURCES.values() for x in s.brands]
-    brand=c.selectbox('Производитель',['']+brands,format_func=lambda x:x or 'Все производители')
+    with st.container(key='product_filters'):
+        a,b,c=st.columns([3,1.3,1.3])
+        query=a.text_input('Поиск номенклатуры',placeholder='Артикул, название или категория')
+        source=b.selectbox('Источник',['']+list(SOURCES),format_func=lambda x:SOURCES[x].label if x else 'Все источники')
+        brands=list(SOURCES[source].brands) if source else [x for s in SOURCES.values() for x in s.brands]
+        brand=c.selectbox('Производитель',['']+brands,format_func=lambda x:x or 'Все производители')
+    from price_monitor.characteristic_audit import render_audit
+    render_audit(library,query,source,brand)
     total,_=library.products(query,source,brand,limit=1)
     offset=page_number(total,50,'products_page_'+str(hash((query,source,brand))))
     _,rows=library.products(query,source,brand,offset=offset)
@@ -266,7 +271,9 @@ def compare_page():
 def runs_page():
     heading('Запуски и результаты','Журнал сбора, состояние каталогов и причины пропусков.')
     if st.button('Обновить журнал'):st.rerun()
-    runs=db.runs()
+    total=db.runs_count()
+    offset=page_number(total,50,'runs_history_page')
+    runs=db.runs(limit=50,offset=offset)
     if not runs:st.info('Запусков пока нет.');return
     ids=[r['id'] for r in runs];chosen=st.session_state.get('selected_run',ids[0])
     run_id=st.selectbox('Запуск',ids,index=ids.index(chosen) if chosen in ids else 0,format_func=lambda value:next(f"№{r['id']} · {r['created_at']} · {RUN_LABELS[r['state']]}" for r in runs if r['id']==value))
@@ -328,12 +335,15 @@ def sources_page():
             if path.exists():
                 with st.expander(label):st.markdown(path.read_text(encoding='utf-8'))
     with algorithms:
+        from price_monitor.notation_ui import render_registry
+        render_registry()
         from price_monitor.algorithms import render_algorithms
         render_algorithms()
 
 
 try:
     {'collect':collect_page,'products':products_page,'compare':compare_page,'runs':runs_page,'history':history_page,'sources':sources_page}[section]()
+    sources_footer()
 except Exception:
     logging.getLogger('price_monitor').exception('Page failed: %s',section)
     st.error('Не удалось выполнить действие. Уже сохранённые данные остаются в базе. Обновите страницу; если ошибка повторится, проверьте журнал приложения.')

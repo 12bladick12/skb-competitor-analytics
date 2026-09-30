@@ -12,7 +12,7 @@ APPLICATIONS={'filled':'Дополнено из обозначения','confirm
 def render_decoding(sensor,expanded=False):
     decoded=sensor.decoding
     if not decoded:return
-    panel=st.expander('Расшифровка обозначения МЕГА-К',expanded=expanded) if expanded is not None else nullcontext()
+    panel=st.expander('Расшифровка обозначения '+decoded.get('brand','МЕГА-К'),expanded=expanded) if expanded is not None else nullcontext()
     with panel:
         st.caption('Модель: '+decoded['model']+' · версия '+decoded['version'])
         st.link_button('Система обозначений производителя',decoded['source_url'])
@@ -29,4 +29,13 @@ def render_decoding(sensor,expanded=False):
             filled=sum(x.get('application')=='filled' for x in decoded['fields'].values())
             st.caption(f'Дополнено характеристик: {filled}. Противоречий с явными кодами: {conflicts}. Исходная карточка сохранена.')
         if decoded['extras']:st.table([{'Дополнительно':k,'По обозначению':str(v)} for k,v in decoded['extras'].items()])
-        st.caption('Шаг резьбы и максимальная частота переключения в этой системе не заданы. Частотное исполнение не определяет частоту переключения. Температурный код сам по себе не выбирает назначение «Холодный климат».')
+        st.caption('Неизвестные серии и суффиксы не наследуют типовые значения. Ссылка на документ и совпадения с карточкой позволяют проверить применимость правил.')
+
+
+def render_registry():
+    from .notations import REGISTRY, CHECKED
+    st.subheader('Системы обозначений производителей')
+    st.caption('Проверка источников: '+CHECKED+'. Наличие документа не подтверждает все серии и годы выпуска. Исходные характеристики сохраняются отдельно.')
+    st.dataframe([{'Производитель':brand,'Область применения':scope,'Состояние':state,'Документ':url}
+                  for brand,(url,scope,state) in REGISTRY.items()],hide_index=True,width='stretch',
+                 column_config={'Документ':st.column_config.LinkColumn(display_text='Источник')})

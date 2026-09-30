@@ -152,9 +152,13 @@ class Store:
                 c.execute("INSERT INTO jobs(run_id,rule_id) VALUES " + ",".join("(?,?)" for _ in batch), [value for r in batch for value in (run_id,ids[r.key])])
             return run_id
 
-    def runs(self):
+    def runs(self, limit=200, offset=0):
         with self.connect() as c:
-            return [dict(r) for r in c.execute("SELECT r.*,count(j.id) total,sum(CASE WHEN j.state='done' THEN 1 ELSE 0 END) finished FROM runs r LEFT JOIN jobs j ON j.run_id=r.id GROUP BY r.id ORDER BY r.id DESC LIMIT 200")]
+            return [dict(r) for r in c.execute("SELECT r.*,count(j.id) total,sum(CASE WHEN j.state='done' THEN 1 ELSE 0 END) finished FROM runs r LEFT JOIN jobs j ON j.run_id=r.id GROUP BY r.id ORDER BY r.id DESC LIMIT ? OFFSET ?",(max(1,min(1000,int(limit))),max(0,int(offset))))]
+
+    def runs_count(self):
+        with self.connect() as c:
+            return c.execute('SELECT count(*) FROM runs').fetchone()[0]
 
     def saved_rules(self):
         with self.connect() as c:

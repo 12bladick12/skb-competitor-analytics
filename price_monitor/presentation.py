@@ -24,7 +24,8 @@ CSS='''<style>
 
 
 def heading(title,subtitle):
-    st.subheader(title);st.caption(subtitle)
+    st.title(title, anchor=False)
+    st.html(f'<p class="page-intro">{escape(subtitle)}</p>')
 
 
 def money(value,currency='RUB'):

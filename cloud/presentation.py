@@ -17,7 +17,9 @@ def html(content):
 
 
 def apply_theme():
-    st.html('<style>' + Path(__file__).with_name('theme.css').read_text(encoding='utf-8') + '</style>')
+    css = '\n'.join(Path(__file__).with_name(name).read_text(encoding='utf-8')
+                    for name in ('theme.css', 'workspace.css'))
+    st.html('<style>' + css + '</style>')
 
 
 def brand():
@@ -27,8 +29,8 @@ def brand():
 
 
 def masthead():
-    html('''<div class="masthead"><span class="eyebrow">СКБ ИНДУКЦИЯ / АНАЛИТИЧЕСКИЙ ЦЕНТР</span>
-    <span class="workspace-tag">Рабочее пространство</span></div>''')
+    html('''<div class="masthead"><span class="eyebrow">СКБ ИНДУКЦИЯ <span class="masthead-divider">/</span> Аналитический центр</span>
+    <span class="workspace-tag">Конкурентная аналитика</span></div>''')
 
 
 def account(email, role):

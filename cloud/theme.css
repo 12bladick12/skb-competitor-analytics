@@ -1,4 +1,12 @@
 :root { --ink:#32262b; --muted:#637387; --line:#e3e8ee; --accent:#7a1f2b; }
+[class*="st-key-portal_card_"] { background:#fff; border:1px solid var(--line)!important; border-radius:18px!important; padding:28px!important; min-height:260px; box-shadow:0 5px 20px #32262b05; }
+[class*="st-key-portal_card_"]:hover { border-color:#c4a4ac!important; }
+.portal-number { display:inline-block; color:var(--accent); font-size:.72rem; letter-spacing:.1em; font-weight:700; margin-bottom:20px; }
+.portal-title { color:var(--ink); font-size:1.8rem!important; margin:0 0 12px!important; }
+.portal-description { color:var(--muted); font-size:.93rem; line-height:1.65; min-height:54px; max-width:540px; }
+.sources-footer { border-top:1px solid var(--line); padding-top:22px; margin-top:28px; }
+.sources-footer a { color:var(--muted); text-decoration:underline!important; text-underline-offset:4px; font-size:.85rem; }
+@media(max-width:700px) { [class*="st-key-portal_card_"] { padding:20px!important; min-height:230px; } .portal-title { font-size:1.5rem!important; } }
 html, body, [data-testid="stApp"] { font-family: "Segoe UI", Arial, sans-serif; }
 [data-testid="stAppViewContainer"] { background:#f4f6f8; }
 [data-testid="stHeader"] { background:rgba(244,246,248,.96); }

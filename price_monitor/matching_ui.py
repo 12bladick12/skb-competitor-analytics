@@ -14,6 +14,8 @@ from .notation_ui import render_decoding
 from .presentation import heading, money, metric_html, price_chart
 from .sources import SOURCES
 from .models import STATUS_LABELS as PRICE_STATES
+from .analytics_ui import render_summary, price_conditions, BASES
+from .price_terms import price_views, terms_for, comparable
 
 PROFILES={'auto':'По указанному исполнению','general':'Общее применение','cold':'Холодный климат','hot':'Высокая температура'}
 
@@ -37,7 +39,7 @@ def match_badge(status,proposed=False):
     st.markdown(f'<span class="match-badge match-{escape(status)}">{escape(label)}</span>'+('<span class="match-proposed">Предложение</span>' if proposed else ''),unsafe_allow_html=True)
 
 
-def comparison_row(item,reference,match,options,history,profile,library,matcher):
+def comparison_row(item,reference,match,options,history,profile,library,matcher,basis='internet'):
     rid=item['rule_id'];saved=matcher.resolve(item.get('our_article'))
     price=reference_price(item,match,matcher)
     currency_ours=item.get('our_currency') or 'RUB'
@@ -57,22 +59,32 @@ def comparison_row(item,reference,match,options,history,profile,library,matcher)
             st.markdown(f'[История модели](?workspace=prices&price_section=history&model={rid})')
         data=[x for x in history if x['rule_id']==rid]
         currencies=list(dict.fromkeys(x['currency'] for x in data if x['status']=='priced' and x.get('currency')))
-        currency=currencies[0] if currencies else item.get('last_currency') or 'RUB'
+        currency=currencies[-1] if currencies else item.get('last_currency') or 'RUB'
         if len(currencies)>1:
-            with competitor:currency=st.selectbox('Валюта графика',currencies,key=f'currency_{rid}')
+            with competitor:currency=st.selectbox('Валюта графика',currencies,index=len(currencies)-1,key=f'currency_{rid}')
         points=series(data,currency)
-        latest,change,baseline,gap=metrics(points,price,currency_ours,currency)
+        from .price_analytics import model_statistics
+        stats=model_statistics(item,reference,[r for r in data if r.get('currency')==currency],basis,price,bool(match and match.status=='direct' and not proposed))
+        latest,change,gap=stats['price'],stats['change'],stats['gap']
+        conditions=item.get('_price_terms') or {}
+        ours_views=price_views(price,conditions.get('ours') or {})
+        baseline=ours_views[basis] if gap is not None else None
+        if basis!='internet':
+            points=series([{**r,'price':price_views(r.get('price'),terms_for(r))[basis]} for r in data],currency)
         with chart:price_chart(points,baseline,height=130)
         with competitor:
             movement=(f'{change:+.1f}% за период' if change is not None else 'Одна цена или нет наблюдений')
-            metric_html('Цена конкурента',money(latest,currency),movement,change)
+            metric_html('Конкурент · '+BASES[basis],money(latest,currency),movement,change)
+            st.caption('С НДС: '+money(stats['gross'],currency)+' · без НДС: '+money(stats['net'],currency))
             if points:st.caption(points[-1]['date'].strftime('%d.%m.%Y · UTC'))
             if data and data[-1]['status']!='priced':st.caption(PRICE_STATES.get(data[-1]['status'],data[-1]['status']))
         with ours:
-            detail=f'{gap:+.1f}% к нашей цене' if gap is not None else ('Разные валюты' if price and currency_ours!=currency else 'Укажите цену этой модели' if match else 'Выберите нашу модель')
-            metric_html('Наша текущая цена',money(price,currency_ours),detail,gap)
+            detail=f'Δ {money(stats["delta"],currency)} · {gap:+.1f}% к СКБ' if gap is not None else ('Разные валюты' if price and currency_ours!=currency else 'Для Δ нужны прямой аналог и подтверждённые условия цен')
+            metric_html('СКБ ИНДУКЦИЯ · '+BASES[basis],money(ours_views[basis],currency_ours),detail,gap)
+            st.caption('С НДС: '+money(ours_views['gross'],currency_ours)+' · без НДС: '+money(ours_views['net'],currency_ours))
             if proposed:st.caption('Сопоставление ещё не сохранено')
             if item.get('our_price') and price is None:st.caption('Прежний ориентир: '+money(item['our_price'],currency_ours)+' · к другой или непроверенной модели')
+        price_conditions(item,library)
         with st.expander('Характеристики и варианты подбора',expanded=False):
             render_decoding(reference)
             if match:
@@ -119,19 +131,24 @@ def comparison_row(item,reference,match,options,history,profile,library,matcher)
 
 
 def render_comparison(library,import_comparisons,downloads):
-    heading('Сравнение цен','Конкурент → наша модель. Прямые аналоги в основном сравнении, близкие варианты и неполные данные — отдельно.')
+    heading('Сравнение цен','Динамика брендов, функциональные группы и разница с ценами СКБ ИНДУКЦИЯ.')
     catalog,matcher=load_catalog()
     with st.expander('Настройки и загрузка сравнения'):
         import_comparisons()
         st.caption(f'Наша номенклатура: {len(matcher.products):,} активных индуктивных датчиков · снимок {catalog["snapshot_date"]}. Цены задаются отдельно.'.replace(',',' '))
         st.link_button('Алгоритмы подбора','?workspace=prices&price_section=sources&source_tab=algorithms')
-    search,purpose,dates=st.columns([2,1.6,2])
-    query=search.text_input('Найти в сравнении',placeholder='Артикул или производитель',key='matching_search')
-    profile=purpose.selectbox('Назначение подбора',list(PROFILES),format_func=PROFILES.get,key='matching_profile',help='«По исполнению» использует явно указанное назначение. Одна низкая Tmin сама по себе не включает холодный профиль.')
-    period=dates.date_input('Период истории (UTC)',value=(date.today()-timedelta(days=90),date.today()),format='DD.MM.YYYY',key='compare_dates')
+    with st.container(key='comparison_filters'):
+        search,purpose,dates=st.columns([2,1.6,2])
+        query=search.text_input('Найти в сравнении',placeholder='Артикул или производитель',key='matching_search')
+        profile=purpose.selectbox('Назначение подбора',list(PROFILES),format_func=PROFILES.get,key='matching_profile',help='«По исполнению» использует явно указанное назначение. Одна низкая Tmin сама по себе не включает холодный профиль.')
+        period=dates.date_input('Период истории (UTC)',value=(date.today()-timedelta(days=90),date.today()),format='DD.MM.YYYY',key='compare_dates')
     if len(period)!=2:st.info('Выберите начало и конец периода');return
+    items=library.export_products(query=query,selected=True)
+    basis=render_summary(library,matcher,period,profile,items)
+    price_terms=library.price_terms()
+    for item in items:item['_price_terms']=price_terms.get(item['rule_id'],{})
+    st.subheader('Сопоставление моделей')
     with st.spinner('Сопоставляем характеристики выбранных моделей…'):
-        items=library.export_products(query=query,selected=True)
         prepared=[]
         for item in items:
             # Prices and history are deliberately excluded from matching inputs.
@@ -155,8 +172,8 @@ def render_comparison(library,import_comparisons,downloads):
     page=st.number_input('Страница',min_value=1,max_value=pages,value=1,key=f'matching_page_{query}_{profile}_{group}_{len(filtered)}') if pages>1 else 1
     visible=filtered[(page-1)*10:page*10]
     st.caption(f'{len(filtered)} позиций · бордовая линия — конкурент, зелёный пунктир — текущая цена сохранённой нашей модели. Валюты, НДС и упаковка автоматически не уравниваются.')
-    history=library.history([row[0]['rule_id'] for row in visible],period[0].isoformat(),(period[1]+timedelta(days=1)).isoformat())
-    for item,reference,match,options,_ in visible:comparison_row(item,reference,match,options,history,profile,library,matcher)
+    history=library.with_specifications(library.history([row[0]['rule_id'] for row in visible],period[0].isoformat(),(period[1]+timedelta(days=1)).isoformat()))
+    for item,reference,match,options,_ in visible:comparison_row(item,reference,match,options,history,profile,library,matcher,basis)
     with st.expander('Изменить ручные связи, цены и примечания'):
         st.caption('При смене обозначения нашей модели цена очищается. Задать цену новой модели можно в её блоке сопоставления.')
         edits=[{k:row[0].get(k) or '' for k in ('rule_id','article','our_article','our_price','our_currency','note')} for row in visible]

@@ -10,7 +10,8 @@ import math
 import re
 import unicodedata
 
-from .megak_notation import enrich, is_megak
+from .megak_notation import is_megak
+from .notations import enrich
 
 
 def key(value):
@@ -69,6 +70,9 @@ def switching(value):
 
 def mounting(value):
     text=key(value)
+    if 'quasi' in text or 'квази' in text:return 'quasi-flush'
+    if text in ('non-flush','non flush','unshielded'):return 'non-flush'
+    if text in ('flush','shielded'):return 'flush'
     if 'невстраив' in text.replace(' ','') or 'не заподлицо' in text or 'незаподлицо' in text:return 'non-flush'
     if 'встраив' in text or text=='заподлицо':return 'flush'
     return None
@@ -76,6 +80,8 @@ def mounting(value):
 
 def material(value):
     text=key(value)
+    if 'brass' in text:return 'brass'
+    if 'stainless' in text:return 'stainless'
     if 'латун' in text:return 'brass'
     if 'нержав' in text or 'нерж.' in text:return 'stainless'
     if any(v in text for v in ('пласт','полимер','текаформ','полиамид','pbt','abs')):return 'plastic'
@@ -86,8 +92,8 @@ def material(value):
 
 def connection(value):
     text=key(value)
-    cable='кабел' in text or 'провод' in text
-    plug='разъем' in text or 'штек' in text or bool(re.search(r'\b[mм](8|12|16|23)\b',text))
+    cable='кабел' in text or 'провод' in text or 'cable' in text
+    plug='разъем' in text or 'штек' in text or 'connector' in text or bool(re.search(r'\b[mм](8|12|16|23)\b',text))
     if cable and plug:return 'cable+connector'
     if cable:return 'cable'
     if plug:return 'connector'
@@ -164,6 +170,22 @@ ALIASES={
     'special_speed':('Диапазон измерения частоты, Гц','Диапазон частоты воздействия, fo, Гц'),
     'special_ex':('Маркировка взрывозащиты','Взрывозащита'),
 }
+for _name, _extra in {
+    'body':('Размер цилиндрического корпуса, мм','Резьба корпуса','Конструкция корпуса'),
+    'sn':('Расстояние переключения, мм','Расстояние срабатывания','Sensing distance','Rated distance [Sn]'),
+    'output':('Тип выхода/функция','Output type','Выходной сигнал'),
+    'function':('Тип выхода/функция','Output function','Выходной сигнал','Тип выходного контакта'),
+    'mount':('Установка','Installation','Mounting'),
+    'voltage':('Рабочее напряжение, В','Рабочее напряжение, Uраб','Напряжение питания, Uраб.','Supply voltage','Operating voltage'),
+    'pin_count':('Число контактов, pin','Количество контактов, pin'),
+    'frequency':('Частота переключения max, Гц','Рабочая частота, Гц','Switching frequency'),
+    'connection':('Connection type','Connection'),
+    'material':('Housing material','Обозначение материала корпуса'),
+    'ip':('Degree of protection','Protection structure'),
+    'temperature':('Ambient temperature',),
+}.items(): ALIASES[_name] += _extra
+ALIASES['diameter']=('Диаметр корпуса, мм','Диаметр цилиндрического корпуса')
+ALIAS_KEYS={name:tuple(key(alias) for alias in aliases) for name,aliases in ALIASES.items()}
 PREFIXES={'length':'_Длина корпуса','diameter':'_Диаметр цилиндрического корпуса','tmin':'_Рабочая температура окружающей среды мин.',
           'tmax':'_Рабочая температура окружающей среды макс.','body_type':'_Тип корпуса'}
 SPECIAL_LABELS={'speed':'Контроль минимальной скорости','pressure':'Высокое давление','namur':'NAMUR','slot':'Щелевые','ex':'Взрывозащищённые','analog':'Аналоговый выход'}
@@ -190,8 +212,8 @@ def normalize_sensor(record):
             sensor.values.pop(name,None);sensor.conflicts.add(name)
         else:sensor.values[name]=value
     def values(name):
-        for alias in ALIASES.get(name,()):
-            yield from props.get(key(alias),[])
+        for alias in ALIAS_KEYS.get(name,()):
+            yield from props.get(alias,[])
         if name in PREFIXES:
             for n,vals in props.items():
                 if n.startswith(key(PREFIXES[name])):yield from vals
@@ -228,7 +250,9 @@ def normalize_sensor(record):
     text=key(' '.join([category,str(record.get('title','')),str(details.get('description','')),purpose]))
     family_text=key(category+' '+str(record.get('title',''))+' '+str(details.get('category','')))
     def family(value):
-        found=[code for stem,code in (('индуктив','inductive'),('емкост','capacitive'),('геркон','reed'),('оптичес','optical')) if stem in key(value)]
+        found=list(dict.fromkeys(code for stem,code in (('индуктив','inductive'),('inductive','inductive'),('емкост','capacitive'),('capacitive','capacitive'),('геркон','reed'),('магниточувств','reed'),('оптичес','optical'),('photoelectric','optical'),('ультразвук','ultrasonic')) if stem in key(value)))
+        if not found:
+            found=[code for stem,code in (('датчик давления','pressure'),('датчики давления','pressure'),('датчик температуры','temperature'),('датчики температуры','temperature'),('датчик уровня','level'),('датчики уровня','level')) if stem in key(value)]
         return found[0] if len(found)==1 else None
     sensor.family=family(family_text)
     # An explicit type attribute is stronger than a broad category.

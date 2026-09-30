@@ -10,9 +10,9 @@ import gzip
 import math
 
 from .matching_normalize import Sensor, normalize_sensor, model_key, SPECIAL_LABELS
-from .megak_notation import field_source
+from .notations import field_source
 
-VERSION='inductive-2026-09-30-v2'
+VERSION='inductive-2026-09-30-v3'
 STATUS_LABELS={'direct':'Прямой аналог','close':'Близкий аналог','review':'Требует проверки','incompatible':'Не подходит','unsupported':'Алгоритм ещё не добавлен'}
 FIELD_LABELS={'body_type':'Форма корпуса','diameter':'Диаметр корпуса, мм','pitch':'Шаг резьбы, мм','output':'Схема выхода',
               'function':'Функция выхода','voltage_type':'Тип питания','vmin':'Минимальное питание, В','vmax':'Максимальное питание, В',
@@ -20,6 +20,7 @@ FIELD_LABELS={'body_type':'Форма корпуса','diameter':'Диаметр
               'material':'Материал корпуса (группа)','connection':'Способ подключения','ip':'Защита IP','load':'Максимальный ток нагрузки, мА',
               'frequency':'Частота переключения, Гц','length':'Длина корпуса, мм','wire_count':'Число проводов','connector':'Разъём','pin_count':'Число контактов'}
 VALUE_LABELS={'threaded':'Цилиндрический резьбовой','smooth':'Цилиндрический гладкий','rectangular':'Прямоугольный','slot':'Щелевой',
+              'quasi-flush':'Квазизаподлицо (quasi-flush)','configurable':'Программируемый NO/NC',
               'pipe-threaded':'Цилиндрический с трубной резьбой','analog-current':'Аналоговый токовый выход',
               'brass':'Латунь','stainless':'Нержавеющая сталь','plastic':'Пластик','aluminium':'Алюминиевый сплав','steel':'Сталь',
               'flush':'Встраиваемый','non-flush':'Невстраиваемый','cable':'Кабель','connector':'Разъём','cable+connector':'Кабель с разъёмом',
@@ -73,7 +74,7 @@ def evaluate(reference:Sensor,candidate:Sensor,profile='auto',max_length=None):
     if reference.family is None:forced_review=True;notices.append('Тип датчика конкурента не подтверждён характеристиками.')
     if reference.decoding.get('supported') and reference.decoding.get('requires_review'):
         forced_review=True
-        notices.append('Расшифровка МЕГА-К требует проверки: есть противоречие с карточкой, неизвестная опция или особое исполнение. Подробности — в блоке расшифровки.')
+        notices.append('Расшифровка производителя требует проверки: противоречие с карточкой, непроверенная редакция, неизвестная опция или особое исполнение. Подробности — в блоке расшифровки.')
     if reference.special!=candidate.special:
         incompatible=True;notices.append('Разные специальные исполнения: '+(', '.join(SPECIAL_LABELS[s] for s in reference.special) or 'стандартное')+' → '+(', '.join(SPECIAL_LABELS[s] for s in candidate.special) or 'стандартное')+'.')
     elif reference.special:

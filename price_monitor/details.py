@@ -93,13 +93,23 @@ def attributes(source, soup, variant=None):
             rows.append({'name':name,'value':value,'group':group})
     if source=='sensoren':
         for row in soup.select('.characteristics-all li'):
-            value = row.find('span')
-            if not value:continue
+            spans=row.find_all('span',recursive=False)
+            value = spans[-1] if spans else row.find('span')
+            if not value:
+                label,sep,raw=text(row).partition(':')
+                if sep:add(label,raw)
+                continue
             # The label can be wrapped in a nested element; exclude the value.
-            label=BeautifulSoup(str(row),'html.parser')
-            first=label.find('span')
-            if first:first.decompose()
+            label=BeautifulSoup(str(row),'html.parser').li
+            label_spans=label.find_all('span',recursive=False)
+            value_copy=label_spans[-1] if label_spans else label.find('span')
+            if value_copy:value_copy.decompose()
             add(text(label),text(value))
+        # Some cards publish useful fields only in the brief beside the price.
+        # Keep both sources, including disagreements, and never parse recommendations.
+        for row in soup.select('.product-info__all-characteristics > ul > li'):
+            label,sep,raw=text(row).partition(':')
+            if sep:add(label,raw)
     elif source=='beskonta':
         for row in soup.select('tr.tab-content_table_character-text, table.p-p-table-mini-h tr'):
             if row.find_parent('tbody',class_='rs-offer-property'):
@@ -134,6 +144,13 @@ def attributes(source, soup, variant=None):
                 if isinstance(brand,dict):brand=brand.get('name')
                 if isinstance(brand,str) and brand.strip():add('Бренд',brand)
     # Product-scoped structured properties complement visible site selectors.
+    product=main_structured_product(soup)
+    if product:
+        properties=product.get('additionalProperty') or []
+        if isinstance(properties,dict):properties=[properties]
+        for prop in properties:
+            if isinstance(prop,dict) and prop.get('name') and prop.get('value') is not None:
+                add(prop['name'],str(prop['value'])+(' '+str(prop['unitText']) if prop.get('unitText') else ''))
     for row in soup.select('[itemtype$="/Product"] [itemprop="additionalProperty"]'):
         name=row.select_one('[itemprop="name"]');value=row.select_one('[itemprop="value"]')
         if name and value:add(name.get('content') or text(name),value.get('content') or text(value))
@@ -176,6 +193,8 @@ def safe_link(base, value):
 
 
 def extract_details(source, soup, url, variant=None):
+    from .price_terms import parse_terms
+    from .sources import SOURCES
     props=attributes(source,soup,variant)
     selectors={
         'sensoren':'.product-tab-item[data-tab="description"], .product-tab-item.description',
@@ -201,7 +220,9 @@ def extract_details(source, soup, url, variant=None):
     if meta:
         image=safe_link(url,meta.get('content'))
         if image:images.append(image)
-    return {'attributes':props,'description':'\n\n'.join(descriptions),'category':' / '.join(crumbs),
+    price_node=soup.select_one(SOURCES[source].price_selector)
+    price_terms=parse_terms(text(price_node.parent) if price_node else '')
+    return {'attributes':props,'description':'\n\n'.join(descriptions),'category':' / '.join(crumbs), 'price_terms':price_terms,
         'manufacturer':manufacturer(source,soup),
         'documents':documents,'images':images,'variant_id':variant['id'] if variant else '',
         'specification_state':'collected' if props else 'not_published_or_unrecognized',
