@@ -114,6 +114,7 @@
 [data-testid="stMain"] .st-key-analytics_scope [data-testid="stRadioOption"] { padding:5px 12px; margin:0; border-radius:5px; gap:0; }
 [data-testid="stMain"] .st-key-analytics_scope [data-testid="stRadioOption"]>div:first-child { display:none; }
 [data-testid="stMain"] .st-key-analytics_scope [data-testid="stRadioOption"]>div:last-child { display:block; margin:0; }
+[data-testid="stMain"] .st-key-analytics_scope [data-testid="stRadioOption"]>div>div:first-child:not(:has([data-testid="stMarkdownContainer"])):not([data-testid="stMarkdownContainer"]) { display:none; }
 [data-testid="stMain"] .st-key-analytics_scope [data-testid="stRadioOption"]>div>div>div:first-child:not([data-testid="stMarkdownContainer"]) { display:none; }
 [data-testid="stMain"] .st-key-analytics_scope [data-testid="stRadioOption"]:has(input:checked) { background:white; box-shadow:0 1px 4px #32262b15; }
 [data-testid="stMain"] .st-key-analytics_scope [data-testid="stRadioOption"] p { font-size:.78rem; }
