@@ -1,5 +1,6 @@
 """PostgreSQL support for persistent Community Cloud storage."""
 from contextlib import contextmanager
+import time
 
 
 class Row(dict):
@@ -34,7 +35,7 @@ def schema_sql(sqlite_schema):
 
 
 class Postgres:
-    def __init__(self, settings, sqlite_schema):
+    def __init__(self, settings, sqlite_schema, initialize=True):
         from psycopg_pool import ConnectionPool
         from .db_connection import DeadlineConnection
 
@@ -53,6 +54,7 @@ class Postgres:
         self.pool = ConnectionPool(connection_class=DeadlineConnection, kwargs=kwargs, min_size=1, max_size=4, max_idle=60, timeout=15, open=True)
         try:
             self.pool.wait(timeout=15)
+            if not initialize:return
             with self.connect() as c:
                 self.lock(c)
                 c.execute("CREATE SCHEMA IF NOT EXISTS price_monitor")
@@ -76,11 +78,18 @@ class Postgres:
     @contextmanager
     def connect(self):
         with self.pool.connection() as raw:
-            # A dedicated schema keeps tables out of Supabase's public Data API.
-            raw.execute("SET LOCAL search_path TO price_monitor")
-            raw.execute("SET LOCAL statement_timeout TO '20s'")
-            raw.execute("SET LOCAL lock_timeout TO '10s'")
-            yield Connection(raw)
+            raw.io_deadline=time.monotonic()+45
+            try:
+                # Commit/rollback must finish before resetting the deadline or
+                # returning this connection to another thread in the pool.
+                with raw.transaction():
+                    raw.execute("SET LOCAL search_path TO price_monitor")
+                    raw.execute("SET LOCAL statement_timeout TO '20s'")
+                    raw.execute("SET LOCAL lock_timeout TO '10s'")
+                    raw.execute("SET LOCAL idle_in_transaction_session_timeout TO '40s'")
+                    yield Connection(raw)
+            finally:
+                raw.io_deadline=None
 
     @staticmethod
     def lock(c):

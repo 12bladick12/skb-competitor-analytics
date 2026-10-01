@@ -143,43 +143,75 @@ class ProductState:
 
     def manifest(self, run_id, source, owner, brands):
         """Queue targeted checks only once all navigation completed successfully."""
-        from .catalog import page_id
         p = {**self.repo.params(run_id, source, owner), 'brands': json.dumps(sorted(brands)),
              'before': (datetime.now(timezone.utc)-timedelta(days=1)).isoformat(timespec='seconds')}
         if self.repo.cancelled(run_id, source, owner): return False
-        existing = self.repo.batch('SELECT state FROM catalog_integrity WHERE run_id=%(run)s AND source=%(source)s', p)
-        if existing: return False
-        pages = self.repo.batch('SELECT url,kind,state,http_status FROM catalog_pages WHERE run_id=%(run)s AND source=%(source)s', p)
-        navigation = [r for r in pages if r['kind'] in ('sitemap','listing')]
-        products = {r['url'] for r in pages if r['kind']=='product'}
-        complete = bool(navigation and products) and all(r['state']=='done' and r['http_status']==200 for r in navigation)
+        pending_note='Подготовка проверок наличия продолжается'
+        existing = self.repo.batch('SELECT state,note FROM catalog_integrity WHERE run_id=%(run)s AND source=%(source)s', p)
+        if existing and (existing[0]['state']!='complete' or existing[0]['note']!=pending_note):return False
+        if not existing:
+            counts=self.repo.batch('''SELECT
+                sum(CASE WHEN kind IN ('sitemap','listing') THEN 1 ELSE 0 END) navigation,
+                sum(CASE WHEN kind='product' THEN 1 ELSE 0 END) products,
+                sum(CASE WHEN kind IN ('sitemap','listing') AND
+                    (state<>'done' OR http_status IS NULL OR http_status<>200) THEN 1 ELSE 0 END) incomplete
+                FROM catalog_pages WHERE run_id=%(run)s AND source=%(source)s''',p)[0]
+            complete=bool(counts['navigation'] and counts['products'] and not counts['incomplete'])
+        else:complete=True
         # A product fetch failure doesn't erase a manifest, but no products are
         # archived based on it without an independent address verification.
-        p.update(state='complete' if complete else 'incomplete', note='' if complete else 'Не подтверждён полный обход навигации; архивирование отключено')
+        p.update(state='complete' if complete else 'incomplete', note=pending_note if complete else 'Не подтверждён полный обход навигации; архивирование отключено')
         self.repo.batch('''INSERT INTO catalog_integrity(run_id,source,state,brands_json,checked_at,note)
             SELECT %(run)s,%(source)s,%(state)s,%(brands)s,%(now)s,%(note)s WHERE '''+self.repo.allowed()+
             ' ON CONFLICT(run_id,source) DO NOTHING', p)
         if not complete: return False
         self.bootstrap(source)
-        for page in pages:
-            if page['kind']=='product' and page['http_status'] in (404,410):
+        # All large reads use stable keyset pages. In particular the external
+        # collector never downloads the entire catalog through one DB response.
+        after=''
+        while True:
+            pages=self.repo.batch('''SELECT url,http_status FROM catalog_pages WHERE run_id=%(run)s
+                AND source=%(source)s AND kind='product' AND http_status IN (404,410)
+                AND url>%(after)s ORDER BY url LIMIT 16''',{**p,'after':after})
+            if not pages:break
+            for page in pages:
                 self.verify(run_id,source,page['url'],page['http_status'],[],owner)
-        variants=self.repo.batch('SELECT * FROM catalog_variant_sets WHERE run_id=%(run)s AND source=%(source)s',p)
-        for row in variants:self.variant_absence(run_id,source,row['url'],json.loads(row['articles_json']),owner)
-        rows = self.repo.batch('''SELECT q.id,q.manufacturer,q.product_url,l.current_url,l.state,l.last_missing_check
-            ,l.missing_kind FROM rules q JOIN product_lifecycle l ON l.rule_id=q.id WHERE q.source=%(source)s''', p)
-        missing = set()
-        for row in rows:
-            if row['manufacturer'] not in brands: continue
-            url = row['current_url'] or row['product_url']
-            if url in products and row['state']!='archived' and row['missing_kind']!='variant': continue
-            if row['last_missing_check'] and row['last_missing_check'] > p['before']: continue
-            missing.add(url)
-            self.repo.batch("UPDATE product_lifecycle SET state=CASE WHEN state='archived' THEN state ELSE 'review' END,note='Ссылка отсутствует в завершённом обходе' WHERE rule_id=%(id)s AND "+self.repo.allowed(), {**p,'id':row['id']})
-        self.repo.add_pages(run_id, source, [('verify',url) for url in sorted(missing)], owner)
-        for url in missing:
-            self.repo.batch("UPDATE catalog_pages SET kind='verify',state='pending' WHERE run_id=%(run)s AND source=%(source)s AND url=%(url)s AND state='cached' AND "+self.repo.allowed(),{**p,'url':url})
-        return bool(missing)
+            after=pages[-1]['url']
+        after=''
+        while True:
+            variants=self.repo.batch('''SELECT url,articles_json FROM catalog_variant_sets
+                WHERE run_id=%(run)s AND source=%(source)s AND url>%(after)s ORDER BY url LIMIT 1''',{**p,'after':after})
+            if not variants:break
+            for row in variants:self.variant_absence(run_id,source,row['url'],json.loads(row['articles_json']),owner)
+            after=variants[-1]['url']
+        brand_params={f'brand{i}':brand for i,brand in enumerate(brands)}
+        p.update(brand_params)
+        brand_sql=','.join(f'%({key})s' for key in brand_params) or 'NULL'
+        after_id=0
+        added=False
+        while True:
+            rows=self.repo.batch(f'''SELECT q.id,COALESCE(NULLIF(l.current_url,''),q.product_url) url
+                FROM rules q JOIN product_lifecycle l ON l.rule_id=q.id WHERE q.source=%(source)s
+                AND q.manufacturer IN ({brand_sql}) AND q.id>%(after_id)s
+                AND (l.last_missing_check IS NULL OR l.last_missing_check<=%(before)s)
+                AND (l.state='archived' OR l.missing_kind='variant' OR NOT EXISTS(
+                    SELECT 1 FROM catalog_pages p WHERE p.run_id=%(run)s AND p.source=%(source)s
+                    AND p.kind='product' AND p.url=COALESCE(NULLIF(l.current_url,''),q.product_url)))
+                ORDER BY q.id LIMIT 16''',{**p,'after_id':after_id})
+            if not rows:break
+            missing=sorted({row['url'] for row in rows})
+            for row in rows:
+                self.repo.batch("UPDATE product_lifecycle SET state=CASE WHEN state='archived' THEN state ELSE 'review' END,note='Ссылка отсутствует в завершённом обходе' WHERE rule_id=%(id)s AND "+self.repo.allowed(),{**p,'id':row['id']})
+            self.repo.add_pages(run_id,source,[('verify',url) for url in missing],owner)
+            for url in missing:
+                self.repo.batch("UPDATE catalog_pages SET kind='verify',state='pending' WHERE run_id=%(run)s AND source=%(source)s AND url=%(url)s AND state='cached' AND "+self.repo.allowed(),{**p,'url':url})
+            if self.repo.cancelled(run_id,source,owner):return False
+            added=True
+            after_id=rows[-1]['id']
+        # Only this final checkpoint closes preparation. A failed intermediate
+        # write leaves the marker above, so the next worker resumes idempotently.
+        self.repo.batch("UPDATE catalog_integrity SET note='' WHERE run_id=%(run)s AND source=%(source)s AND "+self.repo.allowed(),p)
+        return added
 
     def verify(self, run_id, source, original_url, code, results, owner):
         """No prices here. Two independent, spaced absence checks retain history."""

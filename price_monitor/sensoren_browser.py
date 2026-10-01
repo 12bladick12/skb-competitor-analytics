@@ -38,8 +38,9 @@ class SensorenBrowserClient(SourceClient):
         self.metrics = {'http_requests': 0, 'browser_navigations': 0,
                         'session_refreshes': 0, 'contexts': 0}
 
-    def _check_cancelled(self):
-        if self.cancelled():
+    def _check_cancelled(self, cached=False):
+        check = getattr(self.cancelled, 'cached', self.cancelled) if cached else self.cancelled
+        if check():
             raise FetchError('cancelled', 'Запуск остановлен пользователем')
 
     def _assert_thread(self):
@@ -144,7 +145,9 @@ class SensorenBrowserClient(SourceClient):
         def route_request(route):
             request = route.request
             try:
-                self._check_cancelled()
+                # Refresh cancellation outside Playwright's event dispatcher:
+                # synchronous DB calls here can stall routing or leak errors.
+                self._check_cancelled(cached=True)
                 validate_url('sensoren', request.url, product=False)
                 parts = urlsplit(request.url)
                 allowed = (parts.hostname == host and request.method == 'GET'

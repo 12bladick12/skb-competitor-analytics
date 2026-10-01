@@ -81,7 +81,8 @@ class AgentStore:
                     phase=excluded.phase,url=excluded.url,phase_started=excluded.phase_started,
                     activity_at=excluded.activity_at,completed_at=excluded.completed_at,
                     recoveries=excluded.recoveries,detail=excluded.detail''')
-        return bool(self.batch(statements,values))
+        from .db_batches import batch
+        return bool(batch(self.settings,statements,values,serialize=False,timeout=15))
 
     def release(self, owner):
         self.batch("UPDATE price_monitor.external_sources SET owner='',heartbeat=0 "
@@ -181,7 +182,7 @@ class SensorenAgent:
             client_factory = SensorenBrowserClient
         self.client_factory = client_factory
         self.store = store
-        self.owner = 'sensoren-monthly1-doc1-' + str(uuid.uuid4())
+        self.owner = 'sensoren-monthly1-doc1-watchdog1-' + str(uuid.uuid4())
         from .runtime import RuntimeProgress
         self.progress = RuntimeProgress()
         self.stopping = threading.Event()
@@ -191,15 +192,19 @@ class SensorenAgent:
         self.catalog_outbox=CatalogOutbox(self.output/'catalog')
 
     def heartbeat_loop(self, finished):
+        import time
+        last_success=time.monotonic()
         while not finished.wait(15):
             try:
                 if not self.store.heartbeat(self.owner,self.progress.snapshot()):
                     self.stopping.set()
                     return
+                last_success=time.monotonic()
             except Exception as exc:
                 print("Связь сборщика с базой прервана: " + type(exc).__name__, flush=True)
-                self.stopping.set()
-                return
+                if time.monotonic()-last_success>=75:
+                    self.stopping.set()
+                    return
 
     def run(self):
         from .runtime import activate, context, phase, completed
@@ -214,6 +219,7 @@ class SensorenAgent:
               + self.client_factory.__name__ + ". Нажимайте «Запустить сбор» в приложении.", flush=True)
         try:
             while not self.stopping.is_set():
+                context(None)
                 job = self.store.claim(self.owner)
                 if not job:
                     from .catalog_storage import CatalogRepository
@@ -240,6 +246,7 @@ class SensorenAgent:
                 rule = Rule(**{k:job[k] for k in ('source','manufacturer','article','product_url','url_template')})
                 context(current_run,rule.url)
                 if self.store.reuse_monthly(job['job_id'],self.owner) is True:
+                    completed()
                     print(f"Запуск №{current_run}: {rule.article} — уже собрано в этом месяце",flush=True)
                     continue
                 stop_reason = job['stop_reason']
@@ -295,10 +302,16 @@ def main():
         help='Короткие подключения к базе, если сеть обрывает постоянные соединения')
     parser.add_argument('--transport', choices=('browser', 'http'), default='browser',
         help='Sensoren: браузерная сессия (по умолчанию) или прежний HTTP-клиент')
+    parser.add_argument('--progress-file', type=Path, help=argparse.SUPPRESS)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--enable', action='store_true', help='Подключить внешний сборщик и ждать заданий')
     mode.add_argument('--disable', action='store_true', help='Вернуть обработку Sensoren облачному сборщику')
     args = parser.parse_args()
+    from .runtime import RuntimeProgress
+    from .sensoren_supervisor import ProgressPublisher
+    progress = RuntimeProgress()
+    publisher = ProgressPublisher(progress, args.progress_file)
+    publisher.start()
     try:
         store = AgentStore(settings_from_file(args.secrets))
         if args.fresh_connections:
@@ -317,6 +330,7 @@ def main():
             signal.signal(sig, stop)
         if args.enable:
             while not stopping.is_set():
+                progress.task(None, '')
                 try:
                     store.configure(True)
                     break
@@ -325,6 +339,7 @@ def main():
                     print('Ожидание готовности Streamlit: '+message, flush=True)
                     stopping.wait(10)
         agent = SensorenAgent(store, client_factory=SourceClient if args.transport == 'http' else None)
+        agent.progress = progress
         while not stopping.is_set():
             # Recover with the same lease identity after a temporary disconnect.
             # A failed release must not make us wait for our own 120-second lease.
@@ -343,6 +358,8 @@ def main():
         message = str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__
         print('Сборщик не запущен или остановлен: ' + message, flush=True)
         return 1
+    finally:
+        publisher.close()
 
 
 if __name__ == '__main__':

@@ -49,15 +49,16 @@ SCHEMA += CATALOG_SCHEMA
 
 
 class Store:
-    def __init__(self, path=None, postgres=None):
+    def __init__(self, path=None, postgres=None, initialize=True):
         self.pg = None
         if postgres is not None:
             from .postgres import Postgres
-            self.pg = Postgres(dict(postgres), SCHEMA)
+            self.pg = Postgres(dict(postgres), SCHEMA, initialize=initialize)
             self.path = None
             return
         self.path = Path(path or os.getenv("PRICE_MONITOR_DB", "data/prices.sqlite3")).resolve()
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        if not initialize:return
         with self.connect() as c:
             version = c.execute("PRAGMA user_version").fetchone()[0]
             if version not in (0,1):

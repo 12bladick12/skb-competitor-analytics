@@ -54,3 +54,7 @@ class CancellationProbe:
         if now-self.last >= self.ttl:
             self.value, self.last = self.check(), now
         return self.value
+
+    def cached(self):
+        """Nonblocking check for browser callbacks; caller refreshes outside them."""
+        return self.stopping.is_set() or self.value

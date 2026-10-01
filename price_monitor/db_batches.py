@@ -57,26 +57,26 @@ def connection_for(settings):
         row_factory=dict_row)
 
 
-def batch(settings, statements, params=None):
+def batch(settings, statements, params=None, *, serialize=True, timeout=45):
     from .runtime import phase
     with phase('database'):
-        return _batch(settings,statements,params)
+        return _batch(settings,statements,params,serialize=serialize,timeout=timeout)
 
 
-def _batch(settings, statements, params=None):
+def _batch(settings, statements, params=None, *, serialize=True, timeout=45):
     if isinstance(statements, str):
         statements = [statements]
     read_only = read_statements(statements)
     query = ('BEGIN READ ONLY; ' if read_only else 'BEGIN; ')
     query += ("SET LOCAL search_path TO price_monitor; SET LOCAL statement_timeout='30s'; "
               "SET LOCAL lock_timeout='10s'; SET LOCAL idle_in_transaction_session_timeout='40s'; ")
-    if not read_only:
+    if not read_only and serialize:
         # A separate statement gives following writes a fresh committed snapshot.
         query += 'SELECT pg_advisory_xact_lock(6743928101); '
     query += '; '.join(statements) + '; COMMIT;'
     result = []
     with connection_for(settings) as connection:
-        connection.io_deadline = time.monotonic()+45
+        connection.io_deadline = time.monotonic()+timeout
         try:
             cursor = connection.execute(query, params or {})
             while True:

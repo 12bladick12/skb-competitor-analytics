@@ -118,12 +118,12 @@ APPLY_PAYLOAD = '''CREATE OR REPLACE FUNCTION sensoren_apply_payload(payload_key
 LANGUAGE plpgsql SECURITY INVOKER SET search_path=price_monitor,pg_temp AS $fn$
 DECLARE meta sensoren_payloads%ROWTYPE; body TEXT; count_parts INTEGER; data JSONB; rid BIGINT; jid BIGINT; ok BOOLEAN;
 BEGIN
+ PERFORM pg_advisory_xact_lock(6743928101);
  SELECT * INTO STRICT meta FROM sensoren_payloads WHERE id=payload_key FOR UPDATE;
  IF meta.accepted IS NOT NULL THEN RETURN meta.accepted=1; END IF;
  SELECT string_agg(p.body,'' ORDER BY p.part),count(*) INTO body,count_parts FROM sensoren_payload_parts p WHERE p.payload_id=payload_key;
  IF count_parts<>meta.parts OR md5(body)<>meta.checksum THEN RAISE EXCEPTION 'Incomplete Sensoren payload'; END IF;
  data:=body::jsonb;rid:=(data->>'run')::bigint;
- PERFORM pg_advisory_xact_lock(6743928101);
  IF NOT EXISTS(SELECT 1 FROM external_sources WHERE source='sensoren' AND enabled=1 AND owner=data->>'owner'
   AND heartbeat>EXTRACT(EPOCH FROM clock_timestamp())-120 AND protocol>=2)
   OR NOT EXISTS(SELECT 1 FROM runs WHERE id=rid AND state='running' AND cancel_requested=0)
@@ -174,6 +174,8 @@ def save_payload(settings,data):
     def short(sql,values=None):
         with connection_for(settings) as connection:
             connection.io_timeout=15
+            import time
+            connection.io_deadline=time.monotonic()+15
             cursor=connection.execute("BEGIN; SET LOCAL search_path=price_monitor; SET LOCAL statement_timeout='10s'; "
                 "SET LOCAL lock_timeout='8s'; "+sql+'; COMMIT',values or {})
             rows=[]

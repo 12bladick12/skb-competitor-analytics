@@ -68,7 +68,7 @@ class CatalogRepository:
         p=self.params(run_id,source,owner)
         return bool(self.batch([
             "UPDATE catalog_pages SET state='pending' WHERE run_id=%(run)s AND source=%(source)s AND state='processing' AND "+self.allowed(),
-            "UPDATE catalog_sources SET state='running',started_at=COALESCE(started_at,%(now)s) WHERE run_id=%(run)s AND source=%(source)s AND state IN ('pending','running') AND "+self.allowed()+" RETURNING source"],p))
+            "UPDATE catalog_sources SET state='running',detail='',started_at=COALESCE(started_at,%(now)s) WHERE run_id=%(run)s AND source=%(source)s AND state IN ('pending','running') AND "+self.allowed()+" RETURNING source"],p))
 
     def cancelled(self,run_id,source,owner):
         return not self.batch('SELECT id FROM runs WHERE id=%(run)s AND '+self.allowed(),self.params(run_id,source,owner))
@@ -157,11 +157,16 @@ class CatalogRepository:
 
     def report_health(self,source,owner,health):
         p={**self.params(health['run_id'],source,owner),**health}
-        self.batch('''INSERT INTO collector_health(source,owner,run_id,phase,url,phase_started,activity_at,completed_at,recoveries,detail)
+        sql='''INSERT INTO collector_health(source,owner,run_id,phase,url,phase_started,activity_at,completed_at,recoveries,detail)
             SELECT %(source)s,%(owner)s,%(run_id)s,%(phase)s,%(url)s,%(phase_started)s,%(activity_at)s,%(completed_at)s,%(recoveries)s,%(detail)s
             WHERE '''+self.authority()+''' ON CONFLICT(source) DO UPDATE SET owner=excluded.owner,run_id=excluded.run_id,
             phase=excluded.phase,url=excluded.url,phase_started=excluded.phase_started,activity_at=excluded.activity_at,
-            completed_at=excluded.completed_at,recoveries=excluded.recoveries,detail=excluded.detail''',p)
+            completed_at=excluded.completed_at,recoveries=excluded.recoveries,detail=excluded.detail'''
+        if self.settings:
+            from .db_batches import batch
+            # Telemetry is owner-fenced and must not queue behind catalog writes.
+            return batch(self.settings,sql,p,serialize=False,timeout=15)
+        return self.batch(sql,p)
 
     def recovery_note(self,run_id,source,owner,detail):
         p={**self.params(run_id,source,owner),'detail':detail}
@@ -252,8 +257,13 @@ class CatalogRepository:
             COALESCE(p.monthly_skipped,0) monthly_skipped,
             COALESCE(p.failures,0) failures, COALESCE(j.positions,0) positions,
             COALESCE(p.navigation_left,0) navigation_left, p.last_checked,
-            h.phase work_phase,h.phase_started,h.activity_at,h.completed_at,h.recoveries,h.url work_url
-            FROM catalog_sources s LEFT JOIN collector_health h ON h.source=s.source AND h.run_id=s.run_id
+            COALESCE(p.products_left,0) products_left,COALESCE(p.skipped,0) skipped,
+            CASE WHEN e.enabled=1 THEN e.heartbeat ELSE w.heartbeat END lease_heartbeat,
+            h.phase work_phase,h.phase_started,h.activity_at,h.completed_at,h.recoveries,h.url work_url,h.detail health_detail
+            FROM catalog_sources s LEFT JOIN external_sources e ON e.source=s.source
+            LEFT JOIN worker_lease w ON w.id=1
+            LEFT JOIN collector_health h ON h.source=s.source AND h.run_id=s.run_id
+                AND h.owner=CASE WHEN e.enabled=1 THEN e.owner ELSE w.owner END
             LEFT JOIN (
                 SELECT source,count(*) pages,
                     sum(CASE WHEN state IN ('done','skipped','failed','cached') THEN 1 ELSE 0 END) visited,
@@ -262,11 +272,14 @@ class CatalogRepository:
                     sum(CASE WHEN kind='product' AND state='cached' THEN 1 ELSE 0 END) monthly_skipped,
                     sum(CASE WHEN state='failed' THEN 1 ELSE 0 END) failures,
                     sum(CASE WHEN kind!='product' AND state IN ('pending','processing') THEN 1 ELSE 0 END) navigation_left,
+                    sum(CASE WHEN kind='product' AND state IN ('pending','processing') THEN 1 ELSE 0 END) products_left,
+                    sum(CASE WHEN state='skipped' THEN 1 ELSE 0 END) skipped,
                     max(checked_at) last_checked
                 FROM catalog_pages WHERE run_id=%(run)s GROUP BY source
             ) p ON p.source=s.source LEFT JOIN (
                 SELECT q.source,count(*) positions FROM jobs j JOIN rules q ON q.id=j.rule_id
-                WHERE j.run_id=%(run)s AND '''+VISIBLE+''' GROUP BY q.source
+                JOIN observations o ON o.job_id=j.id
+                WHERE j.run_id=%(run)s AND o.status IN ('priced','on_request','no_price') AND '''+VISIBLE+''' GROUP BY q.source
             ) j ON j.source=s.source
             WHERE s.run_id=%(run)s ORDER BY s.source''',{'run':run_id})
 

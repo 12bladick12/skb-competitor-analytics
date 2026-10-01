@@ -1,3 +1,4 @@
+# Collector release 2026-10-01: isolated watchdogs and resumable finalization.
 # UI release 2026-10-01: rebuild shared viewport and refresh indicator.
 # Unified news and price analytics, Python 3.13.
 # Reboot the Streamlit process after upgrading to reload both background workers.

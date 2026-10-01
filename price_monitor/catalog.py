@@ -136,12 +136,14 @@ def ingest_navigation(repository, page, owner, outbox, saved, brands=None):
         repository.add_pages(page['run_id'],page['source'],portion,owner)
         # A cancelled/expired writer must not advance past links it could not
         # insert. All preceding successful batches are safe to replay.
-        if repository.cancelled(page['run_id'],page['source'],owner):return
+        if repository.cancelled(page['run_id'],page['source'],owner):return False
         if end<len(links):
             outbox.save_navigation(page,links,end)
-            repository.finish_page(page['id'],owner,'pending','Добавление ссылок продолжается',200)
+            return repository.finish_page(page['id'],owner,'pending','Добавление ссылок продолжается',200)
         elif repository.finish_page(page['id'],owner,'done','',200):
             outbox.acknowledge_navigation(page)
+            return True
+        return False
 
 
 def process_catalog(repository, run_id, source, owner, shutdown, client_factory=SourceClient, outbox=None):
@@ -171,7 +173,8 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
             # twentieth page so a large product queue cannot starve navigation.
             page=repository.claim(run_id,source,owner,prefer_navigation=(claimed==0 and strategy_for(source).navigation_first) or claimed>0 and claimed%20==0)
             if not page:
-                if lifecycle.manifest(run_id,source,owner,brands):continue
+                with phase('reconcile'):queued=lifecycle.manifest(run_id,source,owner,brands)
+                if queued:continue
                 repository.finish_source(run_id,source,owner)
                 return
             claimed+=1
@@ -187,13 +190,14 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                     continue
                 navigation=outbox.load_navigation(page) if outbox and page['kind'] in ('listing','sitemap') else None
                 if navigation is not None:
-                    ingest_navigation(repository,page,owner,outbox,navigation,brands)
+                    if not ingest_navigation(repository,page,owner,outbox,navigation,brands):return
                     completed()
                     continue
                 saved=outbox.load(page) if outbox and page['kind']=='product' else None
                 if saved:
                     with phase('save'):accepted=repository.record_products(run_id,source,page['id'],saved,owner)
-                    if accepted:outbox.acknowledge(page)
+                    if not accepted:return
+                    outbox.acknowledge(page)
                     completed()
                     continue
                 with phase('download'):
@@ -208,6 +212,7 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                     continue
                 if code!=200:
                     repository.finish_page(page['id'],owner,'failed',f'HTTP {code}',code)
+                    completed()
                     continue
                 if page['kind']=='product':
                     if not product_url(source,url):
@@ -221,14 +226,15 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                         with phase('parse'):results=lifecycle.relocated(results,page['url'],client)
                         if outbox:outbox.save(page,results)
                         with phase('save'):accepted=repository.record_products(run_id,source,page['id'],results,owner)
-                        if outbox and accepted:outbox.acknowledge(page)
+                        if not accepted:return
+                        if outbox:outbox.acknowledge(page)
                     else:
                         repository.finish_page(page['id'],owner,'failed',detail,code)
                 else:
                     with phase('discover'):links=discover(source,page['kind'],body,url,brands)
                     if outbox:
                         outbox.save_navigation(page,links)
-                        ingest_navigation(repository,page,owner,outbox,{'links':links,'offset':0},brands)
+                        if not ingest_navigation(repository,page,owner,outbox,{'links':links,'offset':0},brands):return
                     else:
                         repository.add_pages(run_id,source,links,owner)
                         repository.finish_page(page['id'],owner,'done','',code)
@@ -244,4 +250,5 @@ def process_catalog(repository, run_id, source, owner, shutdown, client_factory=
                     return
             except (ValueError,ET.ParseError) as exc:
                 repository.finish_page(page['id'],owner,'failed',str(exc)[:500],None)
+                completed()
     finally:client.close()

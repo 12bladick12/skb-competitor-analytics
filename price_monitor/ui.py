@@ -118,9 +118,19 @@ def catalog_progress(run_id, sensoren_route=None):
         offline = (item['source']=='sensoren' and sensoren_route and sensoren_route['enabled']
                    and time.time()-(sensoren_route['heartbeat'] or 0)>=50)
         if offline:phase=None
-        phase_age=max(0,time.time()-(item.get('phase_started') or time.time()))
-        if item['state']=='running' and phase and phase!='idle' and phase_age>90:
-            st.warning(f"{SOURCES[item['source']].label}: этап «{PHASES.get(phase,phase)}» не завершён {int(phase_age)} с. Связь со сборщиком не подтверждает продвижение очереди.")
+        activity_age=max(0,time.time()-(item.get('activity_at') or time.time()))
+        if item['state']=='running':
+            label=SOURCES[item['source']].label
+            lease=item.get('lease_heartbeat') or 0
+            if time.time()-lease>=120:
+                st.warning(f'{label}: нет связи со сборщиком. Очередь сохранена.')
+            elif phase and activity_age>=180:
+                st.warning(f'{label}: нет активности основного потока {int(activity_age)} с; контроль сборщика проверяет восстановление.')
+            else:
+                st.caption(f"{label} · {PHASES.get(phase,'Подготовка сборщика')} · "
+                           f"осталось карточек: {item.get('products_left',0):,} · "
+                           f"пропущено по правилам: {item.get('skipped',0):,}".replace(',',' '))
+                if item.get('health_detail'):st.caption(f"{label} · восстановление: {item['health_detail']}")
         view.append({'Источник':SOURCES[item['source']].label,'Производители':', '.join(json.loads(item['brands_json'])),
             'Состояние':CATALOG_STATES.get(item['state'],item['state']),'Страниц найдено':item['pages'],
             'Текущий этап':'Ожидание внешнего сборщика' if offline else PHASES.get(phase,'—'),'Восстановлений связи':item.get('recoveries') or 0,
@@ -130,7 +140,7 @@ def catalog_progress(run_id, sensoren_route=None):
             'Разделов осталось':item['navigation_left'],
             'Ошибок':item['failures'],'Последняя обработка (UTC)':item['last_checked'],'Примечание':item['detail']})
     st.dataframe(view,hide_index=True,width='stretch')
-    st.caption('Уже собранные за текущий месяц карточки пропускаются. Категории и карты сайта проверяются для поиска новых товаров. «Разделов осталось» включает карты сайта; ошибки показаны отдельно.')
+    st.caption('Обработанные страницы включают пропуски по производителю и правилам источника: при их проверке число сохранённых позиций не растёт. Категории и карты сайта проверяются для поиска новых товаров. «Разделов осталось» включает карты сайта; ошибки показаны отдельно.')
     return True
 
 
@@ -140,6 +150,7 @@ def active_progress():
     heartbeat=db.lease()
     st.caption('● Облачный сборщик подключён' if heartbeat and time.time()-heartbeat<40 else '○ Облачный сборщик запускается или ожидает подключения')
     sensoren_route=source_connection()
+    st.caption('Состояние обновлено: '+time.strftime('%H:%M:%S UTC',time.gmtime())+' · Автообновление каждые 10 с')
     if active:
         with st.container(border=True):
             st.subheader(f"Запуск №{active['id']} · {RUN_LABELS[active['state']]}")
