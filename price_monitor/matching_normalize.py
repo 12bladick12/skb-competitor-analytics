@@ -49,9 +49,9 @@ def output(value):
     found=[v for v in ('PNP','NPN','NAMUR') if re.search(r'\b'+v+r'\b',text)]
     if len(found)==1:return found[0]
     if len(found)>1:return '/'.join(sorted(found))
-    if re.search(r'2\s*[-хx]?\s*провод',text):return '2-wire'
+    if re.search(r'2\s*[-ХX]*\s*(?:ПРОВОД|ПРОВ\.)',text):return '2-wire'
     if text.startswith(('AC','DC')):return '2-wire'
-    if 'реле' in text:return 'relay'
+    if 'РЕЛЕ' in text or 'RELAY' in text:return 'relay'
     return None
 
 
@@ -73,6 +73,8 @@ def mounting(value):
     if 'quasi' in text or 'квази' in text:return 'quasi-flush'
     if text in ('non-flush','non flush','unshielded'):return 'non-flush'
     if text in ('flush','shielded'):return 'flush'
+    if 'неутапливаем' in text.replace(' ',''):return 'non-flush'
+    if 'утапливаем' in text:return 'flush'
     if 'невстраив' in text.replace(' ','') or 'не заподлицо' in text or 'незаподлицо' in text:return 'non-flush'
     if 'встраив' in text or text=='заподлицо':return 'flush'
     return None
@@ -80,8 +82,10 @@ def mounting(value):
 
 def material(value):
     text=key(value)
+    if text in ('металл','metal','сплав','alloy'):return None
     if 'brass' in text:return 'brass'
     if 'stainless' in text:return 'stainless'
+    if re.search(r'12[хx]18[нh]10[тt]|03[хx]17[нh]14[мm]3|\b(?:aisi|sus)\s*(?:303|304|316)\b|\b1\.(?:4301|4305|4404|4435)\b',text):return 'stainless'
     if 'латун' in text:return 'brass'
     if 'нержав' in text or 'нерж.' in text:return 'stainless'
     if any(v in text for v in ('пласт','полимер','текаформ','полиамид','pbt','abs')):return 'plastic'
@@ -175,7 +179,7 @@ ALIASES={
     'special_ex':('Маркировка взрывозащиты','Взрывозащита'),
 }
 for _name, _extra in {
-    'body':('Размер цилиндрического корпуса, мм','Резьба корпуса','Конструкция корпуса'),
+    'body':('Размер цилиндрического корпуса, мм','Резьба корпуса','Конструкция корпуса','Обозначение резьбы','Габаритный размер, мм'),
     'sn':('Расстояние переключения, мм','Расстояние срабатывания','Sensing distance','Rated distance [Sn]'),
     'output':('Тип выхода/функция','Output type','Выходной сигнал'),
     'function':('Тип выхода/функция','Output function','Выходной сигнал','Тип выходного контакта'),
@@ -183,19 +187,23 @@ for _name, _extra in {
     'voltage':('Рабочее напряжение, В','Рабочее напряжение, Uраб','Напряжение питания, Uраб.','Supply voltage','Operating voltage'),
     'pin_count':('Число контактов, pin','Количество контактов, pin'),
     'frequency':('Частота переключения max, Гц','Рабочая частота, Гц','Switching frequency'),
-    'connection':('Connection type','Connection'),
-    'material':('Housing material','Обозначение материала корпуса'),
+    'connection':('Connection type','Connection','Вид подключения'),
+    'material':('Housing material','Обозначение материала корпуса','Материал корпуса сенсора'),
     'ip':('Degree of protection','Protection structure'),
-    'temperature':('Ambient temperature',),
+    'temperature':('Ambient temperature','Температура окружающей среды','Температура окружающей среды, °C'),
+    'load':('Максимальный ток коммутационного элемента, мА','Коммутируемый ток [AC]'),
+    'special_pressure':('Давление max, Бар','Максимальное давление, MПа'),
+    'special_speed':('Диапазон частот контроля, Гц',),
 }.items(): ALIASES[_name] += _extra
-ALIASES['diameter']=('Диаметр корпуса, мм','Диаметр цилиндрического корпуса')
+ALIASES['diameter']=('Диаметр корпуса, мм','Диаметр цилиндрического корпуса','Диаметр гладкого корпуса, мм')
+ALIASES['pitch']=('Шаг резьбы, мм','Шаг резьбы корпуса, мм')
 ALIAS_KEYS={name:tuple(key(alias) for alias in aliases) for name,aliases in ALIASES.items()}
 PREFIXES={'length':'_Длина корпуса','diameter':'_Диаметр цилиндрического корпуса','tmin':'_Рабочая температура окружающей среды мин.',
           'tmax':'_Рабочая температура окружающей среды макс.','body_type':'_Тип корпуса'}
 SPECIAL_LABELS={'speed':'Контроль минимальной скорости','pressure':'Работа под давлением','immersible':'Погружное исполнение','namur':'NAMUR','slot':'Щелевые','ex':'Взрывозащищённые','analog':'Аналоговый выход'}
 
 
-def normalize_sensor(record):
+def normalize_sensor(record, *, enrich_designation=True):
     """Accept either our catalog record or a collected product + _specifications."""
     details=record.get('_specifications') or {}
     raw_attrs=record.get('props') or details.get('attributes') or []
@@ -223,7 +231,7 @@ def normalize_sensor(record):
                 if n.startswith(key(PREFIXES[name])):yield from vals
     for name,parser in [('length',number),('sn',number),('output',output),('function',switching),('mount',mounting),
                         ('material',material),('connection',connection),('ip',ip),('tmin',number),('tmax',number),
-                        ('wire_count',number),('pin_count',number),('connector',connector),('diameter',number),('body_type',body_type),('voltage_type',supply_type)]:
+                        ('wire_count',number),('pin_count',number),('connector',connector),('diameter',number),('pitch',number),('body_type',body_type),('voltage_type',supply_type)]:
         for field_name,raw in values(name):add(name,parser(raw),field_name,raw)
     if is_megak(record):
         for field_name,raw in props.get(key('Длина'),[]):
@@ -233,9 +241,18 @@ def normalize_sensor(record):
         m=re.search(r'[MМmм]\s*(\d+(?:[.,]\d+)?)(?:\s*[xх×XХ]\s*(\d+(?:[.,]\d+)?))?',raw)
         if m:
             add('diameter',float(m[1].replace(',','.')),field_name,raw)
-            if m[2]:add('pitch',float(m[2].replace(',','.')),field_name,raw)
+            # M18x70 is often diameter x body length, never a 70 mm pitch.
+            if m[2] and 0<float(m[2].replace(',','.'))<=6:add('pitch',float(m[2].replace(',','.')),field_name,raw)
         elif key(field_name) in {key('Размер корпуса'),key('Размер цилиндрического корпуса, мм')}:
             add('diameter',number(raw),field_name,raw)
+    for field_name,raw in props.get(key('Габаритный размер, мм'),[]):
+        # Only explicitly labelled L; rectangular tuples have no known orientation.
+        m=re.search(r'\bL\s*=\s*(\d+(?:[.,]\d+)?)\b',raw,re.I)
+        if m:add('length',float(m[1].replace(',','.')),field_name,raw)
+    for field_name,raw in props.get(key('Электрическое исполнение'),[]):
+        m=re.search(r'\b([2345])\s*[-хx]*\s*провод',key(raw))
+        if m:add('wire_count',float(m[1]),field_name,raw)
+        add('voltage_type',supply_type(raw),field_name,raw)
     for field_name,raw in values('temperature'):
         bounds=interval(raw)
         if bounds:add('tmin',bounds[0],field_name,raw);add('tmax',bounds[1],field_name,raw)
@@ -246,12 +263,17 @@ def normalize_sensor(record):
     for name in ('load','frequency'):
         for field_name,raw in values(name):
             value=number(raw)
+            if name=='load' and value is None:
+                bounds=interval(raw)
+                if bounds and bounds[0]>=0:value=bounds[1]
             if value is not None:
                 if name=='load' and (key(field_name).endswith(', а') or re.search(r'\d\s*[АA]\b',raw)):value*=1000
                 if name=='frequency' and ('кгц' in key(raw) or 'khz' in key(raw)):value*=1000
             add(name,value,field_name,raw)
     purpose=' '.join(str(v) for n,v in entries if any(w in key(n) for w in ('специаль','исполнение','дополнитель','функция')))
-    text=key(' '.join([category,str(record.get('title','')),str(details.get('description','')),purpose]))
+    # General descriptions explain analog oscillators even for digital SIS.
+    # Execution must be stated in identity/purpose or a dedicated property.
+    text=key(' '.join([category,str(record.get('title','')),purpose]))
     family_text=key(category+' '+str(record.get('title',''))+' '+str(details.get('category','')))
     def family(value):
         found=list(dict.fromkeys(code for stem,code in (('индуктив','inductive'),('inductive','inductive'),('емкост','capacitive'),('capacitive','capacitive'),('геркон','reed'),('магниточувств','reed'),('оптичес','optical'),('photoelectric','optical'),('ультразвук','ultrasonic')) if stem in key(value)))
@@ -284,7 +306,7 @@ def normalize_sensor(record):
     sensor.special=tuple(sorted(set(flags)))
     if 'низких температур' in text or 'низкотемператур' in text:sensor.profile='cold'
     elif 'высоких температур' in text or 'высокотемператур' in text:sensor.profile='hot'
-    sensor=enrich(sensor,record)
+    if enrich_designation:sensor=enrich(sensor,record)
     verified=record.get('_confirmed_geometry') or {}
     for item in verified.get('fields',[]):
         source=f"Паспорт {verified.get('fingerprint','')[:12]}, стр. {item['page']}; проверил {verified.get('reviewer','')}"

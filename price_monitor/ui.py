@@ -105,21 +105,25 @@ def source_connection():
             else:st.warning('Внешний сборщик Sensoren нужно перезапустить, чтобы он получил поддержку полного каталога.')
         else:st.warning('Sensoren ждёт подключения внешнего сборщика. Включите компьютер со сборщиком; очередь сохранена.')
     elif CLOUD_MODE:st.warning('Для Sensoren нужен внешний сборщик: облачный адрес получает HTTP 403. Подключение описано в разделе «Источники».')
+    return route
 
 
-def catalog_progress(run_id):
+def catalog_progress(run_id, sensoren_route=None):
     from price_monitor.runtime import PHASES
     progress=catalog.progress(run_id)
     if not progress:return False
     view=[]
     for item in progress:
         phase=item.get('work_phase')
+        offline = (item['source']=='sensoren' and sensoren_route and sensoren_route['enabled']
+                   and time.time()-(sensoren_route['heartbeat'] or 0)>=50)
+        if offline:phase=None
         phase_age=max(0,time.time()-(item.get('phase_started') or time.time()))
         if item['state']=='running' and phase and phase!='idle' and phase_age>90:
             st.warning(f"{SOURCES[item['source']].label}: этап «{PHASES.get(phase,phase)}» не завершён {int(phase_age)} с. Связь со сборщиком не подтверждает продвижение очереди.")
         view.append({'Источник':SOURCES[item['source']].label,'Производители':', '.join(json.loads(item['brands_json'])),
             'Состояние':CATALOG_STATES.get(item['state'],item['state']),'Страниц найдено':item['pages'],
-            'Текущий этап':PHASES.get(phase,'—'),'Восстановлений связи':item.get('recoveries') or 0,
+            'Текущий этап':'Ожидание внешнего сборщика' if offline else PHASES.get(phase,'—'),'Восстановлений связи':item.get('recoveries') or 0,
             'Обработано страниц':item['visited'],'Карточек найдено':item['cards'],
             'Карточек обработано':item['cards_visited'],'Позиций сохранено':item['positions'],
             'Уже собрано в месяце':item['monthly_skipped'],
@@ -134,12 +138,12 @@ def catalog_progress(run_id):
 def active_progress():
     runs=db.runs();active=next((r for r in runs if r['state'] in ('queued','running')),None)
     heartbeat=db.lease()
-    st.caption('● Сборщик подключён' if heartbeat and time.time()-heartbeat<40 else '○ Сборщик запускается или ожидает подключения')
-    source_connection()
+    st.caption('● Облачный сборщик подключён' if heartbeat and time.time()-heartbeat<40 else '○ Облачный сборщик запускается или ожидает подключения')
+    sensoren_route=source_connection()
     if active:
         with st.container(border=True):
             st.subheader(f"Запуск №{active['id']} · {RUN_LABELS[active['state']]}")
-            if not catalog_progress(active['id']):
+            if not catalog_progress(active['id'],sensoren_route):
                 st.progress(active['finished']/max(1,active['total']),text=f"Обработано {active['finished']} из {active['total']}")
             if st.button('Остановить сбор',key='stop_active'):
                 db.cancel(active['id']);st.rerun()
@@ -345,6 +349,10 @@ def sources_page():
     with algorithms:
         from price_monitor.notation_ui import render_registry
         render_registry()
+        enrichment_rules=ROOT/'docs'/'prices'/'INDUCTIVE_ENRICHMENT.md'
+        if enrichment_rules.exists():
+            with st.expander('Заполненность характеристик и дозаполнение индуктивных датчиков'):
+                st.markdown(enrichment_rules.read_text(encoding='utf-8'))
         from price_monitor.algorithms import render_algorithms
         render_algorithms()
 
