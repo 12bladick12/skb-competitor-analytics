@@ -31,6 +31,8 @@ def characteristics(record):
     from .matching import FIELD_LABELS,display
     sensor=normalize_sensor(record)
     decoded=sensor.decoding
+    if decoded and decoded.get('brand')!='МЕГА-К' and decoded.get('version')!=EXPECTED_RULES:
+        raise RuntimeError('Cached normalization requires a process reload')
     attrs=[]
     if sensor.family!='inductive':
         return {'attributes':[],'version':current_version(),'requires_review':False,'conflicts':[]}

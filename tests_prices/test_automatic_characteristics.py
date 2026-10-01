@@ -95,6 +95,11 @@ class AutomaticCharacteristicsTests(unittest.TestCase):
         with patch('price_monitor.notations.VERSION','notation-registry-2026-10-01-v2'):
             with self.assertRaises(RuntimeError):self.service.process_batch()
         self.assertEqual(self.repo.batch('SELECT count(*) n FROM product_enrichment')[0]['n'],0)
+        from price_monitor.matching_normalize import Sensor
+        stale=Sensor('old','LR08BN02DPC',family='inductive',decoding={'brand':'LANBAO','version':'old'})
+        with patch('price_monitor.matching_normalize.normalize_sensor',return_value=stale):
+            with self.assertRaises(RuntimeError):self.service.process_batch()
+        self.assertEqual(self.repo.batch('SELECT count(*) n FROM product_enrichment')[0]['n'],0)
 
     def test_correct_function_prevents_matching_no_as_nc(self):
         from price_monitor.matching import evaluate
