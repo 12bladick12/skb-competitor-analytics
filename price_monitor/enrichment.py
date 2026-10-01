@@ -3,9 +3,10 @@ import json
 import logging
 import threading
 
-REVISION = 2
-VERSION = 'automatic-characteristics-2026-10-01-v2'
-EXPECTED_RULES = 'notation-registry-2026-10-01-v3'
+REVISION = 3
+VERSION = 'automatic-characteristics-2026-10-01-v3'
+EXPECTED_RULES = 'notation-registry-2026-10-01-v4'
+EXPECTED_MEGAK = 'megak-ps-vb-2026-10-01-v2'
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS product_enrichment (
  rule_id INTEGER PRIMARY KEY REFERENCES rules(id), details_hash TEXT NOT NULL,
@@ -19,10 +20,11 @@ CREATE TABLE IF NOT EXISTS product_enrichment (
 
 def current_version():
     from .notations import VERSION as rules
+    from .megak_notation import VERSION as megak_rules
     # A rolling Cloud deployment can retain imported modules in old workers.
     # Never stamp their results as the current generation. Increment REVISION
     # for subsequent enrichment releases; database CAS fences older replicas.
-    if rules!=EXPECTED_RULES:raise RuntimeError('Designation modules require a process reload')
+    if rules!=EXPECTED_RULES or megak_rules!=EXPECTED_MEGAK:raise RuntimeError('Designation modules require a process reload')
     return VERSION+'/'+rules
 
 
@@ -31,7 +33,8 @@ def characteristics(record):
     from .matching import FIELD_LABELS,display
     sensor=normalize_sensor(record)
     decoded=sensor.decoding
-    if decoded and decoded.get('brand')!='МЕГА-К' and decoded.get('version')!=EXPECTED_RULES:
+    expected=EXPECTED_MEGAK if decoded.get('brand')=='МЕГА-К' else EXPECTED_RULES
+    if decoded and decoded.get('version')!=expected:
         raise RuntimeError('Cached normalization requires a process reload')
     attrs=[]
     if sensor.family!='inductive':
@@ -120,7 +123,7 @@ class Enrichment:
         return rows
 
     def process_batch(self,limit=40):
-        rows=self.repo.batch('''SELECT q.id rule_id,q.source,q.manufacturer,q.article,i.title,i.category,
+        rows=self.repo.batch('''SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.product_url,i.title,i.category,
             i.details_hash,d.details_json FROM product_index i JOIN rules q ON q.id=i.rule_id
             JOIN product_documents d ON d.fingerprint=i.details_hash
             LEFT JOIN product_enrichment e ON e.rule_id=q.id

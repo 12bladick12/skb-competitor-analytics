@@ -20,8 +20,10 @@ def render_decoding(sensor,expanded=False):
         rows=[]
         for name,entry in decoded['fields'].items():
             rows.append({'Характеристика':FIELD_LABELS.get(name,name),'В карточке':display(entry.get('card_value'),name),
-                         'Из обозначения':display(entry['value'],name),
-                         'Применение':APPLICATIONS.get(entry.get('application'),'Не применяется'),
+                         'Из документа / обозначения':display(entry['value'],name),
+                         'Применение':('Дополнено из таблицы корпуса' if entry.get('basis')=='housing_table' else
+                                       'Из описания корпуса' if entry.get('basis')=='product_description' else
+                                       APPLICATIONS.get('filled')) if entry.get('application')=='filled' else APPLICATIONS.get(entry.get('application'),'Не применяется'),
                          'Источник':entry.get('source_url',decoded['source_url']),
                          'Основание':entry['token']+' · п. '+entry['section']+(' · по умолчанию' if entry['default'] else '')})
         if rows:

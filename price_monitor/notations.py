@@ -3,21 +3,21 @@ import re
 
 from . import megak_notation
 
-VERSION = 'notation-registry-2026-10-01-v3'
+VERSION = 'notation-registry-2026-10-01-v4'
 CHECKED = '2026-10-01'
 LANBAO_PDF = 'https://www.cnlanbaosensor.com/uploads/LR18XB-Y-DC-34-E2.pdf'
 SENSOR_URL = 'https://sensor-com.ru/baza-znaniy/rasshifrovka-markirovki-inductive-datchikov/'
 REGISTRY = {
-    'МЕГА-К': (megak_notation.SOURCE_URL, 'PS2/VB2; остальные серии требуют паспорта', 'Правила обозначений'),
-    'LANBAO': ('https://www.cnlanbaosensor.com/uploads/Product%C2%A0summary-2024.pdf', 'LR08B F15/N02 DC 3-wire без X; LR08/12/18/30X; точные таблицы LR12XB-Y/LR18XB-Y', 'Автоматическое дозаполнение с сохранением источника; Y/F не считается flush'),
+    'МЕГА-К': (megak_notation.SOURCE_URL, 'PS2/VB2; шаг из явного описания корпуса официальной карточки', 'Обозначение и описание с раздельными источниками; неизвестный шаг не выводится из диаметра'),
+    'LANBAO': ('https://flextronicbg.com/wp-content/uploads/2018/10/Inductive-Sensors.pdf#page=9', 'LR08B кабель/-E1/-E2; LR12/18/30XB стандартные и Y; таблицы корпусов стр. 15/19', 'Резьба корпуса отделена от разъёма; длина по точному чертежу; Y/F не считается flush'),
     'СЕНСОР': (SENSOR_URL, 'ВБИ/ВБЕ: корпус, подключение, электрическая группа; условная длина не равна габаритной', 'Правила обозначений и расширенный разбор полей карточки'),
-    'Autonics': ('https://www.autonics.com/in/data/manual/en/PR_DC_3-wire', 'PR/PRA, кабель/W/CM, Normal/Short/Long, DC 3-wire; только описанные комбинации', 'Модуль обозначений и таблиц PR; неизвестные суффиксы исключены'),
-    'Balluff': ('https://www.balluff.com/en-us/products/BES005N', 'Точная пара BES005N / BES M12MI-POC40B-S04G', 'Справочник точных моделей; общий декодер не подтверждён'),
+    'Autonics': ('https://www.autonics.com/in/data/manual/en/PR_DC_3-wire', 'PR/PRA DC 3-wire; отдельная геометрия PR AC и DC 2-wire по своим инструкциям', 'Электрические параметры разных серий не смешиваются; неизвестные суффиксы исключены'),
+    'Balluff': ('https://www.balluff.com/en-us/products/BES005N', 'Точные пары заказа/модели BES005N, BES001P, BES001Y; корпуса с двумя резьбами требуют проверки', 'Справочник точных моделей; общего шага по бренду нет'),
     'BESKONTA': ('https://beskonta.ru/informaciya/rasshifrovka-markirovki/', 'SIS 12/18/30 V/N; стандартные электрические группы и IP/C1/H1', 'Модуль обозначений; шаг M30 и базовая длина не подставляются'),
-    'ТЕКО': ('https://teko-com.ru/useful-info/sistemy-oboznachenija/sistema-oboznacheniya-induktivnykh-vyklyuchateley/', 'ISB/ISN общего применения, DC; индекс корпуса не является диаметром', 'Модуль обозначений; отдельные ключи NAMUR/скорости/Ex не смешиваются'),
-    'ifm': ('https://www.ifm.com/gb/en/product/IGT200', 'Точная модель IGT200; соседние артикулы не наследуют значения', 'Справочник точных моделей; короткий артикул не расшифровывается по сходству'),
-    'Pepperl+Fuchs': ('https://files.pepperl-fuchs.com/online-catalogs/245613/files/assets/basic-html/page37.html', 'NBB/NBN/NCB/NCN/NEB/NEN/NRB/NRN цилиндрические, E0–E3/A0/A2', 'Модуль обозначений; длина резьбы отделена от общей длины'),
-    'SICK': ('https://www.sick.com/media/pdf/1/81/481/dataSheet_IME12-04BPSZC0S_1040764_en.pdf', 'Точные пары IME12-04BPSZC0S / 1040764 и IM04-01BNSVR8K / 6058030', 'Справочник точных моделей; универсальные значения буквы B не вводятся'),
+    'ТЕКО': ('https://teko-com.ru/useful-info/sistemy-oboznachenija/sistema-oboznacheniya-induktivnykh-vyklyuchateley/', 'ISB/ISN общего применения; геометрия IV0B AC41B-49P-6-LZS4 по точному паспорту', 'Индекс корпуса не является диаметром; скорость/Ex требуют проверки применения'),
+    'ifm': ('https://www.ifm.com/gb/en/product/IGT200', 'Точные модели IGT200 и IFC204; соседние артикулы не наследуют значения', 'Справочник точных моделей; короткий артикул не расшифровывается по сходству'),
+    'Pepperl+Fuchs': ('https://files.pepperl-fuchs.com/online-catalogs/245613/files/assets/basic-html/page37.html', 'Обозначения стандартных серий; геометрия по перечням моделей в таблицах M4/M5/M8/M12/M18/M30', 'Длина резьбы отделена от общей длины; шаг только для перечисленных моделей'),
+    'SICK': ('https://www.sick.com/media/pdf/1/81/481/dataSheet_IME12-04BPSZC0S_1040764_en.pdf', 'Точные модели 1040764, 6058028, 6058029, 6058030, 6058031 и их полные обозначения', 'Шаг по индивидуальным паспортам; соседние модели не наследуют значения'),
 }
 
 
@@ -43,7 +43,7 @@ def decode(brand, model):
         if match:
             quasi = match['mount'].startswith('F')
             small = match['size']=='12'
-            if small:result['source_url']='https://www.cnlanbaosensor.com/uploads/LR12XB-Y-DC-3-E2.pdf'
+            result['source_url']='https://www.cnlanbaosensor.com/uploads/LR12XB-Y-DC-3-E2.pdf' if small else LANBAO_PDF
             values = dict(body_type='threaded', diameter=float(match['size']), length=63. if quasi else 71. if small else 75.,
                           sn=float(match['mount'][1:]), mount='quasi-flush' if quasi else 'non-flush',
                           output={'N':'NPN','P':'PNP'}[match['output']],
@@ -53,7 +53,7 @@ def decode(brand, model):
                           connection='connector', connector='m12')
             for name, value in values.items(): add(name, value, code)
             result['family'] = 'inductive'
-            result['notes'].append('Паспорт Ver. A 04/T не содержит однозначной даты редакции. Проверьте применимость к вашему изделию; шаг резьбы, материал и контакты не выводятся по сходству.')
+            result['notes'].append('Паспорт Ver. A 04/T не содержит однозначной даты редакции. Геометрия дополняется только отдельной подтверждённой таблицей корпуса; материал и контакты не выводятся по сходству.')
             if quasi:
                 result['requires_review'] = True
                 result['notes'].append('Quasi-flush — отдельное исполнение монтажа, не равное flush. Требуется сверка установочных размеров.')
@@ -98,11 +98,25 @@ def decode(brand, model):
             if name not in result['fields']:
                 add(name, value, code, supplement['section'])
                 result['fields'][name]['source_url'] = supplement['source']
+                if name in supplement.get('geometry_fields',()):result['fields'][name]['basis']='housing_table'
         result['family'] = 'inductive'
         result['special'].extend(supplement.get('special', []))
         result['extras'].update(supplement.get('extras', {}))
         result['notes'].extend(supplement.get('notes', []))
         result['requires_review'] |= supplement.get('review', False)
+    from .housing_references import housing_reference
+    geometry = housing_reference(brand, code)
+    if geometry:
+        if not result['fields']:result['source_url'] = geometry['source']
+        for name,value in geometry['values'].items():
+            evidence=geometry.get('field_sources',{}).get(name,geometry)
+            if name in result['fields'] and result['fields'][name]['value'] != value:
+                result['requires_review']=True
+                result['notes'].append(f'Геометрия {name}: противоречие таблиц производителя; требуется проверка документа.')
+                continue
+            add(name,value,code,evidence['section'])
+            result['fields'][name].update(source_url=evidence['source'],basis='housing_table')
+        result['family']='inductive'
     if result['fields']:
         result['supported'] = result['complete'] = True
     else:
@@ -146,5 +160,8 @@ def enrich(sensor, record):
 
 
 def field_source(sensor, name):
+    entry=(sensor.decoding or {}).get('fields',{}).get(name,{})
+    if entry.get('application')=='filled' and entry.get('basis')=='housing_table':
+        return 'Таблица корпуса '+sensor.decoding['brand']+': '+entry['token']+' · '+entry['section']
     text=megak_notation.field_source(sensor,name)
     return text.replace('МЕГА-К',sensor.decoding.get('brand','МЕГА-К'))

@@ -5,6 +5,42 @@ never copy a neighboring model or an advertised replacement's specifications.
 """
 
 REFERENCES = {
+    ('ТЕКО','IV0BAC41B-49P-6-LZS4'):dict(
+        aliases=('ДАТЧИККОНТРОЛЯМИНИМАЛЬНОЙСКОРОСТИIV0BAC41B-49P-6-LZS4',),
+        source='https://teko-com.ru/local/ajax/file_download.php?id=520488',
+        section='IV0B AC41B-49P-6-LZS4.000 ПС, PDF стр. 2: Формат М18×1×84 / габаритный чертёж; дата не указана',
+        review=True,special=['speed'],
+        values=dict(body_type='threaded',diameter=18.,pitch=1.,length=84.)),
+    ('Balluff','BES001P'):dict(
+        aliases=('BESM08MG-USC20B-BP03',),
+        source='https://www.balluff.com/pt-pt/products/BES001P',
+        section='BES001P / BES M08MG-USC20B-BP03, Dimension / Style Housing; дата не указана',
+        values=dict(body_type='threaded',diameter=8.,pitch=1.,length=40.)),
+    ('Balluff','BES001Y'):dict(
+        aliases=('BESM08ME1-USC20B-S04G',),
+        source='https://www.balluff.com/en-lt/products/BES001Y',
+        section='BES001Y / BES M08ME1-USC20B-S04G, Dimension / Style Housing; дата не указана',
+        values=dict(body_type='threaded',diameter=8.,pitch=1.,length=50.)),
+    ('ifm','IFC204'):dict(
+        aliases=('IFB3004BBPKG/US-104',),
+        source='https://www.ifm.com/in/en/product/IFC204',
+        section='IFC204-02 EN-GB, 2025-01-14, Mechanical data: Thread designation / Dimensions',
+        values=dict(body_type='threaded',diameter=12.,pitch=1.,length=45.)),
+    ('SICK','6058028'):dict(
+        aliases=('IM04-01BNSVU2K',),
+        source='https://www.sick.com/media/pdf/4/44/044/dataSheet_IM04-01BNSVU2K_6058028_en.pdf',
+        section='6058028 / IM04-01BNSVU2K, 2026-06-10, стр. 2: Thread size',
+        values=dict(body_type='threaded',diameter=4.,pitch=.5)),
+    ('SICK','6058029'):dict(
+        aliases=('IM04-01BPSVU2K',),
+        source='https://www.sick.com/media/pdf/5/45/045/dataSheet_IM04-01BPSVU2K_6058029_en.pdf',
+        section='6058029 / IM04-01BPSVU2K, 2026-08-21, стр. 2–4: Thread size / Housing length',
+        values=dict(body_type='threaded',diameter=4.,pitch=.5,length=12.)),
+    ('SICK','6058031'):dict(
+        aliases=('IM04-01BPSVR8K',),
+        source='https://www.sick.com/media/pdf/7/47/047/dataSheet_IM04-01BPSVR8K_6058031_en.pdf',
+        section='6058031 / IM04-01BPSVR8K, стр. 2: Thread size (дата редакции не подтверждена)',
+        values=dict(body_type='threaded',diameter=4.,pitch=.5)),
     ('Balluff','BES005N'):dict(
         aliases=('BESM12MI-POC40B-S04G',),
         source='https://www.balluff.com/en-us/products/BES005N',
@@ -41,7 +77,7 @@ REFERENCES = {
 def exact_reference(brand, code):
     for (owner,order),entry in REFERENCES.items():
         if owner==brand and code in (order,*entry['aliases']):
-            return {**entry,'values':dict(entry['values']),
+            return {**entry,'values':dict(entry['values']),'geometry_fields':('body_type','diameter','pitch','length'),
                     'notes':['Точная запись официальной модели. Соседние артикулы и другие исполнения эти значения не наследуют.'] +
                             (['Ток 100 мА — максимум; документ содержит температурное снижение допустимого тока (стр. 4). Требуется проверка условий.'] if order=='6058030' else [])}
     return None

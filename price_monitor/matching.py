@@ -12,7 +12,7 @@ import math
 from .matching_normalize import Sensor, normalize_sensor, model_key, SPECIAL_LABELS
 from .notations import field_source
 
-VERSION='inductive-2026-10-01-v6'
+VERSION='inductive-2026-10-01-v7'
 STATUS_LABELS={'direct':'Прямой аналог','close':'Близкий аналог','review':'Требует проверки','incompatible':'Не подходит','unsupported':'Алгоритм ещё не добавлен'}
 FIELD_LABELS={'body_type':'Форма корпуса','diameter':'Диаметр корпуса, мм','pitch':'Шаг резьбы, мм','output':'Схема выхода',
               'function':'Функция выхода','voltage_type':'Тип питания','vmin':'Минимальное питание, В','vmax':'Максимальное питание, В',

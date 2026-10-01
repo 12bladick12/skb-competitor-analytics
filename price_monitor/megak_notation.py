@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from urllib.parse import urlsplit
 
 SOURCE_URL='https://mega-k.com/news/notation_ps'
-VERSION='megak-ps-vb-2026-09-30-v1'
+VERSION='megak-ps-vb-2026-10-01-v2'
 
 # output, function, number of conductors (not connector contacts)
 CIRCUITS={
@@ -158,6 +159,22 @@ def enrich(sensor,record):
         decoded['notes'].append('Тип изделия в карточке противоречит обозначению PS2/VB2; дополнение характеристик остановлено.')
         return sensor
     sensor.special=tuple(sorted(set(sensor.special)|set(decoded['special'])))
+    # The official product description states the actual housing thread, while
+    # the ordering key only says M. Read its leading housing sentence, never
+    # related products, connector descriptions or a manufacturer-wide default.
+    url=str(record.get('product_url') or '')
+    description=str((record.get('_specifications') or {}).get('description') or '')
+    housing=re.match(r'^\s*Индуктивный\s+бесконтактный\s+датчик\s+в\s+цилиндрическом\s+[^.!?]{0,100}?корпусе\s+с\s+резьбой\s+([МM]\d+(?:[.,]\d+)?\s*[xх×*]\s*\d+(?:[.,]\d+)?)(?=\s|$)',description,re.I)
+    if housing and urlsplit(url).hostname in ('mega-k.com','www.mega-k.com'):
+        from .matching_normalize import metric_threads
+        diameter,pitch=next(metric_threads(housing[1]))
+        if pitch is not None and decoded['fields'].get('body_type',{}).get('value')=='threaded':
+            if decoded['fields'].get('diameter',{}).get('value')==diameter:
+                decoded['fields']['pitch']=dict(value=pitch,token=housing[1],section='Описание корпуса в официальной карточке',
+                    default=False,basis='product_description',source_url=url)
+            else:
+                decoded['requires_review']=True
+                decoded['notes'].append('Диаметр резьбы в описании не совпадает с обозначением; шаг не дополнен.')
     for name,entry in decoded['fields'].items():
         existing=sensor.values.get(name);value=entry['value']
         entry['card_value']=existing
@@ -165,7 +182,7 @@ def enrich(sensor,record):
         elif existing is None:
             sensor.values[name]=value;entry['application']='filled'
             sensor.raw.setdefault(name,[]).append({'field':'Обозначение МЕГА-К','value':sensor.model,
-                'token':entry['token'],'section':entry['section'],'source_url':SOURCE_URL,'version':VERSION,'default':entry['default']})
+                'token':entry['token'],'section':entry['section'],'source_url':entry.get('source_url',SOURCE_URL),'version':VERSION,'default':entry['default']})
         elif existing==value:entry['application']='confirmed'
         elif entry['default'] or (name=='material' and value=='steel' and existing=='stainless'):
             entry['application']='card_priority'
@@ -176,6 +193,8 @@ def enrich(sensor,record):
 
 def field_source(sensor,name):
     row=(sensor.decoding or {}).get('fields',{}).get(name,{})
+    if row.get('application')=='filled' and row.get('basis')=='product_description':
+        return 'Описание корпуса МЕГА-К: '+row['token']+' · '+row['source_url']
     if row.get('application')=='filled':
         return f'Обозначение МЕГА-К: {row["token"]}, п. {row["section"]}'+(' (значение по умолчанию)' if row['default'] else '')
     if name in sensor.conflicts:return 'Противоречивые данные карточки'

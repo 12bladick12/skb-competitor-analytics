@@ -91,7 +91,9 @@ class ManufacturerChecks(unittest.TestCase):
         self.assertEqual(sensor.decoding['fields']['mount']['value'],'quasi-flush')
         self.assertEqual(sensor.decoding['fields']['mount']['application'],'conflict')
         self.assertTrue(sensor.decoding['requires_review'])
-        self.assertNotIn('pitch',sensor.values)
+        self.assertEqual(sensor.values['pitch'],1.)
+        self.assertEqual(sensor.decoding['fields']['pitch']['basis'],'housing_table')
+        self.assertIn('Inductive-Sensors.pdf',sensor.decoding['fields']['pitch']['source_url'])
 
     def test_lanbao_unknown_suffix_or_other_brand_gets_no_defaults(self):
         for brand,model in [('LANBAO','LR18XBF08DPOY-E2-OLD'),('Balluff','LR18XBF08DPOY-E2')]:

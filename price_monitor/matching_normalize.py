@@ -121,6 +121,18 @@ def body_type(value):
     return None
 
 
+def thread_pitch(value):
+    parsed=number(value)
+    return parsed if parsed is not None and 0 < parsed <= 6 else None
+
+
+def metric_threads(value):
+    """Explicit M diameter/pitch pairs; a long second dimension is not pitch."""
+    for m in re.finditer(r'(?<![\w])[MМmм]\s*(\d+(?:[.,]\d+)?)(?:\s*[xх×XХ*]\s*(\d+(?:[.,]\d+)?))?',str(value)):
+        diameter=float(m[1].replace(',','.'))
+        if diameter>0:yield diameter,thread_pitch(m[2]) if m[2] else None
+
+
 def ip(value):
     values=sorted(set(re.findall(r'IP\s*(\d\d(?:K|[A-D])?)',str(value).upper())))
     return tuple(values) if values else None
@@ -179,7 +191,8 @@ ALIASES={
     'special_ex':('Маркировка взрывозащиты','Взрывозащита'),
 }
 for _name, _extra in {
-    'body':('Размер цилиндрического корпуса, мм','Резьба корпуса','Конструкция корпуса','Обозначение резьбы','Габаритный размер, мм'),
+    'body':('Размер цилиндрического корпуса, мм','Резьба корпуса','Конструкция корпуса','Обозначение резьбы','Габаритный размер, мм',
+            'Thread size','Thread designation','Housing thread','Dimensions','Dimensions [mm]','Размер резьбы'),
     'sn':('Расстояние переключения, мм','Расстояние срабатывания','Sensing distance','Rated distance [Sn]'),
     'output':('Тип выхода/функция','Output type','Выходной сигнал'),
     'function':('Тип выхода/функция','Output function','Выходной сигнал','Тип выходного контакта'),
@@ -196,7 +209,7 @@ for _name, _extra in {
     'special_speed':('Диапазон частот контроля, Гц',),
 }.items(): ALIASES[_name] += _extra
 ALIASES['diameter']=('Диаметр корпуса, мм','Диаметр цилиндрического корпуса','Диаметр гладкого корпуса, мм')
-ALIASES['pitch']=('Шаг резьбы, мм','Шаг резьбы корпуса, мм')
+ALIASES['pitch']=('Шаг резьбы, мм','Шаг резьбы корпуса, мм','Thread pitch','Thread pitch [mm]','Housing thread pitch')
 ALIAS_KEYS={name:tuple(key(alias) for alias in aliases) for name,aliases in ALIASES.items()}
 PREFIXES={'length':'_Длина корпуса','diameter':'_Диаметр цилиндрического корпуса','tmin':'_Рабочая температура окружающей среды мин.',
           'tmax':'_Рабочая температура окружающей среды макс.','body_type':'_Тип корпуса'}
@@ -231,18 +244,22 @@ def normalize_sensor(record, *, enrich_designation=True):
                 if n.startswith(key(PREFIXES[name])):yield from vals
     for name,parser in [('length',number),('sn',number),('output',output),('function',switching),('mount',mounting),
                         ('material',material),('connection',connection),('ip',ip),('tmin',number),('tmax',number),
-                        ('wire_count',number),('pin_count',number),('connector',connector),('diameter',number),('pitch',number),('body_type',body_type),('voltage_type',supply_type)]:
+                        ('wire_count',number),('pin_count',number),('connector',connector),('diameter',number),('pitch',thread_pitch),('body_type',body_type),('voltage_type',supply_type)]:
         for field_name,raw in values(name):add(name,parser(raw),field_name,raw)
     if is_megak(record):
         for field_name,raw in props.get(key('Длина'),[]):
             if re.search(r'\b(?:мм|mm)\b',raw,re.I):add('length',number(raw),field_name,raw)
     for field_name,raw in values('body'):
         add('body_type',body_type(raw),field_name,raw)
-        m=re.search(r'[MМmм]\s*(\d+(?:[.,]\d+)?)(?:\s*[xх×XХ]\s*(\d+(?:[.,]\d+)?))?',raw)
-        if m:
-            add('diameter',float(m[1].replace(',','.')),field_name,raw)
-            # M18x70 is often diameter x body length, never a 70 mm pitch.
-            if m[2] and 0<float(m[2].replace(',','.'))<=6:add('pitch',float(m[2].replace(',','.')),field_name,raw)
+        threads=list(metric_threads(raw))
+        if threads:
+            for diameter,pitch in threads:
+                add('diameter',diameter,field_name,raw)
+                add('pitch',pitch,field_name,raw)
+            if len(set(threads))>1:
+                # Multiple mounting threads cannot be reduced to the first one,
+                # even when one of them omits the pitch or shares the diameter.
+                sensor.values.pop('pitch',None);sensor.conflicts.add('pitch')
         elif key(field_name) in {key('Размер корпуса'),key('Размер цилиндрического корпуса, мм')}:
             add('diameter',number(raw),field_name,raw)
     for field_name,raw in props.get(key('Габаритный размер, мм'),[]):

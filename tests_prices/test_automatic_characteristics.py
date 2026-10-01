@@ -81,6 +81,21 @@ class AutomaticCharacteristicsTests(unittest.TestCase):
             self.assertEqual(self.service.process_batch(),1)
             self.assertEqual(self.repo.batch('SELECT version FROM product_enrichment')[0]['version'],current_version())
 
+    def test_background_megak_description_keeps_official_source(self):
+        url='https://mega-k.com/products/ps2-08m33-2b11-k'
+        raw={'category':'Индуктивные датчики','description':
+             'Индуктивный бесконтактный датчик в цилиндрическом латунном корпусе с резьбой М8х1 длиной 33 мм.'}
+        fp,canonical,_=document(json.dumps(raw))
+        self.repo.batch(["UPDATE rules SET source='megak',manufacturer='МЕГА-К',article='PS2-08M33-2B11-K',product_url=%(url)s WHERE id=1",
+            "INSERT INTO product_documents VALUES(%(fp)s,%(raw)s)",
+            "UPDATE product_index SET title='PS2-08M33-2B11-K',details_hash=%(fp)s WHERE rule_id=1"],
+            {'url':url,'fp':fp,'raw':canonical})
+        self.assertEqual(self.service.process_batch(),1)
+        payload=json.loads(self.repo.batch('SELECT payload_json FROM product_enrichment')[0]['payload_json'])
+        pitch=next(p for p in payload['attributes'] if p['key']=='pitch')
+        self.assertEqual((pitch['typed_value'],pitch['source_url']),(1.,url))
+        self.assertEqual(self.service.process_batch(),0)
+
     def test_older_worker_cannot_overwrite_higher_revision(self):
         data=prepare(self.record());data['revision']+=1;self.service.save_prepared([data])
         old=prepare(self.record());old['payload']='{}';self.service.save_prepared([old])
@@ -95,6 +110,8 @@ class AutomaticCharacteristicsTests(unittest.TestCase):
         with patch('price_monitor.notations.VERSION','notation-registry-2026-10-01-v2'):
             with self.assertRaises(RuntimeError):self.service.process_batch()
         self.assertEqual(self.repo.batch('SELECT count(*) n FROM product_enrichment')[0]['n'],0)
+        with patch('price_monitor.megak_notation.VERSION','megak-ps-vb-2026-09-30-v1'):
+            with self.assertRaises(RuntimeError):self.service.process_batch()
         from price_monitor.matching_normalize import Sensor
         stale=Sensor('old','LR08BN02DPC',family='inductive',decoding={'brand':'LANBAO','version':'old'})
         with patch('price_monitor.matching_normalize.normalize_sensor',return_value=stale):

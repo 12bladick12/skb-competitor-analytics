@@ -72,12 +72,14 @@ def lanbao(code):
                   connection='connector' if conn else 'cable')
         if conn:
             vals.update(connector='m8' if conn=='E1' else 'm12',pin_count=3. if conn=='E1' else 4.)
+            vals.update(pitch=1.,length=(49. if conn=='E1' else 65.)+(0. if flush else 3.))
             if conn=='E1':vals['material']='stainless'
         else:vals.update(pitch=1.,length=40. if flush else 43.,material='stainless')
         return dict(values=vals,source='https://www.cnlanbaosensor.com/uploads/'+
                     ('LR08-DC-3-E11.pdf' if conn=='E1' else 'LR08-DC-3-E21.pdf' if conn=='E2' else 'LR08-DC-31.pdf'),
                     section='LR08 standard DC 3-wire: Part number, Technical specifications, Dimensions',
-                    notes=['Таблица конкретной серии LR08 без X. Для кабельных моделей шаг M8×1 подтверждён чертежом; исполнения разъёма имеют отдельные документы.'])
+                    geometry_fields=('pitch','length'),
+                    notes=['Таблицы серии LR08 без X: резьба корпуса M8×1, включая -E1 и -E2. Длина берётся из чертежа своего подключения и монтажа; резьба разъёма учитывается отдельно.'])
     # Restrict shape X to threaded LR; square sizes are not diameters.
     m = re.fullmatch(r'LR(?P<size>08|12|18|30)X(?P<material>G|S|V)?(?P<body>A|B|C|D)(?P<mount>F|N)(?P<sn>\d{2})(?P<supply>A|B|D|H|L|S|E)(?P<out>N|P|B|L|T)(?P<function>O|C|R|B)(?P<feature>W[1-4]?|Y|B|J|U|A|Q|G|Z)?(?:-(?P<conn>E1|E2|E3|E5|F\d+|D))?', code)
     if not m: return None
