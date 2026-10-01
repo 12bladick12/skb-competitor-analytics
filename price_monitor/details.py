@@ -193,7 +193,7 @@ def safe_link(base, value):
 
 
 def extract_details(source, soup, url, variant=None):
-    from .price_terms import parse_terms
+    from .price_terms import extract_price_terms
     from .sources import SOURCES
     props=attributes(source,soup,variant)
     selectors={
@@ -214,8 +214,7 @@ def extract_details(source, soup, url, variant=None):
     if meta:
         image=safe_link(url,meta.get('content'))
         if image:images.append(image)
-    price_node=soup.select_one(SOURCES[source].price_selector)
-    price_terms=parse_terms(text(price_node.parent) if price_node else '')
+    price_terms=extract_price_terms(source,soup,url)
     return {'attributes':props,'description':'\n\n'.join(descriptions),'category':' / '.join(crumbs), 'price_terms':price_terms,
         'manufacturer':manufacturer(source,soup),
         'images':images,'variant_id':variant['id'] if variant else '',

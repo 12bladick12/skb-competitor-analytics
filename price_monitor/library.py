@@ -15,6 +15,7 @@ PRODUCT_SELECT="""SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.produc
     COALESCE(o.status,'pending') status,o.price,o.currency,o.availability,o.checked_at,o.detail,
     o.url,o.price_text,o.availability_text,o.http_status,o.response_hash,i.updated_at specifications_checked_at,
     p.price last_price,p.currency last_currency,p.checked_at price_checked_at,
+    p.price_text last_price_text,p.details_json last_price_details_json,
     c.our_article,c.our_price,c.our_currency,c.note,c.updated_at our_price_updated_at,
     COALESCE(l.state,'active') product_state,l.note product_state_note,l.checked_at lifecycle_checked_at,
     CASE WHEN c.rule_id IS NULL THEN 0 ELSE 1 END selected
@@ -49,6 +50,12 @@ class Library:
             page=[dict(x) for x in rows[offset:offset+100]]
             references=set();current=[]
             for row in page:
+                if 'last_price_details_json' not in row:continue
+                try:price_payload=json.loads(row.get('last_price_details_json') or '{}')
+                except (ValueError,TypeError):price_payload={}
+                row['_price_payload']=price_payload
+                if price_payload.get('ref'):references.add(price_payload['ref'])
+            for row in page:
                 if '_specifications' in row:continue
                 if 'details_json' not in row:
                     if row.get('rule_id') is not None:current.append(row['rule_id'])
@@ -70,6 +77,11 @@ class Library:
             from .passport_review import confirmed
             geometry=confirmed(self.repo,[r['rule_id'] for r in page if 'details_json' not in r and r.get('rule_id') is not None])
             for row in page:
+                if '_price_payload' in row:
+                    from .price_terms import parse_terms
+                    price_payload=row.pop('_price_payload')
+                    if price_payload.get('ref'):price_payload=docs.get(price_payload['ref'],{})
+                    row['_price_snapshot_terms']=price_payload.get('price_terms') or parse_terms(row.get('last_price_text'))
                 ref=row.pop('_details_ref',None)
                 if ref:row['_specifications']=docs.get(ref,{})
                 elif 'details_json' not in row and '_specifications' not in row:row['_specifications']=latest.get(row.get('rule_id'),{})
@@ -196,4 +208,53 @@ class Library:
             total,page=self.products(query,source,brand,selected,offset,1000)
             rows.extend(self.with_specifications(page));offset+=len(page)
             if offset>=total or not page:break
+        return rows
+
+    def comparison_products(self):
+        """Read the search catalog without per-page export/enrichment writes.
+
+        Current characteristics and the last actual quote keep separate snapshots.
+        The comparison index normalizes these records using the current rules.
+        """
+        sql=PRODUCT_SELECT.replace('    FROM rules q', '''    ,d.details_json current_details_json,i.details_hash current_details_hash,
+            review.fingerprint geometry_fingerprint,review.fields_json geometry_fields,
+            review.reviewer geometry_reviewer,review.updated_at geometry_updated_at
+            FROM rules q''',1)
+        sql+=''' LEFT JOIN product_documents d ON d.fingerprint=i.details_hash
+            LEFT JOIN passport_products pp ON pp.rule_id=q.id
+            LEFT JOIN passport_field_reviews review ON review.rule_id=q.id AND review.fingerprint=pp.current_fingerprint
+                AND EXISTS(SELECT 1 FROM passport_links pl WHERE pl.rule_id=q.id
+                    AND pl.fingerprint=review.fingerprint AND pl.applicability='confirmed')
+            WHERE '''+VISIBLE+' AND q.id>%(after)s ORDER BY q.id LIMIT 1000'
+        rows=[];after=0
+        while True:
+            page=self.repo.batch(sql,{'after':after})
+            rows.extend(page)
+            if len(page)<1000:break
+            after=page[-1]['rule_id']
+        docs={};references=set()
+        for row in rows:
+            details=json.loads(row.pop('current_details_json') or '{}')
+            fingerprint=row.pop('current_details_hash')
+            row['_specifications']=details
+            if fingerprint:docs[fingerprint]=details
+            payload=json.loads(row.get('last_price_details_json') or '{}')
+            row['_price_payload']=payload
+            if payload.get('ref'):references.add(payload['ref'])
+            geometry=row.pop('geometry_fingerprint')
+            fields=row.pop('geometry_fields');reviewer=row.pop('geometry_reviewer');updated=row.pop('geometry_updated_at')
+            if geometry:
+                row['_confirmed_geometry']={'fingerprint':geometry,'fields':json.loads(fields),
+                    'reviewer':reviewer,'updated_at':updated}
+        missing=list(references-docs.keys())
+        for offset in range(0,len(missing),1000):
+            params={f'h{i}':value for i,value in enumerate(missing[offset:offset+1000])}
+            found=self.repo.batch('SELECT fingerprint,details_json FROM product_documents WHERE fingerprint IN ('+
+                ','.join(f'%({key})s' for key in params)+')',params)
+            docs.update({row['fingerprint']:json.loads(row['details_json']) for row in found})
+        from .price_terms import parse_terms
+        for row in rows:
+            payload=row.pop('_price_payload')
+            if payload.get('ref'):payload=docs.get(payload['ref'],{})
+            row['_price_snapshot_terms']=payload.get('price_terms') or parse_terms(row.get('last_price_text'))
         return rows

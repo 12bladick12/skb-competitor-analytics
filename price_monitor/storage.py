@@ -46,6 +46,10 @@ CREATE TABLE IF NOT EXISTS external_sources (
 PRAGMA user_version=1;
 """
 SCHEMA += CATALOG_SCHEMA
+from .own_prices import SCHEMA as OWN_PRICES_SCHEMA
+SCHEMA += OWN_PRICES_SCHEMA
+from .automatic_price_terms import SCHEMA as AUTOMATIC_TERMS_SCHEMA
+SCHEMA += AUTOMATIC_TERMS_SCHEMA
 
 
 class Store:
