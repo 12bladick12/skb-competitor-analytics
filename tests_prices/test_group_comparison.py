@@ -127,6 +127,38 @@ class GroupTests(unittest.TestCase):
         self.assertEqual(set(alternatives),{'ТЕКО','BESKONTA','МЕГА-К'})
         self.assertEqual(len(index.search('MODEL-2')),1)
 
+    def test_compact_catalog_preserves_matching_and_on_demand_evidence(self):
+        from price_monitor.matching import evaluate
+        from price_monitor.comparison_groups import IndexedMatch
+        row={'rule_id':7,'manufacturer':'LANBAO','article':'LR18XBF08DPOY-E2',
+             'category':'Индуктивные датчики',
+             'props':{'Способ установки':'Встраиваемый','Длина корпуса, мм':'63'}}
+        full=competitor_record(row)['sensor']
+        index=ComparisonIndex([row],[sensor()],{})
+        compact=index.records['competitor:7']['sensor']
+        self.assertEqual(compact.values,full.values)
+        self.assertEqual(compact.conflicts,full.conflicts)
+        self.assertEqual(compact.decoding['requires_review'],full.decoding['requires_review'])
+        self.assertFalse(compact.raw)
+        self.assertNotIn('fields',compact.decoding)
+        restored=normalize_sensor(index.records['competitor:7'])
+        self.assertEqual(restored.values,full.values)
+        self.assertEqual(restored.decoding,full.decoding)
+        original=evaluate(full,sensor())
+        cached=IndexedMatch(full,original)
+        self.assertEqual(cached.status,original.status)
+        self.assertEqual(cached.fields,original.fields)
+        self.assertEqual(cached.rows(),original.rows())
+        self.assertNotIn('fields',vars(cached))
+        archived={**row,'_catalog_details_hash':'original','_specifications':{'description':'Keep source evidence'}}
+        lean=ComparisonIndex([archived],[sensor()],{},reference_loader=lambda _:archived)
+        reference=lean.records['competitor:7']
+        self.assertNotIn('props',reference)
+        self.assertNotIn('description',reference['_specifications'])
+        matches=lean.alternatives(reference)
+        self.assertTrue(matches)
+        self.assertEqual(matches['СКБ Индукция'][0][1].fields,original.fields)
+
 
 class AutomaticTermsTests(unittest.TestCase):
     def test_tax_phrasing_and_conflict(self):

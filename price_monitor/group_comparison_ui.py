@@ -1,5 +1,5 @@
 """Multi-brand comparison using the existing Streamlit presentation."""
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import date, timedelta, datetime
 from html import escape
 import math
@@ -54,13 +54,16 @@ def refresh_indicator(job,key):
         else:st.rerun()
 
 
-@st.cache_resource(ttl=300, max_entries=4, show_spinner='Загружаем модели и цены…')
+@st.cache_resource(ttl=300, max_entries=1, show_spinner='Загружаем модели и цены…')
 def comparison_index(database_key, version, _library):
     _,matcher=load_catalog()
-    rows=_library.comparison_products()
+    rows=deque(_library.comparison_products())
     own_rows=OwnPrices(_library.repo).current()
     own={r['catalog_id']:r for r in own_rows if r['catalog_id']}
-    return ComparisonIndex(rows,matcher.products,own,[r for r in own_rows if not r['catalog_id']])
+    def consume_rows():
+        while rows:yield rows.popleft()
+    return ComparisonIndex(consume_rows(),matcher.products,own,[r for r in own_rows if not r['catalog_id']],
+                           reference_loader=_library.comparison_reference)
 
 
 def short_date(value):

@@ -53,5 +53,13 @@ class ComparisonCatalogTests(unittest.TestCase):
         for field in ('rule_id','article','last_price','price_checked_at','_price_snapshot_terms','_specifications'):
             self.assertEqual(current[field],exported[field])
 
+    def test_reference_restores_original_snapshot_after_card_update(self):
+        library=Library(self.repo)
+        row=library.comparison_products()[0]
+        original=row['_specifications']
+        row['_specifications']={}
+        self.repo.batch("UPDATE product_index SET details_hash='old' WHERE rule_id=1")
+        self.assertEqual(library.comparison_reference(row)['_specifications'],original)
+
 
 if __name__=='__main__':unittest.main()

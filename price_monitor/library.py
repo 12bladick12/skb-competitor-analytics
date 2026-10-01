@@ -236,6 +236,7 @@ class Library:
         for row in rows:
             details=json.loads(row.pop('current_details_json') or '{}')
             fingerprint=row.pop('current_details_hash')
+            row['_catalog_details_hash']=fingerprint
             row['_specifications']=details
             if fingerprint:docs[fingerprint]=details
             payload=json.loads(row.get('last_price_details_json') or '{}')
@@ -258,3 +259,11 @@ class Library:
             if payload.get('ref'):payload=docs.get(payload['ref'],{})
             row['_price_snapshot_terms']=payload.get('price_terms') or parse_terms(row.get('last_price_text'))
         return rows
+
+    def comparison_reference(self, row):
+        """Restore evidence from the same immutable snapshot used by the index."""
+        fingerprint=row.get('_catalog_details_hash')
+        if not fingerprint:return row
+        found=self.repo.batch('SELECT details_json FROM product_documents WHERE fingerprint=%(hash)s',{'hash':fingerprint})
+        if not found:raise ValueError('Исходная карточка для подбора недоступна. Обновите базу поиска.')
+        return {**row,'_specifications':json.loads(found[0]['details_json'])}

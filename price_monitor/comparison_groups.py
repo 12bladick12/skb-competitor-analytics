@@ -13,9 +13,27 @@ BRAND_COLORS={OUR_BRAND:'#18756A','ТЕКО':'#7A1F2B','BESKONTA':'#BE661B','М�
               'ifm':'#C87C00','LANBAO':'#228EAA','SICK':'#5F718B'}
 
 
-def competitor_record(row):
+def competitor_record(row, *, compact=False, lazy_details=False):
+    sensor=normalize_sensor(row)
+    if compact:
+        # Every catalog row needs typed values, not a second copy of the full
+        # decoder/evidence tree. Rehydrate the reference only when comparing it.
+        sensor.raw={}
+        sensor.decoding={key:sensor.decoding.get(key) for key in ('supported','requires_review')}
+        keys=('rule_id','source','manufacturer','article','product_url','title','category','model',
+              'last_price','last_currency','price_checked_at','checked_at','status','our_article',
+              'selected','props','_confirmed_geometry','_price_snapshot_terms','price_text','last_price_text','_catalog_details_hash')
+        details=row.get('_specifications') or {}
+        row={key:row[key] for key in keys if key in row}
+        row['_specifications']={key:details[key] for key in ('attributes','description','category','price_terms') if key in details}
+        if lazy_details and row.get('_catalog_details_hash'):
+            from .catalog_search import characteristic_values
+            dimensions=characteristic_values({**row,'sensor':sensor}).get('dimensions')
+            if dimensions:row['_search_dimensions']=dimensions
+            row.pop('props',None)
+            row['_specifications']={key:details[key] for key in ('price_terms',) if key in details}
     return {**row,'entry_id':'competitor:'+str(row['rule_id']),'brand':row['manufacturer'],
-            'model':row['article'],'is_ours':False,'sensor':normalize_sensor(row)}
+            'model':row['article'],'is_ours':False,'sensor':sensor}
 
 
 def own_record(sensor, price=None):
@@ -23,13 +41,29 @@ def own_record(sensor, price=None):
             'is_ours':True,'sensor':sensor,'own_price':price,'catalog_id':sensor.id}
 
 
+class IndexedMatch:
+    """Keep rankings compact; full field evidence is needed for chosen rows only."""
+    def __init__(self, reference, match):
+        self.reference=reference
+        self.candidate=match.candidate
+        self.status=match.status
+        self.profile=match.profile
+        self.priority=match.priority
+
+    def __getattr__(self, name):
+        match=evaluate(self.reference,self.candidate,self.profile)
+        match.priority=self.priority
+        return getattr(match,name)
+
+
 class ComparisonIndex:
-    def __init__(self, competitors, own_sensors, own_prices, unmatched_prices=()):
+    def __init__(self, competitors, own_sensors, own_prices, unmatched_prices=(), reference_loader=None):
         self.records={}
         self.buckets=defaultdict(list)
         self._alternatives={}
+        self.reference_loader=reference_loader
         for row in competitors:
-            self.add(competitor_record(row))
+            self.add(competitor_record(row,compact=True,lazy_details=reference_loader is not None))
         for sensor in own_sensors:
             self.add(own_record(sensor,own_prices.get(sensor.id)))
         for price in unmatched_prices:
@@ -52,7 +86,9 @@ class ComparisonIndex:
     def alternatives(self, anchor, profile='auto'):
         cache_key=(anchor['entry_id'],profile)
         if cache_key in self._alternatives:return self._alternatives[cache_key]
-        sensor=anchor['sensor'];v=sensor.values
+        reference=self.reference_loader(anchor) if self.reference_loader and not anchor['is_ours'] else anchor
+        sensor=anchor['sensor'] if anchor['is_ours'] else normalize_sensor(reference)
+        v=sensor.values
         if sensor.family not in (None,'inductive') or not any(v.get(k) is not None for k in ('diameter','output','sn')):
             return {}
         candidates=[r for (body,diameter),rows in self.buckets.items()
@@ -79,11 +115,12 @@ class ComparisonIndex:
             # Unknown mandatory fields cannot make an unrelated, poorly described
             # item the default ahead of an otherwise compatible documented one.
             status_order={'direct':0,'close':1,'review':2}
-            result[brand]=sorted(pairs,key=lambda pair:(status_order[pair[1].status],
+            ordered=sorted(pairs,key=lambda pair:(status_order[pair[1].status],
                 sum(f['outcome']=='missing' and f['group']=='Обязательные' for f in pair[1].fields),
                 order[id(pair[1])]))
+            result[brand]=[(row,IndexedMatch(sensor,match)) for row,match in ordered]
         # Keep only a bounded number of reviewed groups in the shared index.
-        if len(self._alternatives)>=64:self._alternatives.pop(next(iter(self._alternatives)))
+        if len(self._alternatives)>=6:self._alternatives.pop(next(iter(self._alternatives)))
         self._alternatives[cache_key]=result
         return result
 

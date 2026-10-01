@@ -51,6 +51,8 @@ def characteristic_values(row):
     values = {name: value for name, value in sensor.values.items() if name not in sensor.conflicts}
     if sensor.family:
         values['family'] = sensor.family
+    if row.get('_search_dimensions'):
+        values['dimensions'] = row['_search_dimensions']
     attributes = row.get('props') or (row.get('_specifications') or {}).get('attributes') or []
     if isinstance(attributes, dict):
         attributes = [{'name': name, 'value': value} for name, value in attributes.items()]
