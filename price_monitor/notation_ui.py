@@ -22,6 +22,7 @@ def render_decoding(sensor,expanded=False):
             rows.append({'Характеристика':FIELD_LABELS.get(name,name),'В карточке':display(entry.get('card_value'),name),
                          'Из обозначения':display(entry['value'],name),
                          'Применение':APPLICATIONS.get(entry.get('application'),'Не применяется'),
+                         'Источник':entry.get('source_url',decoded['source_url']),
                          'Основание':entry['token']+' · п. '+entry['section']+(' · по умолчанию' if entry['default'] else '')})
         if rows:
             st.dataframe(rows,hide_index=True,width='stretch')

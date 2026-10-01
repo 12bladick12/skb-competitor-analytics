@@ -3,21 +3,21 @@ import re
 
 from . import megak_notation
 
-VERSION = 'notation-registry-2026-09-30-v1'
-CHECKED = '2026-09-30'
+VERSION = 'notation-registry-2026-10-01-v2'
+CHECKED = '2026-10-01'
 LANBAO_PDF = 'https://www.cnlanbaosensor.com/uploads/LR18XB-Y-DC-34-E2.pdf'
 SENSOR_URL = 'https://sensor-com.ru/baza-znaniy/rasshifrovka-markirovki-inductive-datchikov/'
 REGISTRY = {
     'МЕГА-К': (megak_notation.SOURCE_URL, 'PS2/VB2; остальные серии требуют паспорта', 'Правила обозначений'),
-    'LANBAO': (LANBAO_PDF, 'LR12XB-Y F04/N08 и LR18XB-Y F08/N12, DNO/DNC/DNR/DPO/DPC/DPR, -E2', 'Точные таблицы моделей; даты редакций не установлены'),
-    'СЕНСОР': (SENSOR_URL, 'ВБИ/ВБЕ: корпус, подключение, 4 цифры электрической группы', 'Правила обозначений; публикация 23.09.2026'),
-    'Autonics': ('https://www.autonics.com/us/model/PR18-5DP', 'PR18-5DP; другие исполнения требуют отдельного паспорта', 'Точная карточка модели'),
-    'Balluff': ('https://assets.balluff.com/WebBinary1/MAN_BES_M08_12_18E_1_L01C_S04G_L04_X_J2_DOK_949852_AA_000.pdf', 'BES: код заказа и обозначение различаются; перенос на другие серии запрещён', 'Документ найден; автоматическое дополнение не подтверждено'),
-    'BESKONTA': ('https://beskonta.ru/informaciya/rasshifrovka-markirovki/', 'Правила зависят от семейства; нужна сверка исполнения', 'Документ найден; автоматическое дополнение не подтверждено'),
-    'ТЕКО': ('https://teko-com.ru/pdf/1-induktivnye.pdf', 'ISB/ISN: каталог содержит несколько поколений и специальных серий', 'Документ найден; автоматическое дополнение не подтверждено'),
-    'ifm': ('https://www.ifm.com/de/de/product/IGT200', 'Короткий артикул проверяется по индивидуальной карточке', 'Карточка найдена; общей расшифровки не подтверждено'),
-    'Pepperl+Fuchs': ('https://blog.pepperl-fuchs.com/en/2019/how-is-a-type-code-from-pepperlfuchs-structured/', 'Функциональный принцип, корпус, электрический выход; схема опубликована в 2019 г.', 'Документ найден; применимость к текущей серии требует проверки'),
-    'SICK': ('https://www.sick.com/media/pdf/9/69/569/dataSheet_IM18-08BPS-ZC1_7900085_en.pdf', 'IM18-08BPS-ZC1, паспорт 16.02.2026; для других моделей нужен их паспорт', 'Точный паспорт найден; монтаж требует сверки таблицы и чертежа'),
+    'LANBAO': ('https://www.cnlanbaosensor.com/uploads/Product%C2%A0summary-2024.pdf', 'LR08/12/18/30X; точные таблицы LR12XB-Y/LR18XB-Y имеют приоритет', 'Дополнение по полностью распознанному обозначению; Y/F не считается flush'),
+    'СЕНСОР': (SENSOR_URL, 'ВБИ/ВБЕ: корпус, подключение, электрическая группа; условная длина не равна габаритной', 'Правила обозначений и расширенный разбор полей карточки'),
+    'Autonics': ('https://www.autonics.com/in/data/manual/en/PR_DC_3-wire', 'PR/PRA, кабель/W/CM, Normal/Short/Long, DC 3-wire; только описанные комбинации', 'Модуль обозначений и таблиц PR; неизвестные суффиксы исключены'),
+    'Balluff': ('https://www.balluff.com/en-us/products/BES005N', 'Точная пара BES005N / BES M12MI-POC40B-S04G', 'Справочник точных моделей; общий декодер не подтверждён'),
+    'BESKONTA': ('https://beskonta.ru/informaciya/rasshifrovka-markirovki/', 'SIS 12/18/30 V/N; стандартные электрические группы и IP/C1/H1', 'Модуль обозначений; шаг M30 и базовая длина не подставляются'),
+    'ТЕКО': ('https://teko-com.ru/useful-info/sistemy-oboznachenija/sistema-oboznacheniya-induktivnykh-vyklyuchateley/', 'ISB/ISN общего применения, DC; индекс корпуса не является диаметром', 'Модуль обозначений; отдельные ключи NAMUR/скорости/Ex не смешиваются'),
+    'ifm': ('https://www.ifm.com/gb/en/product/IGT200', 'Точная модель IGT200; соседние артикулы не наследуют значения', 'Справочник точных моделей; короткий артикул не расшифровывается по сходству'),
+    'Pepperl+Fuchs': ('https://files.pepperl-fuchs.com/online-catalogs/245613/files/assets/basic-html/page37.html', 'NBB/NBN/NCB/NCN/NEB/NEN/NRB/NRN цилиндрические, E0–E3/A0/A2', 'Модуль обозначений; длина резьбы отделена от общей длины'),
+    'SICK': ('https://www.sick.com/media/pdf/1/81/481/dataSheet_IME12-04BPSZC0S_1040764_en.pdf', 'Точные пары IME12-04BPSZC0S / 1040764 и IM04-01BNSVR8K / 6058030', 'Справочник точных моделей; универсальные значения буквы B не вводятся'),
 }
 
 
@@ -83,9 +83,26 @@ def decode(brand, model):
             add('output', {'1':'PNP','2':'NPN','3':'2-wire','4':'2-wire','5':'2-wire','7':'relay','8':'NPN/PNP'}[match['output']], match['output'])
             add('function', {'1':'NO','2':'NC','3':'NO/NC','4':'configurable'}[match['function']], match['function'])
             if body=='Щ': result['special'].append('slot')
-            if match['mods'] or match['function']=='4':
+            if (match['mods'] and not re.fullmatch(r'[СЗЛН]+',match['mods'])) or match['function']=='4':
                 result['requires_review']=True
                 result['notes'].append('Дополнительные модификации/программируемый выход требуют отдельной проверки; температура, IP и Sn не подставлены.')
+            if match['mods'] and re.search(r'(?:EX|ЕХ)',match['mods']):result['special'].append('ex')
+    # Exact LANBAO tables above take precedence over the general ordering key.
+    from .inductive_designations import DECODERS
+    from .inductive_references import exact_reference
+    supplement = DECODERS[brand](code) if brand in DECODERS else None
+    supplement = supplement or exact_reference(brand, code)
+    if supplement:
+        if not result['fields']: result['source_url'] = supplement['source']
+        for name, value in supplement['values'].items():
+            if name not in result['fields']:
+                add(name, value, code, supplement['section'])
+                result['fields'][name]['source_url'] = supplement['source']
+        result['family'] = 'inductive'
+        result['special'].extend(supplement.get('special', []))
+        result['extras'].update(supplement.get('extras', {}))
+        result['notes'].extend(supplement.get('notes', []))
+        result['requires_review'] |= supplement.get('review', False)
     if result['fields']:
         result['supported'] = result['complete'] = True
     else:
@@ -116,7 +133,7 @@ def enrich(sensor, record):
         if name in sensor.conflicts: entry['application']='card_conflict'; decoded['requires_review']=True
         elif existing is None:
             sensor.values[name]=entry['value'];entry['application']='filled'
-            sensor.raw.setdefault(name,[]).append(dict(field='Паспорт '+brand, value=sensor.model, source_url=decoded['source_url'], version=VERSION))
+            sensor.raw.setdefault(name,[]).append(dict(field='Обозначение '+brand, value=sensor.model, source_url=entry.get('source_url', decoded['source_url']), version=VERSION))
         elif existing == entry['value']:
             entry['application']='confirmed'
             confirmed.add({'vmin':'voltage','vmax':'voltage','voltage_type':'voltage',
