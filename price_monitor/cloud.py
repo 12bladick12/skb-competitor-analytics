@@ -6,10 +6,33 @@ import time
 from .worker import Worker
 
 log = logging.getLogger("price_monitor.cloud")
+WORKER_VERSION='isolated-recovery-2026-10-01'
+
+
+def retire_legacy_workers():
+    """Fence cached workers after a hot deployment before creating replacements.
+
+    Streamlit may retain a cache_resource instance from an older module. These
+    objects predate our registry, so locate only our named controller threads.
+    Releasing their exact owner prevents late writes even if old I/O is stuck.
+    """
+    for thread in threading.enumerate():
+        if thread.name!='price-monitor-cloud':continue
+        controller=getattr(getattr(thread,'_target',None),'__self__',None)
+        if controller is None or getattr(controller,'version',None)==WORKER_VERSION:continue
+        if not all(hasattr(controller,key) for key in ('stopping','guard','store','worker')):continue
+        controller.stopping.set()
+        with controller.guard:
+            worker=controller.worker
+            if worker is not None:
+                worker.shutdown.set()
+                controller.store.release(worker.owner)
+        thread.join(timeout=2)
 
 
 class EmbeddedWorker:
     def __init__(self, store, worker_factory=Worker):
+        self.version=WORKER_VERSION
         self.store = store
         self.worker_factory = worker_factory
         self.stopping = threading.Event()

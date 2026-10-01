@@ -30,6 +30,7 @@ class Worker:
     def heartbeat_loop(self, finished):
         last_success=time.monotonic()
         while not finished.wait(10):
+            if self.shutdown.is_set():return
             try:
                 if not self.store.heartbeat(self.owner):
                     log.error("Worker lease lost")

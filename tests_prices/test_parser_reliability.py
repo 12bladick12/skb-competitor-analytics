@@ -67,6 +67,28 @@ class ParserReliabilityTests(unittest.TestCase):
                 self.assertEqual(restart_reason(state,42,0,10),'')
                 self.assertTrue(restart_reason(state,42,0,181))
 
+    def test_hot_deployment_fences_old_cached_controller_only(self):
+        from price_monitor.cloud import retire_legacy_workers,WORKER_VERSION
+        class Controller:
+            def __init__(self,version):
+                self.version=version
+                self.stopping=threading.Event()
+                self.guard=threading.Lock()
+                self.store=Mock()
+                self.worker=Mock(owner='old-owner',shutdown=threading.Event())
+            def loop(self):pass
+        old=Controller('old')
+        current=Controller(WORKER_VERSION)
+        old_thread=Mock();old_thread.name='price-monitor-cloud';old_thread._target=old.loop
+        current_thread=Mock();current_thread.name='price-monitor-cloud';current_thread._target=current.loop
+        with patch('price_monitor.cloud.threading.enumerate',return_value=[old_thread,current_thread]):
+            retire_legacy_workers()
+        self.assertTrue(old.stopping.is_set())
+        self.assertTrue(old.worker.shutdown.is_set())
+        old.store.release.assert_called_once_with('old-owner')
+        current.store.release.assert_not_called()
+        self.assertFalse(current.stopping.is_set())
+
     def test_hung_cloud_source_is_killed_retried_and_reported_blocked(self):
         started=time.monotonic()
         original_wait=self.worker.shutdown.wait

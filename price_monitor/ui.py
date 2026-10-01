@@ -25,13 +25,14 @@ st.html(CSS)
 
 
 @st.cache_resource
-def services(cloud_mode,version='analytics-no-passports-2026-09-30-v1'):
+def services(cloud_mode,version='analytics-parser-recovery-2026-10-01-v1'):
     from price_monitor.scope import refresh_scope
     from price_monitor.retired_documents import disable_document_jobs,stop_document_threads
     stop_document_threads()
     if not cloud_mode:
         store=Store();disable_document_jobs(store.catalog);refresh_scope(store.catalog);return store,None
-    from price_monitor.cloud import EmbeddedWorker
+    from price_monitor.cloud import EmbeddedWorker,retire_legacy_workers
+    retire_legacy_workers()
     settings=dict(st.secrets['database'])
     store=Store(postgres=settings);disable_document_jobs(store.catalog);refresh_scope(store.catalog);worker=EmbeddedWorker(store)
     atexit.register(worker.close)
