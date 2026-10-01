@@ -61,6 +61,23 @@ def beskonta(code):
 
 
 def lanbao(code):
+    # LR08 standard series has no X. Its F15 means 1.5 mm, not 15 mm.
+    lr08=re.fullmatch(r'LR08B(?P<mount>F15|N02)D(?P<out>N|P)(?P<function>O|C)(?:-(?P<conn>E1|E2))?',code)
+    if lr08:
+        flush=lr08['mount']=='F15';conn=lr08['conn']
+        vals=dict(body_type='threaded',diameter=8.,sn=1.5 if flush else 2.,
+                  mount='flush' if flush else 'non-flush',output='NPN' if lr08['out']=='N' else 'PNP',
+                  function='NO' if lr08['function']=='O' else 'NC',voltage_type='DC',vmin=10.,vmax=30.,
+                  tmin=-25.,tmax=70.,ip=('67',),load=150.,frequency=2000. if flush else 1500.,wire_count=3.,
+                  connection='connector' if conn else 'cable')
+        if conn:
+            vals.update(connector='m8' if conn=='E1' else 'm12',pin_count=3. if conn=='E1' else 4.)
+            if conn=='E1':vals['material']='stainless'
+        else:vals.update(pitch=1.,length=40. if flush else 43.,material='stainless')
+        return dict(values=vals,source='https://www.cnlanbaosensor.com/uploads/'+
+                    ('LR08-DC-3-E11.pdf' if conn=='E1' else 'LR08-DC-3-E21.pdf' if conn=='E2' else 'LR08-DC-31.pdf'),
+                    section='LR08 standard DC 3-wire: Part number, Technical specifications, Dimensions',
+                    notes=['Таблица конкретной серии LR08 без X. Для кабельных моделей шаг M8×1 подтверждён чертежом; исполнения разъёма имеют отдельные документы.'])
     # Restrict shape X to threaded LR; square sizes are not diameters.
     m = re.fullmatch(r'LR(?P<size>08|12|18|30)X(?P<material>G|S|V)?(?P<body>A|B|C|D)(?P<mount>F|N)(?P<sn>\d{2})(?P<supply>A|B|D|H|L|S|E)(?P<out>N|P|B|L|T)(?P<function>O|C|R|B)(?P<feature>W[1-4]?|Y|B|J|U|A|Q|G|Z)?(?:-(?P<conn>E1|E2|E3|E5|F\d+|D))?', code)
     if not m: return None

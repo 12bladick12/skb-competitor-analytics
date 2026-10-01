@@ -25,7 +25,7 @@ st.html(CSS)
 
 
 @st.cache_resource
-def services(cloud_mode,version='analytics-parser-recovery-2026-10-01-v1'):
+def services(cloud_mode,version='analytics-automatic-characteristics-2026-10-01-v1'):
     from price_monitor.scope import refresh_scope
     from price_monitor.retired_documents import disable_document_jobs,stop_document_threads
     stop_document_threads()
@@ -35,6 +35,9 @@ def services(cloud_mode,version='analytics-parser-recovery-2026-10-01-v1'):
     retire_legacy_workers()
     settings=dict(st.secrets['database'])
     store=Store(postgres=settings);disable_document_jobs(store.catalog);refresh_scope(store.catalog);worker=EmbeddedWorker(store)
+    from price_monitor.enrichment import EnrichmentWorker
+    store.enrichment_worker=EnrichmentWorker(store.catalog)
+    atexit.register(store.enrichment_worker.close)
     atexit.register(worker.close)
     return store,worker
 
@@ -169,8 +172,15 @@ def details_panel(rule_id):
     from price_monitor.notation_ui import render_decoding
     rows=library.products(rule_id=rule_id)[1]
     if rows:
-        normalized=normalize_sensor(library.with_specifications(rows)[0])
+        enriched=library.with_specifications(rows)[0]
+        normalized=normalize_sensor(enriched)
         render_decoding(normalized)
+        automatic=enriched.get('_enrichment',{}).get('attributes',[])
+        if automatic:
+            st.caption(f'Автоматически дозаполнено характеристик: {len(automatic)}. Значения и источники сохраняются в базе.')
+            st.dataframe([{'Характеристика':p['name'],'Значение':p['value'],'Источник':p['source_url'],
+                           'Проверка':'Требуется сверка' if p['requires_review'] else 'По системе обозначений'} for p in automatic],hide_index=True,width='stretch')
+            details={**details,'automatic_attributes':automatic}
         if normalized.conflicts:st.warning('Противоречивые характеристики требуют проверки: '+', '.join(sorted(normalized.conflicts)))
     if not details:
         st.info('Исходные характеристики карточки появятся после её повторного сбора. Расшифровка обозначения показана отдельно, если она доступна. Исторические цены уже сохранены.');return
@@ -237,6 +247,7 @@ def products_page():
     offset=page_number(total,50,'products_page_'+str(hash((query,source,brand))))
     _,rows=library.products(query,source,brand,offset=offset)
     if not rows:st.info('По этому запросу товаров пока нет. Запустите сбор или измените фильтры.');return
+    rows=library.with_specifications(rows)
     view=[]
     for row in rows:
         view.append({'Выбрать':False,'Артикул':row['article'],'Производитель':row['manufacturer'],'Источник':SOURCES[row['source']].label,
@@ -244,7 +255,7 @@ def products_page():
             'Дата цены (UTC)':row['price_checked_at'],'Последняя проверка':STATUS_LABELS.get(row['status'],row['status']),
             'Состояние товара':{'active':'Активен','review':'Требует проверки','archived':'Архив','discontinued':'Снят с производства'}.get(row['product_state'],row['product_state']),
             'Проверка карточки':row['specifications_checked_at'],
-            'Характеристик':row['attributes_count'],'В сравнении':'Да' if row['selected'] else '',
+            'Исходных характеристик':row['attributes_count'],'Дозаполнено':row.get('automatic_attributes_count',0),'В сравнении':'Да' if row['selected'] else '',
             'История':f"?workspace=prices&price_section=history&model={row['rule_id']}"})
     edited=st.data_editor(view,hide_index=True,width='stretch',disabled=[x for x in view[0] if x!='Выбрать'],key=f'products_{query}_{source}_{brand}_{offset}',
         column_config={'Выбрать':st.column_config.CheckboxColumn(),'История':st.column_config.LinkColumn(display_text='История'),'Последняя цена':st.column_config.NumberColumn(format='%.2f')})

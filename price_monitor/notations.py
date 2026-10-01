@@ -3,13 +3,13 @@ import re
 
 from . import megak_notation
 
-VERSION = 'notation-registry-2026-10-01-v2'
+VERSION = 'notation-registry-2026-10-01-v3'
 CHECKED = '2026-10-01'
 LANBAO_PDF = 'https://www.cnlanbaosensor.com/uploads/LR18XB-Y-DC-34-E2.pdf'
 SENSOR_URL = 'https://sensor-com.ru/baza-znaniy/rasshifrovka-markirovki-inductive-datchikov/'
 REGISTRY = {
     'МЕГА-К': (megak_notation.SOURCE_URL, 'PS2/VB2; остальные серии требуют паспорта', 'Правила обозначений'),
-    'LANBAO': ('https://www.cnlanbaosensor.com/uploads/Product%C2%A0summary-2024.pdf', 'LR08/12/18/30X; точные таблицы LR12XB-Y/LR18XB-Y имеют приоритет', 'Дополнение по полностью распознанному обозначению; Y/F не считается flush'),
+    'LANBAO': ('https://www.cnlanbaosensor.com/uploads/Product%C2%A0summary-2024.pdf', 'LR08B F15/N02 DC 3-wire без X; LR08/12/18/30X; точные таблицы LR12XB-Y/LR18XB-Y', 'Автоматическое дозаполнение с сохранением источника; Y/F не считается flush'),
     'СЕНСОР': (SENSOR_URL, 'ВБИ/ВБЕ: корпус, подключение, электрическая группа; условная длина не равна габаритной', 'Правила обозначений и расширенный разбор полей карточки'),
     'Autonics': ('https://www.autonics.com/in/data/manual/en/PR_DC_3-wire', 'PR/PRA, кабель/W/CM, Normal/Short/Long, DC 3-wire; только описанные комбинации', 'Модуль обозначений и таблиц PR; неизвестные суффиксы исключены'),
     'Balluff': ('https://www.balluff.com/en-us/products/BES005N', 'Точная пара BES005N / BES M12MI-POC40B-S04G', 'Справочник точных моделей; общий декодер не подтверждён'),

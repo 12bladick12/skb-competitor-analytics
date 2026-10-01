@@ -2,9 +2,13 @@
 def export_tables(rows):
     products,properties=[],[]
     for original in rows:
-        row={k:v for k,v in original.items() if k not in ('details_json','characteristics_json','documents_json','_specifications')}
+        row={k:v for k,v in original.items() if not k.startswith('_') and k not in ('details_json','characteristics_json','documents_json')}
         detail=original.get('_specifications',{})
-        attrs=detail.get('attributes',[])
+        raw=detail.get('attributes',[])
+        automatic=original.get('_enrichment',{}).get('attributes',[])
+        attrs=raw+automatic
+        row['Исходных характеристик']=len(raw)
+        row['Автоматически дозаполнено']=len(automatic)
         row['Характеристик']=len(attrs)
         row['Статус характеристик']=('Получены' if attrs else 'Нет в сохранённом ответе')
         row['Описание']=detail.get('description','')
@@ -18,6 +22,8 @@ def export_tables(rows):
                 'Артикул':original.get('article',''),'ID модели':original.get('rule_id',''),
                 'Запуск':original.get('run_id',''),'Проверено (UTC)':original.get('checked_at',''),
                 'Ссылка':original.get('url') or original.get('product_url',''),
-                'Группа':group,'Характеристика':name,'Значение':value})
+                'Группа':group,'Характеристика':name,'Значение':value,
+                'Источник дозаполнения':prop.get('source_url',''),'Основание':prop.get('evidence',''),
+                'Версия правила':prop.get('rule_version','')})
         products.append(row)
     return products,properties

@@ -46,6 +46,8 @@ from .runtime import SCHEMA as RUNTIME_SCHEMA
 SCHEMA += RUNTIME_SCHEMA
 from .passport_schema import SCHEMA as PASSPORT_SCHEMA
 SCHEMA += PASSPORT_SCHEMA
+from .enrichment import SCHEMA as ENRICHMENT_SCHEMA
+SCHEMA += ENRICHMENT_SCHEMA
 
 
 def document(details_json):

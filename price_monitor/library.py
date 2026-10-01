@@ -75,6 +75,8 @@ class Library:
                 elif 'details_json' not in row and '_specifications' not in row:row['_specifications']=latest.get(row.get('rule_id'),{})
                 if row.get('rule_id') in geometry and 'details_json' not in row:row['_confirmed_geometry']=geometry[row['rule_id']]
                 output.append(row)
+        from .enrichment import Enrichment
+        for offset in range(0,len(output),100):Enrichment(self.repo).attach(output[offset:offset+100])
         return output
 
     def summary(self):

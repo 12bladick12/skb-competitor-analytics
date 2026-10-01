@@ -57,6 +57,8 @@ def comparison_row(item,reference,match,options,history,profile,library,matcher,
                 if item.get('our_article'):st.caption('Ручная связь: '+item['our_article'])
                 match_badge('unsupported' if reference.family not in (None,'inductive') else 'review')
             st.markdown(f'[История модели](?workspace=prices&price_section=history&model={rid})')
+            if item.get('automatic_attributes_count'):
+                st.caption(f"Автоматически дозаполнено: {item['automatic_attributes_count']}")
         data=[x for x in history if x['rule_id']==rid]
         currencies=list(dict.fromkeys(x['currency'] for x in data if x['status']=='priced' and x.get('currency')))
         currency=currencies[-1] if currencies else item.get('last_currency') or 'RUB'
