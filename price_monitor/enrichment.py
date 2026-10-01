@@ -3,8 +3,9 @@ import json
 import logging
 import threading
 
-REVISION = 1
-VERSION = 'automatic-characteristics-2026-10-01-v1'
+REVISION = 2
+VERSION = 'automatic-characteristics-2026-10-01-v2'
+EXPECTED_RULES = 'notation-registry-2026-10-01-v3'
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS product_enrichment (
  rule_id INTEGER PRIMARY KEY REFERENCES rules(id), details_hash TEXT NOT NULL,
@@ -18,8 +19,11 @@ CREATE TABLE IF NOT EXISTS product_enrichment (
 
 def current_version():
     from .notations import VERSION as rules
-    from .matching import VERSION as normalization
-    return VERSION+'/'+rules+'/'+normalization
+    # A rolling Cloud deployment can retain imported modules in old workers.
+    # Never stamp their results as the current generation. Increment REVISION
+    # for subsequent enrichment releases; database CAS fences older replicas.
+    if rules!=EXPECTED_RULES:raise RuntimeError('Designation modules require a process reload')
+    return VERSION+'/'+rules
 
 
 def characteristics(record):

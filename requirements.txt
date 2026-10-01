@@ -1,4 +1,4 @@
-# Automatic characteristics release 2026-10-01: reload persistence worker and LR08 rules.
+# Automatic characteristics release 2026-10-01 v2: fence stale worker generations.
 # Collector release 2026-10-01: isolated watchdogs and resumable finalization.
 # UI release 2026-10-01: rebuild shared viewport and refresh indicator.
 # Unified news and price analytics, Python 3.13.

@@ -1,3 +1,4 @@
+# Prices release 2026-10-01: automatic characteristics, generation 2.
 """Shared Streamlit shell for news (Neon/Drive) and prices (Supabase)."""
 
 from pathlib import Path

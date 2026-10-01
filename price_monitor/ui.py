@@ -25,7 +25,7 @@ st.html(CSS)
 
 
 @st.cache_resource
-def services(cloud_mode,version='analytics-automatic-characteristics-2026-10-01-v1'):
+def services(cloud_mode,version='analytics-automatic-characteristics-2026-10-01-v2'):
     from price_monitor.scope import refresh_scope
     from price_monitor.retired_documents import disable_document_jobs,stop_document_threads
     stop_document_threads()

@@ -82,7 +82,7 @@ class AutomaticCharacteristicsTests(unittest.TestCase):
             self.assertEqual(self.repo.batch('SELECT version FROM product_enrichment')[0]['version'],current_version())
 
     def test_older_worker_cannot_overwrite_higher_revision(self):
-        data=prepare(self.record());data['revision']=2;self.service.save_prepared([data])
+        data=prepare(self.record());data['revision']+=1;self.service.save_prepared([data])
         old=prepare(self.record());old['payload']='{}';self.service.save_prepared([old])
         self.assertNotEqual(self.repo.batch('SELECT payload_json FROM product_enrichment')[0]['payload_json'],'{}')
 
@@ -90,6 +90,11 @@ class AutomaticCharacteristicsTests(unittest.TestCase):
         self.repo.batch("UPDATE rules SET article='LR08BN02DPC-UNKNOWN' WHERE id=1")
         self.assertEqual(self.service.process_batch(),1);self.assertEqual(self.service.process_batch(),0)
         self.assertEqual(self.repo.batch('SELECT filled_count FROM product_enrichment')[0]['filled_count'],0)
+
+    def test_mixed_deployment_cannot_label_old_rules_as_current(self):
+        with patch('price_monitor.notations.VERSION','notation-registry-2026-10-01-v2'):
+            with self.assertRaises(RuntimeError):self.service.process_batch()
+        self.assertEqual(self.repo.batch('SELECT count(*) n FROM product_enrichment')[0]['n'],0)
 
     def test_correct_function_prevents_matching_no_as_nc(self):
         from price_monitor.matching import evaluate
