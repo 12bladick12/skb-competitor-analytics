@@ -1,3 +1,4 @@
+# UI release 2026-10-01: rebuild shared viewport and refresh indicator.
 # Unified news and price analytics, Python 3.13.
 # Reboot the Streamlit process after upgrading to reload both background workers.
 # Collector release 2026-09-30 v4: preserve case-insensitive HTTP redirect headers.
