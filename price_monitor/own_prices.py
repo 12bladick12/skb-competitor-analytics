@@ -104,6 +104,8 @@ class OwnPrices:
         if len(rows) != metadata['row_count'] or any(r['batch_id'] != metadata['batch_id'] for r in rows):
             raise ValueError('Состав строк не соответствует проверенному импорту.')
         if self.repo.batch('SELECT batch_id FROM own_price_imports WHERE batch_id=%(batch)s', {'batch':metadata['batch_id']}):
+            actual=self.repo.batch('SELECT count(*) n FROM own_product_prices WHERE batch_id=%(batch)s',{'batch':metadata['batch_id']})[0]['n']
+            if actual!=metadata['row_count']:raise ValueError('Предыдущая загрузка прайса не завершена.')
             return False
         params = dict(metadata)
         sql = ['''INSERT INTO own_price_imports
@@ -120,7 +122,8 @@ class OwnPrices:
     def current(self, as_of=None):
         rows = self.repo.batch('''SELECT p.*,i.effective_date,i.vat_rate,i.source_name,i.source_hash,i.imported_at
             FROM own_product_prices p JOIN own_price_imports i ON i.batch_id=p.batch_id
-            WHERE i.effective_date<=%(today)s ORDER BY i.effective_date,i.imported_at,p.article''',
+            WHERE i.effective_date<=%(today)s AND i.row_count=(SELECT count(*) FROM own_product_prices ready WHERE ready.batch_id=i.batch_id)
+            ORDER BY i.effective_date,i.imported_at,p.article''',
             {'today':as_of or date.today().isoformat()})
         latest = {}
         for row in rows:
@@ -131,4 +134,4 @@ class OwnPrices:
         return {row['catalog_id']:row for row in self.current(as_of) if row['catalog_id']}
 
     def imports(self):
-        return self.repo.batch('SELECT * FROM own_price_imports ORDER BY effective_date DESC,imported_at DESC')
+        return self.repo.batch('SELECT * FROM own_price_imports i WHERE i.row_count=(SELECT count(*) FROM own_product_prices ready WHERE ready.batch_id=i.batch_id) ORDER BY effective_date DESC,imported_at DESC')

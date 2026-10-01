@@ -27,6 +27,18 @@ def workbook(rows):
 
 
 class OwnPriceTests(unittest.TestCase):
+    def test_incomplete_import_is_not_visible_as_a_current_price_list(self):
+        metadata,rows=read_prices(workbook([['Model','00123',100]]),'p.xlsx','2026-10-01',Matcher([sensor()]))
+        with TemporaryDirectory() as tmp:
+            prices=OwnPrices(Store(Path(tmp)/'prices.sqlite3').catalog)
+            prices.import_rows(metadata,rows)
+            prices.repo.batch('UPDATE own_price_imports SET row_count=2 WHERE batch_id=%(batch)s',{'batch':metadata['batch_id']})
+            self.assertEqual(prices.current('2026-10-01'),[])
+            self.assertEqual(prices.imports(),[])
+            prices.repo.batch('UPDATE own_price_imports SET row_count=1 WHERE batch_id=%(batch)s',{'batch':metadata['batch_id']})
+            self.assertEqual(len(prices.current('2026-10-01')),1)
+            self.assertEqual(len(prices.imports()),1)
+
     def test_exact_article_net_gross_and_idempotent_import(self):
         matcher=Matcher([sensor()])
         raw=workbook([['Name preserved','00123',100.05],['Service','other',200]])
