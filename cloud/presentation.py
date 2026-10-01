@@ -18,8 +18,13 @@ def html(content):
 
 def apply_theme():
     css = '\n'.join(Path(__file__).with_name(name).read_text(encoding='utf-8')
-                    for name in ('theme.css', 'workspace.css'))
+                    for name in ('theme.css', 'workspace.css', 'shell.css'))
     st.html('<style>' + css + '</style>')
+    # Only this checked-in script is executable; external text stays escaped.
+    script = Path(__file__).with_name('shell.js').read_text(encoding='utf-8')
+    with st.container(key='skb_shell_setup'):
+        st.iframe('<!doctype html><html data-skb-shell-helper><body><script>' + script + '</script></body></html>',
+                  height=1, tab_index=-1)
 
 
 def brand():

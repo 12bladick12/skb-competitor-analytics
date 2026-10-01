@@ -1,0 +1,40 @@
+/* Keep scrolling inside the app, including when the Cloud frame is resized. */
+html, body, #root, [data-testid="stScreencast"] {
+  width:100%; height:100%; margin:0; background:#f4f6f8;
+}
+html, body { overflow:hidden; }
+[data-testid="stApp"] {
+  position:fixed; inset:0; height:100%; height:100dvh; overflow:hidden;
+}
+[data-testid="stAppViewContainer"] { inset:0; height:100%; min-height:0; }
+[data-testid="stMain"] { min-height:0; overflow:auto; overscroll-behavior-y:contain; }
+/* This trusted script has no visible content and must not reserve a row. */
+.st-key-skb_shell_setup { display:none; }
+
+/* Retain readable previous results during full and fragment reruns. Widget
+   disabled states and the Stop action remain controlled by Streamlit. */
+[data-stale="true"] { opacity:1!important; transition:none!important; }
+[data-testid="stApp"][data-test-script-state="running"] [data-testid="stExpander"] summary {
+  opacity:1!important; transition:none!important;
+}
+
+/* Fragment refreshes don't always render Streamlit's native running icon.
+   Use its script state for one shared, fixed indicator without polling. */
+.skb-refresh-status {
+  display:none; position:fixed; top:3.7rem; right:1.4rem; z-index:999990;
+  align-items:center; gap:.5rem; padding:.45rem .7rem; pointer-events:none;
+  color:#7a1f2b; background:#fff; border:1px solid #e3e8ee; border-radius:1.2rem;
+  box-shadow:0 2px 8px #32262b0a; font:500 .75rem "Segoe UI",Arial,sans-serif;
+}
+body:has([data-testid="stApp"][data-test-script-state="running"]) .skb-refresh-status { display:flex; }
+body:has(.skb-refresh-status) [data-testid="stStatusWidgetRunningIcon"] { display:none; }
+.skb-refresh-icon::before {
+  content:""; display:block; width:1.2rem; height:1.2rem;
+  background:var(--accent,#7a1f2b);
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M20 7v5h-5M19.5 11a8 8 0 1 0-2.2 6.7'/%3E%3C/svg%3E") center / contain no-repeat;
+  animation:skb-refresh .9s linear infinite;
+}
+@keyframes skb-refresh { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) {
+  .skb-refresh-icon::before { animation:none; }
+}
