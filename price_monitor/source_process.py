@@ -88,7 +88,7 @@ def run_source_process(worker, run_id, source, mode, jobs=None, *, stall_seconds
     try:
         for attempt in range(3):
             if worker.shutdown.is_set():return
-            if mode=='jobs' and attempt:
+            if mode=='jobs':
                 repo=worker.store.catalog
                 repo.batch("""UPDATE jobs SET state='pending' WHERE run_id=%(run)s AND state='processing'
                     AND rule_id IN (SELECT id FROM rules WHERE source=%(source)s)
@@ -136,7 +136,7 @@ def run_source_process(worker, run_id, source, mode, jobs=None, *, stall_seconds
             if mode=='catalog':worker.store.catalog.recovery_note(run_id,source,worker.owner,note)
             if attempt==2:
                 if mode=='catalog':worker.store.catalog.block_source(run_id,source,worker.owner,note)
-                else:raise RuntimeError(note)
+                else:worker.store.pause_source(run_id,source,note)
                 return
             if worker.shutdown.wait(5*(attempt+1)):return
     finally:

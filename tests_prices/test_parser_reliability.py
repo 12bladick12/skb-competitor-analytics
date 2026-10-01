@@ -126,6 +126,27 @@ class ParserReliabilityTests(unittest.TestCase):
         self.assertTrue(self.worker.shutdown.is_set())
         self.assertLess(time.monotonic()-started,3)
 
+    def test_failed_manual_source_stops_retrying_and_remaining_jobs_finish_with_reason(self):
+        from price_monitor.models import Rule
+        rule=Rule('megak','МЕГА-К','TEST-1','https://mega-k.com/products/test-1')
+        with self.store.connect() as conn:
+            cur=conn.execute("INSERT INTO rules(rule_key,source,manufacturer,article,product_url,url_template,created_at) VALUES(?,?,?,?,?,?,?)",
+                             (rule.key,rule.source,rule.manufacturer,rule.article,rule.url,'',utcnow()))
+            conn.execute("INSERT INTO jobs(run_id,rule_id,state) VALUES(?,?,'processing')",(self.run,cur.lastrowid))
+        process=Mock(pid=42,exitcode=1)
+        process.is_alive.return_value=False
+        ctx=Mock();ctx.Process.return_value=process
+        with patch('price_monitor.source_process.multiprocessing.get_context',return_value=ctx), \
+             patch.object(self.worker.shutdown,'wait',return_value=False):
+            run_source_process(self.worker,self.run,'megak','jobs')
+        self.assertEqual(process.start.call_count,3)
+        self.assertIn('3/3',self.store.pause_reason(self.run,'megak'))
+        client=Mock();self.worker.client_factory=Mock(return_value=client)
+        self.worker.process_source(self.run,'megak',self.store.pending(self.run))
+        client.fetch.assert_not_called()
+        self.assertEqual(self.store.results(run_id=self.run)[0]['status'],'source_stopped')
+        self.assertEqual(self.store.pending(self.run),[])
+
     def test_shutdown_does_not_wait_for_an_unresponsive_child(self):
         timer=threading.Timer(2,self.worker.shutdown.set)
         timer.start()
