@@ -57,18 +57,22 @@ def connection_for(settings):
         row_factory=dict_row)
 
 
-def batch(settings, statements, params=None, *, serialize=True, timeout=45):
+def batch(settings, statements, params=None, *, serialize=True, timeout=None):
     from .runtime import phase
     with phase('database'):
         return _batch(settings,statements,params,serialize=serialize,timeout=timeout)
 
 
-def _batch(settings, statements, params=None, *, serialize=True, timeout=45):
+def _batch(settings, statements, params=None, *, serialize=True, timeout=None):
     if isinstance(statements, str):
         statements = [statements]
     read_only = read_statements(statements)
+    # Catalog reads may use the full minute requested for the search page.
+    # Leave time to receive the result after the server finishes or cancels it.
+    statement_seconds = 60 if read_only else 30
+    if timeout is None:timeout = 75 if read_only else 45
     query = ('BEGIN READ ONLY; ' if read_only else 'BEGIN; ')
-    query += ("SET LOCAL search_path TO price_monitor; SET LOCAL statement_timeout='30s'; "
+    query += (f"SET LOCAL search_path TO price_monitor; SET LOCAL statement_timeout='{statement_seconds}s'; "
               "SET LOCAL lock_timeout='10s'; SET LOCAL idle_in_transaction_session_timeout='40s'; ")
     if not read_only and serialize:
         # A separate statement gives following writes a fresh committed snapshot.
@@ -76,6 +80,8 @@ def _batch(settings, statements, params=None, *, serialize=True, timeout=45):
     query += '; '.join(statements) + '; COMMIT;'
     result = []
     with connection_for(settings) as connection:
+        previous_io_timeout = connection.io_timeout
+        connection.io_timeout = timeout
         connection.io_deadline = time.monotonic()+timeout
         try:
             cursor = connection.execute(query, params or {})
@@ -88,5 +94,6 @@ def _batch(settings, statements, params=None, *, serialize=True, timeout=45):
                     break
         finally:
             connection.io_deadline = None
+            connection.io_timeout = previous_io_timeout
     return result
 
