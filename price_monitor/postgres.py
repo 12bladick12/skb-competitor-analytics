@@ -51,7 +51,7 @@ class Postgres:
         kwargs = connection_settings(kwargs)
         self.settings = dict(kwargs)
         kwargs.update(connect_timeout=10, prepare_threshold=None, row_factory=row_factory)
-        self.pool = ConnectionPool(connection_class=DeadlineConnection, kwargs=kwargs, min_size=1, max_size=4, max_idle=60, timeout=15, open=True)
+        self.pool = ConnectionPool(connection_class=DeadlineConnection, kwargs=kwargs, min_size=1, max_size=2, max_idle=60, timeout=15, open=True)
         try:
             self.pool.wait(timeout=15)
             if not initialize:return

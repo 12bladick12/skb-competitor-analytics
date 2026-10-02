@@ -215,28 +215,127 @@ class Library:
     def comparison_products(self):
         return list(self.iter_comparison_products())
 
-    def iter_comparison_products(self):
-        """Read the search catalog without per-page export/enrichment writes.
+    def iter_search_identities(self):
+        """Names for autocomplete, without documents, prices or observation history."""
+        after=0;size=5000
+        while True:
+            rows=self.repo.batch('''SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.product_url,
+                COALESCE(i.title,'') title,COALESCE(i.category,'') category,
+                i.details_hash _catalog_details_hash,c.our_article,
+                CASE WHEN c.rule_id IS NULL THEN 0 ELSE 1 END selected
+                FROM rules q LEFT JOIN product_index i ON i.rule_id=q.id
+                LEFT JOIN comparison_items c ON c.rule_id=q.id
+                WHERE '''+VISIBLE+''' AND q.id>%(after)s ORDER BY q.id LIMIT %(limit)s''',
+                {'after':after,'limit':size})
+            yield from rows
+            if len(rows)<size:break
+            after=rows[-1]['rule_id']
 
-        Current characteristics and the last actual quote keep separate snapshots.
-        The comparison index normalizes these records using the current rules.
-        """
-        sql=PRODUCT_SELECT.replace('    FROM rules q', '''    ,d.details_json current_details_json,i.details_hash current_details_hash,
-            review.fingerprint geometry_fingerprint,review.fields_json geometry_fields,
-            review.reviewer geometry_reviewer,review.updated_at geometry_updated_at
-            FROM rules q''',1)
-        sql+=''' LEFT JOIN product_documents d ON d.fingerprint=i.details_hash
-            LEFT JOIN passport_products pp ON pp.rule_id=q.id
-            LEFT JOIN passport_field_reviews review ON review.rule_id=q.id AND review.fingerprint=pp.current_fingerprint
-                AND EXISTS(SELECT 1 FROM passport_links pl WHERE pl.rule_id=q.id
-                    AND pl.fingerprint=review.fingerprint AND pl.applicability='confirmed')
-            WHERE '''+VISIBLE+' AND q.id>%(after)s ORDER BY q.id LIMIT %(limit)s'
+    def iter_search_products(self):
+        """Read current characteristics only; history is fetched for visible models."""
+        from .passport_review import confirmed
+        after=0
+        size=1000
+        while True:
+            rows=self.repo.batch('''SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.product_url,
+                COALESCE(i.title,'') title,COALESCE(i.category,'') category,
+                i.details_hash _catalog_details_hash,d.details_json,
+                c.our_article,CASE WHEN c.rule_id IS NULL THEN 0 ELSE 1 END selected
+                FROM (SELECT q.* FROM rules q WHERE '''+VISIBLE+''' AND q.id>%(after)s
+                    ORDER BY q.id LIMIT %(limit)s) q
+                LEFT JOIN product_index i ON i.rule_id=q.id
+                LEFT JOIN product_documents d ON d.fingerprint=i.details_hash
+                LEFT JOIN comparison_items c ON c.rule_id=q.id ORDER BY q.id''',
+                {'after':after,'limit':size})
+            if not rows:break
+            geometry=confirmed(self.repo,[row['rule_id'] for row in rows])
+            for row in rows:
+                row['_specifications']=json.loads(row.pop('details_json') or '{}')
+                if row['rule_id'] in geometry:row['_confirmed_geometry']=geometry[row['rule_id']]
+                yield row
+            if len(rows)<size:break
+            after=rows[-1]['rule_id']
+
+    def comparison_prices(self,ids):
+        """Fetch quote snapshots only for displayed models, preserving failed checks."""
+        ids=list(dict.fromkeys(int(value) for value in ids))
+        result={}
+        for start in range(0,len(ids),100):
+            subset=ids[start:start+100]
+            quotes=self.comparison_observations(subset)
+            latest={row['rule_id']:row for row in quotes if row['_latest_rank']==1}
+            priced={row['rule_id']:row for row in quotes if row['_priced_rank']==1
+                    and row['status']=='priced' and row['price'] is not None}
+            rows=[]
+            for rid in subset:
+                current=latest.get(rid,{});price=priced.get(rid,{})
+                rows.append({'rule_id':rid,'status':current.get('status','pending'),
+                    'checked_at':current.get('checked_at'),'price_text':current.get('price_text'),
+                    'last_price':price.get('price'),'last_currency':price.get('currency'),
+                    'price_checked_at':price.get('checked_at'),'last_price_text':price.get('price_text'),
+                    'last_price_details_json':price.get('details_json'),
+                    'current_details_json':'{}','current_details_hash':None})
+            for row in self._comparison_page(rows):
+                row.pop('_specifications',None);row.pop('_catalog_details_hash',None)
+                result[row['rule_id']]=row
+        return result
+
+    def iter_comparison_products(self):
+        """Read bounded cards, quotes and reviews with separate indexed queries."""
+        selected="""SELECT q.* FROM rules q
+            LEFT JOIN product_index visible_index ON visible_index.rule_id=q.id
+            LEFT JOIN product_scope visible_scope ON visible_scope.rule_id=q.id
+            WHERE q.id>%(after)s AND (q.source<>'teko' OR
+                (visible_scope.state='confirmed' AND visible_scope.manufacturer=%(visible_brand)s
+                 AND visible_scope.details_hash=visible_index.details_hash))
+            ORDER BY q.id LIMIT %(limit)s"""
+        sql="""SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.product_url,
+            i.title,COALESCE(i.category,'') category,COALESCE(i.attributes_count,0) attributes_count,
+            i.updated_at specifications_checked_at,d.details_json current_details_json,
+            i.details_hash current_details_hash,c.our_article,c.our_price,c.our_currency,c.note,
+            c.updated_at our_price_updated_at,CASE WHEN c.rule_id IS NULL THEN 0 ELSE 1 END selected,
+            COALESCE(l.state,'active') product_state,l.note product_state_note,l.checked_at lifecycle_checked_at
+            FROM ("""+selected+""") q LEFT JOIN product_index i ON i.rule_id=q.id
+            LEFT JOIN product_documents d ON d.fingerprint=i.details_hash
+            LEFT JOIN comparison_items c ON c.rule_id=q.id
+            LEFT JOIN product_lifecycle l ON l.rule_id=q.id ORDER BY q.id"""
+        from .passport_review import confirmed
         after=0
         while True:
-            page=self.repo.batch(sql,{'after':after,'limit':COMPARISON_PAGE_SIZE})
+            page=self.repo.batch(sql,{'after':after,'limit':COMPARISON_PAGE_SIZE,'visible_brand':SOURCES['teko'].brands[0]})
+            if not page:break
+            ids=[row['rule_id'] for row in page]
+            quotes=self.comparison_observations(ids)
+            latest={row['rule_id']:row for row in quotes if row['_latest_rank']==1}
+            priced={row['rule_id']:row for row in quotes if row['_priced_rank']==1 and row['status']=='priced' and row['price'] is not None}
+            geometry=confirmed(self.repo,ids)
+            for row in page:
+                current=latest.get(row['rule_id'],{});price=priced.get(row['rule_id'],{})
+                if row.get('title') is None:row['title']=current.get('title') or ''
+                row['status']=current.get('status','pending')
+                for key in ('price','currency','availability','checked_at','detail','url','price_text',
+                            'availability_text','http_status','response_hash'):
+                    row[key]=current.get(key)
+                for target,source in (('last_price','price'),('last_currency','currency'),('price_checked_at','checked_at'),
+                                      ('last_price_text','price_text'),('last_price_details_json','details_json')):
+                    row[target]=price.get(source)
+                if row['rule_id'] in geometry:row['_confirmed_geometry']=geometry[row['rule_id']]
             yield from self._comparison_page(page)
             if len(page)<COMPARISON_PAGE_SIZE:break
             after=page[-1]['rule_id']
+
+    def comparison_observations(self,ids):
+        if not ids:return []
+        params={f'id{i}':value for i,value in enumerate(ids)}
+        return self.repo.batch("""SELECT * FROM (
+            SELECT j.rule_id,o.*,
+                row_number() OVER (PARTITION BY j.rule_id ORDER BY o.checked_at DESC,o.id DESC) _latest_rank,
+                row_number() OVER (PARTITION BY j.rule_id ORDER BY
+                    CASE WHEN o.status='priced' AND o.price IS NOT NULL THEN 0 ELSE 1 END,
+                    o.checked_at DESC,o.id DESC) _priced_rank
+            FROM jobs j JOIN observations o ON o.job_id=j.id
+            WHERE j.rule_id IN ("""+','.join(f'%({key})s' for key in params)+""")
+            ) ranked WHERE _latest_rank=1 OR (_priced_rank=1 AND status='priced' AND price IS NOT NULL)""",params)
 
     def _comparison_page(self,rows):
         """Resolve only this page before passing records to the compact index."""
@@ -250,8 +349,8 @@ class Library:
             payload=json.loads(row.pop('last_price_details_json',None) or '{}')
             row['_price_payload']={'ref':payload['ref']} if payload.get('ref') else {'price_terms':payload.get('price_terms')}
             if payload.get('ref'):references.add(payload['ref'])
-            geometry=row.pop('geometry_fingerprint')
-            fields=row.pop('geometry_fields');reviewer=row.pop('geometry_reviewer');updated=row.pop('geometry_updated_at')
+            geometry=row.pop('geometry_fingerprint',None)
+            fields=row.pop('geometry_fields',None);reviewer=row.pop('geometry_reviewer',None);updated=row.pop('geometry_updated_at',None)
             if geometry:
                 row['_confirmed_geometry']={'fingerprint':geometry,'fields':json.loads(fields),
                     'reviewer':reviewer,'updated_at':updated}

@@ -124,7 +124,7 @@ class CatalogSearchUiTests(unittest.TestCase):
         script = '''
 import streamlit as st
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from tests_prices.test_catalog_search import records
 from price_monitor.group_comparison_ui import render_comparison
 template = records()['a']
@@ -133,7 +133,9 @@ index = SimpleNamespace(records=rows)
 library = SimpleNamespace(repo=SimpleNamespace(path='test-search'))
 def group(anchor, *args):
     st.write('Rendered ID: '+anchor['entry_id'])
-with patch('price_monitor.group_comparison_ui.comparison_index', return_value=index), patch('price_monitor.group_comparison_ui.OwnPrices') as prices, patch('price_monitor.group_comparison_ui.render_group', side_effect=group):
+cache=Mock()
+cache.state.return_value=SimpleNamespace(index=index,complete=True,loading=False,generation=1,loaded=12,updated_at=0,error='')
+with patch('price_monitor.group_comparison_ui.comparison_catalog', return_value=cache), patch('price_monitor.group_comparison_ui.OwnPrices') as prices, patch('price_monitor.group_comparison_ui.render_group', side_effect=group):
     prices.return_value.imports.return_value = []
     render_comparison(library)
 '''

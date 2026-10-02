@@ -147,9 +147,9 @@ class EnrichmentWorker:
 
     def _loop(self):
         while not self.stopping.is_set():
-            try:delay=1 if self.service.process_batch() else 60
+            try:delay=15 if self.service.process_batch() else 300
             except Exception as exc:
-                logging.getLogger(__name__).warning('Automatic characteristics retry: %s',type(exc).__name__);delay=30
+                logging.getLogger(__name__).warning('Automatic characteristics retry: %s',type(exc).__name__);delay=60
             self.stopping.wait(delay)
 
     def close(self):self.stopping.set();self.thread.join(timeout=2)

@@ -36,7 +36,7 @@ class CatalogMaintenance:
         while not self.stopping.is_set():
             try:
                 changed=refresh_scope(self.repository,max_batches=1)
-                delay=2 if changed else 300
+                delay=15 if changed else 300
             except Exception as exc:
                 logging.getLogger(__name__).warning('Catalog metadata will retry (%s)',type(exc).__name__)
                 delay=60

@@ -6,7 +6,7 @@ import time
 from .worker import Worker
 
 log = logging.getLogger("price_monitor.cloud")
-WORKER_VERSION='isolated-recovery-2026-10-01'
+WORKER_VERSION='bounded-load-2026-10-02'
 
 
 def retire_legacy_workers():

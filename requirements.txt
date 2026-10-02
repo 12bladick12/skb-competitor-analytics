@@ -1,3 +1,4 @@
+# Search load recovery 2026-10-02: staged catalog, on-demand quotes and bounded workers.
 # Search read timeout 2026-10-02: 60s server budget and 75s response deadline.
 # Catalog streaming recovery 2026-10-02: bounded source snapshots.
 # Startup recovery 2026-10-02: existing schema and background metadata.

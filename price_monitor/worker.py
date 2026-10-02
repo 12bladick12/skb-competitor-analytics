@@ -146,7 +146,7 @@ class Worker:
         groups = defaultdict(list)
         for job in self.store.pending(run_id):
             groups[job[1].source].append(job)
-        with ThreadPoolExecutor(max_workers=5, thread_name_prefix="source") as pool:
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="source") as pool:
             from .source_process import run_source_process
             isolated=self.client_factory is SourceClient
             futures = [pool.submit(run_source_process,self,run_id,source,'jobs',jobs) if isolated
@@ -181,7 +181,7 @@ class Worker:
                     self.process_run(run_id)
                 if once:
                     break
-                self.shutdown.wait(1)
+                self.shutdown.wait(10)
         finally:
             finished.set()
             heartbeat.join(timeout=15)

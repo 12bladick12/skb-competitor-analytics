@@ -25,7 +25,7 @@ st.html(CSS)
 
 
 @st.cache_resource(show_spinner='Подключаем сохранённые данные…')
-def services(cloud_mode,version='analytics-startup-2026-10-02-v1'):
+def services(cloud_mode,version='analytics-startup-2026-10-02-v2'):
     from price_monitor.scope import refresh_scope
     from price_monitor.retired_documents import disable_document_jobs,stop_document_threads
     stop_document_threads()

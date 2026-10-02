@@ -29,7 +29,7 @@ def pool_for(settings):
                 connection_class=DeadlineConnection,
                 kwargs={**settings, 'connect_timeout':10, 'autocommit':True, 'prepare_threshold':None,
                         'cursor_factory':psycopg.ClientCursor, 'row_factory':dict_row},
-                min_size=1, max_size=4, timeout=15, max_idle=60, max_lifetime=600,
+                min_size=0, max_size=2, timeout=15, max_idle=60, max_lifetime=600,
                 check=check_connection, name='price-catalog', open=True)
             _pools[key] = pool
             atexit.register(pool.close)

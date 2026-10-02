@@ -1,6 +1,6 @@
 """Multi-brand comparison using the existing Streamlit presentation."""
 from collections import defaultdict
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta, datetime, timezone
 from html import escape
 import math
 
@@ -54,14 +54,34 @@ def refresh_indicator(job,key):
         else:st.rerun()
 
 
-@st.cache_resource(ttl=300, max_entries=1, show_spinner='Загружаем модели и цены…')
-def comparison_index(database_key, version, _library):
-    _,matcher=load_catalog()
-    rows=_library.iter_comparison_products()
-    own_rows=OwnPrices(_library.repo).current()
-    own={r['catalog_id']:r for r in own_rows if r['catalog_id']}
-    return ComparisonIndex(rows,matcher.products,own,[r for r in own_rows if not r['catalog_id']],
-                           reference_loader=_library.comparison_reference)
+@st.cache_resource(max_entries=1,show_spinner=False)
+def comparison_catalog(database_key,version,_library):
+    import atexit
+    from .search_cache import SearchCatalogCache
+    cache=SearchCatalogCache(_library)
+    atexit.register(cache.close)
+    return cache
+
+
+@st.cache_data(ttl=60,max_entries=128,show_spinner=False)
+def visible_prices(database_key,ids,_library):
+    return _library.comparison_prices(ids)
+
+
+@st.fragment(run_every=3)
+def catalog_progress(cache,generation):
+    cache.request_refresh()
+    state=cache.state()
+    if state.generation!=generation:st.rerun()
+    if state.loading:
+        label='Обновляем каталог в фоне' if state.complete else 'Подготавливаем характеристики'
+        st.caption(label+(f': {state.loaded:,} карточек'.replace(',',' ') if state.loaded else '…'))
+    if state.error:
+        if state.complete:st.warning('Обновление временно недоступно. Показан последний успешно загруженный каталог.')
+        elif state.index is not None:st.warning('Характеристики пока не загрузились. Поиск по обозначению доступен; повторим загрузку автоматически.')
+        else:st.warning('Каталог временно недоступен. Повторим подключение автоматически.')
+    if state.updated_at:
+        st.caption('Каталог обновлён: '+datetime.fromtimestamp(state.updated_at,timezone.utc).strftime('%d.%m.%Y %H:%M')+' UTC')
 
 
 def short_date(value):
@@ -140,14 +160,15 @@ def render_chart(rows, visible, histories, basis, period, baseline):
     st.caption('Точки — полученные цены. Цена СКБ относится к дате прайса; разрывы после ошибок сбора сохранены.')
 
 
-def render_group(anchor,index,library,profile,basis,period):
+def render_group(anchor,index,library,profile,basis,period,matching_ready=True):
     aid=anchor['entry_id']
     with st.spinner('Подбираем аналоги всех производителей…'):
-        alternatives=index.alternatives(anchor,profile)
+        alternatives=index.alternatives(anchor,profile) if matching_ready else {}
     ordered=sorted(alternatives,key=lambda brand:(brand!=OUR_BRAND,brand))
     rows=[dict(anchor)];matches={}
     with st.expander('Варианты аналогов',expanded=False):
-        if not alternatives:st.caption('Для этой модели подходящие варианты пока не найдены.')
+        if not matching_ready:st.caption('Подбор аналогов появится после подготовки характеристик каталога.')
+        elif not alternatives:st.caption('Для этой модели подходящие варианты пока не найдены.')
         for brand in ordered:
             pairs=alternatives[brand];lookup={r['entry_id']:(r,m) for r,m in pairs}
             options=list(lookup)
@@ -159,6 +180,10 @@ def render_group(anchor,index,library,profile,basis,period):
                 format_func=lambda key,lookup=lookup:lookup[key][0]['model']+' · '+STATUS_LABELS[lookup[key][1].status])
             for entry_id in chosen:
                 row,match=lookup[entry_id];rows.append(dict(row));matches[entry_id]=match
+    quotes=visible_prices(str(library.repo.path or 'cloud'),
+                          tuple(sorted({r['rule_id'] for r in rows if not r['is_ours']})),library)
+    for row in rows:
+        if not row['is_ours']:row.update(quotes.get(row['rule_id'],{}))
     # Rechecks are attached to copies, never to cached shared records.
     load_terms(library.repo,[r for r in rows if not r['is_ours']])
     if job:=automatic_refresh(library.repo,[r for r in rows if not r['is_ours']]):
@@ -167,9 +192,11 @@ def render_group(anchor,index,library,profile,basis,period):
     lookup={r['entry_id']:r for r in rows}
     default=next((r['entry_id'] for r in rows if r['is_ours']),aid)
     key='group_baseline_'+aid
-    if st.session_state.get(key) not in ids:st.session_state[key]=default
-    basecol,_=st.columns([3,2])
-    base=basecol.selectbox('Считать Δ относительно',ids,format_func=lambda v:entry_label(lookup[v]),key=key)
+    if matching_ready:
+        if st.session_state.get(key) not in ids:st.session_state[key]=default
+        basecol,_=st.columns([3,2])
+        base=basecol.selectbox('Считать Δ относительно',ids,format_func=lambda v:entry_label(lookup[v]),key=key)
+    else:base=aid
     baseline=lookup[base]
     with st.container(border=True,key='group_card_'+aid.replace(':','_')):
         table,plot=st.columns([1.45,1],gap='large',vertical_alignment='top')
@@ -249,19 +276,26 @@ def render_group(anchor,index,library,profile,basis,period):
         st.download_button('Скачать сравнение XLSX',xlsx_bytes(export),file_name='comparison.xlsx',key='group_export_'+aid)
     present={r['brand'] for r in rows}
     absent=[b for spec in SOURCES.values() for b in spec.brands if b not in present and b not in alternatives]
-    if absent:st.caption('Подходящие модели не найдены среди собранных карточек: '+', '.join(absent)+'.')
+    if absent and matching_ready:st.caption('Подходящие модели не найдены среди собранных карточек: '+', '.join(absent)+'.')
 
 
 def render_comparison(library,import_comparisons=None,downloads=None):
     st.html(CSS)
     heading('Сравнение цен','Искомая модель и аналоги всех производителей. Текущие цены, НДС и история изменений.')
-    prices=OwnPrices(library.repo)
-    imports=prices.imports()
-    version=VERSION+':'+(imports[0]['batch_id'] if imports else 'no-prices')+':'+str(getattr(library,'data_version',''))
-    st.button('Обновить базу поиска',key='catalog_search_refresh',on_click=comparison_index.clear,
-              help='Загрузить новые карточки и характеристики после сбора. При работе со страницей база поиска также обновляется каждые 5 минут.')
-    index=comparison_index(str(library.repo.path or 'cloud'),version,library)
-    candidates=render_search(index)
+    version=VERSION+':'+str(getattr(library,'data_version',''))
+    cache=comparison_catalog(str(library.repo.path or 'cloud'),version,library)
+    st.button('Обновить базу поиска',key='catalog_search_refresh',on_click=cache.request_refresh,args=(True,),
+              help='Обновить каталог в фоне. Последний загруженный каталог остаётся доступен; автоматическое обновление — раз в 15 минут.')
+    cache.request_refresh()
+    state=cache.state()
+    catalog_progress(cache,state.generation)
+    index=state.index
+    if index is None:
+        st.multiselect('Поиск по номенклатуре или артикулу',[],disabled=True,
+                       placeholder='Подключаем каталог…',key='catalog_search_loading')
+        st.info('Загружаем обозначения из базы. Цены и историю получим только для выбранных моделей.')
+        return
+    candidates=render_search(index,state.complete)
     profilecol,periodcol=st.columns([1.35,1.6])
     profile=profilecol.selectbox('Назначение подбора',list(PROFILES),format_func=PROFILES.get,key='matching_profile')
     period=periodcol.date_input('Период графика (UTC)',value=(date.today()-timedelta(days=90),date.today()),format='DD.MM.YYYY',key='compare_dates')
@@ -275,10 +309,13 @@ def render_comparison(library,import_comparisons=None,downloads=None):
     st.caption(f'Выбрано моделей: {len(candidates)} · страница {page} из {pages}. На странице до 5 сравнений.')
     st.caption('Цены в строках — последние полученные; период ограничивает только график. СКБ Индукция выделена зелёным.')
     for anchor in candidates[(page-1)*5:page*5]:
+        if not state.complete and not anchor['is_ours']:
+            from .comparison_groups import competitor_record
+            anchor=competitor_record(library.comparison_reference(anchor))
         st.subheader(entry_label(anchor))
         if anchor['sensor'].family not in (None,'inductive'):
             st.info('Модель найдена по каталогу. Автоматический подбор аналогов этого типа пока не настроен; доступны её цена и история.')
-        render_group(anchor,index,library,profile,basis,period)
+        render_group(anchor,index,library,profile,basis,period,state.complete)
     price_register(library)
     with st.expander('Обзор по брендам и сохранённые сравнения'):
         if st.checkbox('Показать обзор',key='group_show_overview'):

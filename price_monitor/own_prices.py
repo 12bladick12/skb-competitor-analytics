@@ -122,7 +122,9 @@ class OwnPrices:
     def current(self, as_of=None):
         rows = self.repo.batch('''SELECT p.*,i.effective_date,i.vat_rate,i.source_name,i.source_hash,i.imported_at
             FROM own_product_prices p JOIN own_price_imports i ON i.batch_id=p.batch_id
-            WHERE i.effective_date<=%(today)s AND i.row_count=(SELECT count(*) FROM own_product_prices ready WHERE ready.batch_id=i.batch_id)
+            JOIN (SELECT batch_id,count(*) row_count FROM own_product_prices GROUP BY batch_id) ready
+                ON ready.batch_id=i.batch_id AND ready.row_count=i.row_count
+            WHERE i.effective_date<=%(today)s
             ORDER BY i.effective_date,i.imported_at,p.article''',
             {'today':as_of or date.today().isoformat()})
         latest = {}
@@ -134,4 +136,7 @@ class OwnPrices:
         return {row['catalog_id']:row for row in self.current(as_of) if row['catalog_id']}
 
     def imports(self):
-        return self.repo.batch('SELECT * FROM own_price_imports i WHERE i.row_count=(SELECT count(*) FROM own_product_prices ready WHERE ready.batch_id=i.batch_id) ORDER BY effective_date DESC,imported_at DESC')
+        return self.repo.batch('''SELECT i.* FROM own_price_imports i
+            JOIN (SELECT batch_id,count(*) row_count FROM own_product_prices GROUP BY batch_id) ready
+                ON ready.batch_id=i.batch_id AND ready.row_count=i.row_count
+            ORDER BY effective_date DESC,imported_at DESC''')

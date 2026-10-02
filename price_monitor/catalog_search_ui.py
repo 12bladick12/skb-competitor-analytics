@@ -118,7 +118,7 @@ def _characteristics(search):
                   on_click=_add, args=(matches, search.records))
 
 
-def render_search(index):
+def render_search(index,characteristics_ready=True):
     if not hasattr(index, '_catalog_search'):
         index._catalog_search = CatalogSearch(index.records)
     search = index._catalog_search
@@ -142,5 +142,6 @@ def render_search(index):
         with paste:
             _paste(search)
         with specs:
-            _characteristics(search)
+            if characteristics_ready:_characteristics(search)
+            else:st.info('Характеристики подготавливаются. Поиск по обозначению и вставка списка уже доступны.')
     return [search.records[entry] for entry in selected]
