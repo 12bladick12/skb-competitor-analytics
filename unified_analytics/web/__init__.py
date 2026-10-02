@@ -1,0 +1,2 @@
+"""Local competitor monitor application."""
+
