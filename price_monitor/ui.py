@@ -383,6 +383,7 @@ def sources_page():
 try:
     {'collect':collect_page,'products':products_page,'compare':compare_page,'runs':runs_page,'history':history_page,'sources':sources_page}[section]()
     sources_footer()
-except Exception:
+except Exception as exc:
     logging.getLogger('price_monitor').exception('Page failed: %s',section)
     st.error('Не удалось выполнить действие. Уже сохранённые данные остаются в базе. Обновите страницу; если ошибка повторится, проверьте журнал приложения.')
+    st.caption('Код для поддержки: '+type(exc).__name__+((' · '+str(exc.sqlstate)) if getattr(exc,'sqlstate',None) else ''))
