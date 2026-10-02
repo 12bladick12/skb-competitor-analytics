@@ -8,6 +8,8 @@ from .models import utcnow
 from .sources import SOURCES
 from .scope import VISIBLE,RESULT_VISIBLE
 
+COMPARISON_PAGE_SIZE=500
+
 
 PRODUCT_SELECT="""SELECT q.id rule_id,q.source,q.manufacturer,q.article,q.product_url,
     COALESCE(i.title,o.title,'') title,COALESCE(i.category,'') category,
@@ -211,6 +213,9 @@ class Library:
         return rows
 
     def comparison_products(self):
+        return list(self.iter_comparison_products())
+
+    def iter_comparison_products(self):
         """Read the search catalog without per-page export/enrichment writes.
 
         Current characteristics and the last actual quote keep separate snapshots.
@@ -225,13 +230,16 @@ class Library:
             LEFT JOIN passport_field_reviews review ON review.rule_id=q.id AND review.fingerprint=pp.current_fingerprint
                 AND EXISTS(SELECT 1 FROM passport_links pl WHERE pl.rule_id=q.id
                     AND pl.fingerprint=review.fingerprint AND pl.applicability='confirmed')
-            WHERE '''+VISIBLE+' AND q.id>%(after)s ORDER BY q.id LIMIT 1000'
-        rows=[];after=0
+            WHERE '''+VISIBLE+' AND q.id>%(after)s ORDER BY q.id LIMIT %(limit)s'
+        after=0
         while True:
-            page=self.repo.batch(sql,{'after':after})
-            rows.extend(page)
-            if len(page)<1000:break
+            page=self.repo.batch(sql,{'after':after,'limit':COMPARISON_PAGE_SIZE})
+            yield from self._comparison_page(page)
+            if len(page)<COMPARISON_PAGE_SIZE:break
             after=page[-1]['rule_id']
+
+    def _comparison_page(self,rows):
+        """Resolve only this page before passing records to the compact index."""
         docs={};references=set()
         for row in rows:
             details=json.loads(row.pop('current_details_json') or '{}')
@@ -239,8 +247,8 @@ class Library:
             row['_catalog_details_hash']=fingerprint
             row['_specifications']=details
             if fingerprint:docs[fingerprint]=details
-            payload=json.loads(row.get('last_price_details_json') or '{}')
-            row['_price_payload']=payload
+            payload=json.loads(row.pop('last_price_details_json',None) or '{}')
+            row['_price_payload']={'ref':payload['ref']} if payload.get('ref') else {'price_terms':payload.get('price_terms')}
             if payload.get('ref'):references.add(payload['ref'])
             geometry=row.pop('geometry_fingerprint')
             fields=row.pop('geometry_fields');reviewer=row.pop('geometry_reviewer');updated=row.pop('geometry_updated_at')
@@ -258,7 +266,7 @@ class Library:
             payload=row.pop('_price_payload')
             if payload.get('ref'):payload=docs.get(payload['ref'],{})
             row['_price_snapshot_terms']=payload.get('price_terms') or parse_terms(row.get('last_price_text'))
-        return rows
+            yield row
 
     def comparison_reference(self, row):
         """Restore evidence from the same immutable snapshot used by the index."""

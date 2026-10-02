@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import Mock,patch
 
 from price_monitor.catalog_storage import CatalogRepository
 from price_monitor.library import Library
@@ -60,6 +61,32 @@ class ComparisonCatalogTests(unittest.TestCase):
         row['_specifications']={}
         self.repo.batch("UPDATE product_index SET details_hash='old' WHERE rule_id=1")
         self.assertEqual(library.comparison_reference(row)['_specifications'],original)
+
+    def test_catalog_yields_first_page_before_reading_the_rest(self):
+        def row(identifier):
+            return {'rule_id':identifier,'current_details_json':'{}','current_details_hash':'',
+                    'last_price_details_json':'{}','geometry_fingerprint':None,'geometry_fields':None,
+                    'geometry_reviewer':None,'geometry_updated_at':None}
+        repository=Mock()
+        repository.batch.side_effect=[[row(1),row(2)],[row(3)]]
+        with patch('price_monitor.library.COMPARISON_PAGE_SIZE',2):
+            stream=Library(repository).iter_comparison_products()
+            repository.batch.assert_not_called()
+            self.assertEqual(next(stream)['rule_id'],1)
+            self.assertEqual(repository.batch.call_count,1)
+            self.assertEqual(next(stream)['rule_id'],2)
+            self.assertEqual(repository.batch.call_count,1)
+            self.assertEqual(next(stream)['rule_id'],3)
+            self.assertEqual(repository.batch.call_args.args[1]['after'],2)
+            self.assertEqual(list(stream),[])
+
+    def test_large_quote_payload_is_not_retained_in_search_rows(self):
+        payload=json.dumps({'description':'x'*100000,'price_terms':{'basis':'net','rate':20}})
+        self.repo.batch('UPDATE observations SET details_json=%(payload)s WHERE id=1',{'payload':payload})
+        row=next(Library(self.repo).iter_comparison_products())
+        self.assertNotIn('last_price_details_json',row)
+        self.assertNotIn('_price_payload',row)
+        self.assertEqual(row['_price_snapshot_terms']['basis'],'net')
 
 
 if __name__=='__main__':unittest.main()
