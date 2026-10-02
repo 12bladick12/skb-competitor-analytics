@@ -1,3 +1,4 @@
+# Startup recovery 2026-10-02: existing schema and background metadata.
 # Comparison search release 2026-10-01 v2: compact catalog and bounded evidence cache.
 # Automatic characteristics release 2026-10-01 v3: documented housing geometry and thread pitch.
 # Collector release 2026-10-01: isolated watchdogs and resumable finalization.
@@ -19,3 +20,4 @@ feedparser==6.0.12
 playwright==1.60.0
 openpyxl==3.1.5
 psycopg-pool==3.3.3
+

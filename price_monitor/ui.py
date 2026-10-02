@@ -24,22 +24,16 @@ CLOUD_MODE=globals().get('CLOUD_MODE',False)
 st.html(CSS)
 
 
-@st.cache_resource
-def services(cloud_mode,version='analytics-automatic-characteristics-2026-10-01-v2'):
+@st.cache_resource(show_spinner='Подключаем сохранённые данные…')
+def services(cloud_mode,version='analytics-startup-2026-10-02-v1'):
     from price_monitor.scope import refresh_scope
     from price_monitor.retired_documents import disable_document_jobs,stop_document_threads
     stop_document_threads()
     if not cloud_mode:
         store=Store();disable_document_jobs(store.catalog);refresh_scope(store.catalog);return store,None
-    from price_monitor.cloud import EmbeddedWorker,retire_legacy_workers
-    retire_legacy_workers()
+    from price_monitor.startup import open_cloud_services
     settings=dict(st.secrets['database'])
-    store=Store(postgres=settings);disable_document_jobs(store.catalog);refresh_scope(store.catalog);worker=EmbeddedWorker(store)
-    from price_monitor.enrichment import EnrichmentWorker
-    store.enrichment_worker=EnrichmentWorker(store.catalog)
-    atexit.register(store.enrichment_worker.close)
-    atexit.register(worker.close)
-    return store,worker
+    return open_cloud_services(settings)
 
 
 try:db,cloud_worker=services(CLOUD_MODE)
@@ -47,7 +41,13 @@ except Exception as exc:
     logging.getLogger('price_monitor').error('Storage initialization failed (%s)',type(exc).__name__)
     if st.query_params.get('price_section')=='sources':db=None;cloud_worker=None
     else:
-        st.error('Не удалось подключиться к базе. Владельцу нужно проверить настройки подключения в Streamlit.');st.stop()
+        from price_monitor.startup import DatabaseSchemaError
+        if isinstance(exc,DatabaseSchemaError):
+            st.error('Хранилище цен требует завершения обновления приложения. Обратитесь к администратору.')
+        else:
+            st.error('Не удалось открыть данные цен. Возможен временный сбой связи с базой. Повторите подключение.')
+        st.button('Повторить подключение',key='retry_price_connection')
+        st.stop()
 catalog=db.catalog if db else None
 library=Library(catalog) if catalog else None
 PAGES={'collect':'Сбор цен','products':'База товаров','compare':'Сравнение цен','runs':'Запуски'}

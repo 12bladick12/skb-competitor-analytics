@@ -11,9 +11,9 @@ VISIBLE = """(q.source<>'teko' OR EXISTS(SELECT 1 FROM product_scope verified
 # confirmed. Only verified products can appear in the searchable library.
 RESULT_VISIBLE = '('+VISIBLE+" OR COALESCE(o.status,'pending') NOT IN ('priced','on_request','no_price'))"
 
-def refresh_scope(repository):
+def refresh_scope(repository, max_batches=None):
     """Backfill only changed/missing evidence from already saved specifications."""
-    count=0
+    count=0;batches=0
     size=10 if repository.settings and not repository.settings.get('reuse_connections',True) else 50
     payload='d.details_json'
     if repository.settings:
@@ -27,8 +27,8 @@ def refresh_scope(repository):
         rows=repository.batch('''SELECT q.id,i.details_hash,i.updated_at,'''+payload+'''
             FROM rules q JOIN product_index i ON i.rule_id=q.id
             JOIN product_documents d ON d.fingerprint=i.details_hash
-            LEFT JOIN product_scope v ON v.rule_id=q.id
-            WHERE q.source='teko' AND (v.rule_id IS NULL OR v.details_hash<>i.details_hash)
+            WHERE q.source='teko' AND NOT EXISTS
+                (SELECT 1 FROM product_scope v WHERE v.rule_id=q.id AND v.details_hash=i.details_hash)
             ORDER BY q.id LIMIT %(limit)s''',{'limit':size})
         if not rows:break
         values=[];params={}
@@ -41,4 +41,6 @@ def refresh_scope(repository):
         repository.batch('INSERT INTO product_scope(rule_id,manufacturer,state,details_hash,checked_at) VALUES '+','.join(values)+
             ' ON CONFLICT(rule_id) DO UPDATE SET manufacturer=excluded.manufacturer,state=excluded.state,details_hash=excluded.details_hash,checked_at=excluded.checked_at',params)
         count+=len(rows)
+        batches+=1
+        if max_batches is not None and batches>=max_batches:break
     return count
