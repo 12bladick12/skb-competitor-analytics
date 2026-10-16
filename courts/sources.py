@@ -4,7 +4,7 @@ import time
 from urllib.parse import urlsplit
 from .model import Page, digest
 from .parsers import blocked, total, sudact_links, sudact_document
-from .browser_access import route_optional, error_code, navigate, capture
+from .browser_access import route_optional, error_code, navigate, capture, wait_for_search_end
 
 CATALOG={
     'kad':('arbitral','https://kad.arbitr.ru/'),
@@ -23,7 +23,10 @@ CATALOG={
 
 
 class PublicBrowser:
-    def __init__(self, channel=None, delay=2):
+    def __init__(self, channel=None, delay=2, browser_name='chromium'):
+        if browser_name not in ('chromium','firefox'):raise ValueError('Unsupported browser')
+        if channel and browser_name!='chromium':raise ValueError('Channel requires Chromium')
+        self.browser_name=browser_name
         self.channel=channel;self.delay=delay;self.blocked_hosts={};self.context=None
 
     def __enter__(self):
@@ -32,7 +35,7 @@ class PublicBrowser:
         try:
             options={'headless':True}
             if self.channel:options['channel']=self.channel
-            self.browser=self.engine.chromium.launch(**options)
+            self.browser=getattr(self.engine,self.browser_name).launch(**options)
             self.context=self.browser.new_context(locale='ru-RU')
             self.context.route('**/*',route_optional)
         except Exception:
@@ -67,7 +70,9 @@ class PublicBrowser:
         try:
             time.sleep(self.delay)
             if source.startswith('sudact_'):
-                return self._sudact(page,source,entity,cursor or {})
+                stage='sudact_search'
+                result=self._sudact(page,source,entity,cursor or {})
+                return result
             response=navigate(page,url)
             result.diagnostics['http_status']=response.status if response else None
             page.wait_for_timeout(1000)
@@ -150,7 +155,7 @@ class PublicBrowser:
             with page.expect_navigation(wait_until='commit'):
                 page.locator('input[type=submit]').click()
         if not problem and not pending:
-            page.wait_for_function("!document.body.innerText.includes('Идет поиск')",timeout=35000)
+            wait_for_search_end(page)
         body=page.locator('body').inner_text();problem=problem or blocked(body)
         html=page.content();proof=hashlib.sha256(html.encode()).hexdigest()
         result.objects[proof]=html.encode();result.url=page.url
@@ -173,4 +178,5 @@ class PublicBrowser:
         elif index+1<len(queries):
             result.next_cursor={'query_index':index+1}
         result.reason=result.reason or 'Обход опубликованных копий; полнота первичных реестров не подтверждена.'
+        result.diagnostics['stage']='document_parsed' if pending else 'search_observed'
         return result

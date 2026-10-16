@@ -1,7 +1,8 @@
 import json
 import unittest
+import sys
 from unittest.mock import Mock, patch
-from courts.browser_access import optional_resource, error_code, navigate
+from courts.browser_access import optional_resource, error_code, navigate, wait_for_search_end
 from courts.public_forms import fetch_fns, fetch_fssp
 from courts.registry import entities
 from courts.sources import PublicBrowser
@@ -29,6 +30,26 @@ class AccessTests(unittest.TestCase):
         self.assertEqual(page.goto.call_args.kwargs['wait_until'],'commit')
         page.locator.return_value.wait_for.assert_called_once_with(state='attached',timeout=10000)
         self.assertEqual(error_code(Exception('secret=abc net::ERR_CONNECTION_RESET https://host/token')),'ERR_CONNECTION_RESET')
+
+    def test_search_wait_survives_missing_body_then_loading_document(self):
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as engine:
+            options={'headless':True}
+            if sys.platform=='win32':options['channel']='msedge'
+            browser=engine.chromium.launch(**options)
+            try:
+                page=browser.new_page();page.set_content('<html><body>Previous document</body></html>')
+                page.evaluate('''() => {
+                    document.body.remove();
+                    setTimeout(() => {
+                        const body=document.createElement('body');body.innerText='Идет поиск';
+                        document.documentElement.appendChild(body);
+                        setTimeout(() => body.innerText='Найдено 2 документа',100);
+                    },100);
+                }''')
+                wait_for_search_end(page)
+                self.assertEqual(page.locator('body').inner_text(),'Найдено 2 документа')
+            finally:browser.close()
 
     @patch('courts.public_forms.time.sleep')
     def test_fns_matches_both_identifiers_and_removes_transient_tokens(self,_):

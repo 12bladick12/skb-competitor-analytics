@@ -51,11 +51,11 @@ def summary(html):
     }
 
 
-def http_probe(name, output):
+def http_probe(name, output, connect_timeout=12):
     started = time.monotonic()
     result = {'source': name, 'transport': 'http', 'url': ROUTES[name]}
     try:
-        response = requests.get(ROUTES[name], timeout=(12, 25))
+        response = requests.get(ROUTES[name], timeout=(connect_timeout, 25))
         response.encoding = response.apparent_encoding or 'utf-8'
         result.update(status=response.status_code, final_url=public_url(response.url), **summary(response.text))
         result['access_status'] = blocked(result['text'], response.status_code) or 'page_only'
@@ -106,18 +106,25 @@ def main():
     parser.add_argument('--mode', choices=['http', 'browser'], required=True)
     parser.add_argument('--channel', choices=['msedge', 'chrome'])
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--connect-timeout',type=int,default=12)
+    parser.add_argument('--ipv4',action='store_true',help='Test IPv4 routing without changing TLS verification or proxies')
     args = parser.parse_args()
+    if args.ipv4:
+        import socket
+        import urllib3.util.connection
+        urllib3.util.connection.allowed_gai_family=lambda:socket.AF_INET
     args.output.mkdir(parents=True, exist_ok=True)
     rows = []
     def save(row):
         row['checked_at'] = datetime.now(timezone.utc).isoformat()
+        row['ipv4_only']=args.ipv4
         rows.append(row)
         (args.output / (args.mode + '-results.json')).write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding='utf-8')
         print(json.dumps({k: row.get(k) for k in ('source', 'transport', 'status', 'stage', 'access_status', 'error', 'title', 'elapsed_seconds')}, ensure_ascii=False), flush=True)
     if args.mode == 'http':
         # Each route once, bounded parallelism; never retries an access denial.
         with ThreadPoolExecutor(max_workers=3) as executor:
-            for row in executor.map(lambda name: http_probe(name, args.output), args.sources): save(row)
+            for row in executor.map(lambda name: http_probe(name, args.output,max(1,min(args.connect_timeout,30))), args.sources): save(row)
     else:
         from playwright.sync_api import sync_playwright
         with sync_playwright() as engine:

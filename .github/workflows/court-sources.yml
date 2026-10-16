@@ -34,5 +34,9 @@ jobs:
         run: >-
           python scripts/probe_court_sources.py --output data/fns-access
           --sources fns --entity all --pages 1
+      - name: Distinguish FNS connection timeout from IPv6 routing
+        run: >-
+          python scripts/diagnose_court_access.py --mode http --sources fns
+          --output data/fns-ipv4 --ipv4 --connect-timeout 30
       # Only status/count/reason are written to logs. Collected HTML stays on the
       # ephemeral runner; source documents are never uploaded as public artifacts.

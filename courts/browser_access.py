@@ -28,7 +28,14 @@ def route_optional(route):
 def error_code(exc):
     """Stable diagnostics only; exceptions can contain URLs, cookies or tokens."""
     match = re.search(r'net::(ERR_[A-Z0-9_]+)', str(exc))
-    return match[1] if match else type(exc).__name__
+    if match:return match[1]
+    message=str(exc).lower()
+    for needle,code in [('strict mode violation','LOCATOR_AMBIGUOUS'),
+                        ('execution context was destroyed','NAVIGATION_CHANGED'),
+                        ('page is navigating','NAVIGATION_CHANGED'),
+                        ('cannot read properties of null','DOM_NOT_READY')]:
+        if needle in message:return code
+    return type(exc).__name__
 
 
 def navigate(page, url):
@@ -37,6 +44,11 @@ def navigate(page, url):
     response = page.goto(url, wait_until='commit', timeout=40000)
     page.locator('body').wait_for(state='attached', timeout=10000)
     return response
+
+
+def wait_for_search_end(page, marker='Идет поиск'):
+    page.wait_for_function('marker => document.body && !document.body.innerText.includes(marker)',
+                           arg=marker,timeout=35000)
 
 
 def capture(page, result):
