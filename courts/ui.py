@@ -88,13 +88,15 @@ def render(library,settings,identity):
                     st.warning('Источники содержат различающиеся сведения.');st.json(item['conflicts'])
                 if safe_url(item.get('url')):st.link_button('Открыть источник',item['url'])
                 if item.get('linked_cases'):st.write('Связанные дела:',item['linked_cases'])
-                if kind=='court_case':
+                if kind=='court_case' and st.checkbox('Показать историю и документы',key='details_'+item['id']):
                     detail_page=st.number_input('Страница истории',min_value=1,step=1,key='history_'+item['id'])
                     for event in service.details(ident,item['id'],'court_event',(detail_page-1)*50):
                         st.write((event.get('occurred_on') or 'Дата не опубликована')+' · '+event['title'])
                         st.caption(event.get('description') or '')
                     for doc in service.details(ident,item['id'],'court_document',(detail_page-1)*50):
                         if safe_url(doc.get('url')):st.link_button(doc['title'],doc['url'])
+                        if st.checkbox('Показать текст акта',key='text_'+item['id']+doc['id']):
+                            st.text(doc.get('text') or 'Текст не получен; доступна ссылка на документ.')
                         for proof in doc.get('evidence_ids',[]):
                             st.download_button('Сохранённая копия',asset_download(settings,identity,ident,proof),
                                 file_name=proof+'.html.txt',key=item['id']+doc['id']+proof,on_click='ignore')

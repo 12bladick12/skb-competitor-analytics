@@ -85,6 +85,15 @@ class CourtTests(unittest.TestCase):
         result=sudact_document(html,URL,entities()[1])
         self.assertFalse(result.cases);self.assertEqual(len(result.candidates),1)
 
+    def test_identical_act_headings_are_distinct_and_body_changes_are_versioned(self):
+        a=sudact_document(HTML,URL,self.entity)
+        b=sudact_document(HTML,URL.replace('ABC123','Another'),self.entity)
+        self.assertNotEqual(a.events[0]['canonical_event_id'],b.events[0]['canonical_event_id'])
+        edited=sudact_document(HTML.replace('Судья А.','Судья Б.'),URL,self.entity)
+        first=normalize_event(a.events[0],a.cases[0],self.entity,'2026-10-16T00:00:00+00:00')
+        second=normalize_event(edited.events[0],edited.cases[0],self.entity,'2026-10-17T00:00:00+00:00')
+        self.assertEqual(first['id'],second['id']);self.assertNotEqual(first['version'],second['version'])
+
     def test_unknown_and_future_dates_do_not_become_current_news(self):
         p=sudact_document(HTML,URL,self.entity);case=p.cases[0];raw=p.events[0]
         raw['occurred_on']=None

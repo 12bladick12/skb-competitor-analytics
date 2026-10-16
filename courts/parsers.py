@@ -96,8 +96,11 @@ def sudact_document(html, url, entity, domain='arbitral'):
     document={'id':digest(url),'case_id':ident,'entity_ids':[entity['id']],'title':title,'date':occurred,
               'court':court,'url':url,'evidence_ids':[proof],'source':source,'text':act}
     result.documents.append(document)
-    result.events.append({'canonical_event_id':digest([ident,court,title]),'case_id':ident,
+    # Several orders can have the same title/date/court. The document's stable
+    # source identifier keeps them distinct; cross-source aliases require evidence.
+    result.events.append({'canonical_event_id':digest([ident,court,url]),'case_id':ident,
                           'type':'judicial_act','title':title,'description':title+'; '+court,
                           'occurred_on':occurred,'document_id':document['id'],'url':url,
+                          'text_digest':digest(act),
                           'evidence_ids':[proof],'date_evidence':'Заголовок опубликованного судебного акта'})
     return result

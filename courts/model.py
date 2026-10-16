@@ -103,7 +103,7 @@ def normalize_event(raw, case, entity, checked_at):
     if not raw.get('type') or not raw.get('title'):
         return None
     # Dates without published precision remain unknown; detection never supplies them.
-    fact={k:deepcopy(raw.get(k)) for k in ('type','title','description','occurred_on','document_number','outcome')}
+    fact={k:deepcopy(raw.get(k)) for k in ('type','title','description','occurred_on','document_number','outcome','text_digest')}
     ident=raw.get('canonical_event_id') or digest([case['id'], fact])
     return {**deepcopy(raw), 'id':ident, 'case_id':case['id'], 'entity_id':entity['id'],
             'brand':entity['brand'], 'occurred_on':occurred, 'detected_at':checked_at,
