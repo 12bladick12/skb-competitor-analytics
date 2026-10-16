@@ -11,6 +11,9 @@ on:
       - '.github/workflows/court-sources.yml'
 permissions:
   contents: read
+concurrency:
+  group: court-access-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   probe:
     runs-on: ubuntu-latest

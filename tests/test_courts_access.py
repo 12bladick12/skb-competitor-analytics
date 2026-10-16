@@ -6,6 +6,7 @@ from courts.browser_access import optional_resource, error_code, navigate, wait_
 from courts.public_forms import fetch_fns, fetch_fssp
 from courts.registry import entities
 from courts.sources import PublicBrowser
+from courts.parsers import blocked
 
 
 def response(text='', payload=None, status=200):
@@ -24,6 +25,12 @@ class AccessTests(unittest.TestCase):
                     'https://fssp.gov.ru/bdip/js/general.js','https://egrul.nalog.ru/js/captcha.js',
                     'https://mc.yandex.ru.attacker.invalid/script.js']:
             self.assertFalse(optional_resource(url))
+
+    def test_empty_200_pravo_challenge_is_not_a_missing_form_or_no_cases(self):
+        html='<html><head><script src="/Content/Static/js/pravocaptcha.2026.js"></script></head><body></body></html>'
+        self.assertEqual(blocked('',200,html),'challenge')
+        self.assertEqual(blocked('Дело А76-1/2026',200,html),'')
+        self.assertEqual(blocked('',200,'<script src="/normal.js"></script>'),'')
 
     def test_navigation_accepts_committed_document_without_waiting_for_trackers(self):
         page=Mock();navigate(page,'https://kad.arbitr.ru/')

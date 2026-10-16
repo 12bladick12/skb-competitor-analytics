@@ -14,9 +14,10 @@ BLOCKS=('подтвердите, что вы не робот','введите к
         'доступ к сервису ограничен','just a moment')
 
 
-def blocked(body, status=200):
+def blocked(body, status=200, html=''):
     if status in (401,403,451):return 'access_denied'
     if status==429:return 'rate_limited'
+    if not body.strip() and re.search(r'<script[^>]+src=[^>]*pravocaptcha',html,re.I):return 'challenge'
     if any(x in body.casefold() for x in BLOCKS):return 'challenge'
     if status>=400:return 'error'
     return ''

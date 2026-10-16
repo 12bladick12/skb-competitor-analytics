@@ -77,7 +77,7 @@ class PublicBrowser:
             result.diagnostics['http_status']=response.status if response else None
             page.wait_for_timeout(1000)
             body=page.locator('body').inner_text()
-            problem=blocked(body,response.status if response else 500)
+            problem=blocked(body,response.status if response else 500,page.content())
             if not problem:
                 stage='form_ready'
                 if source=='vsrf':
@@ -105,7 +105,7 @@ class PublicBrowser:
                         page.locator('input[type=submit]').click()
                     page.wait_for_timeout(2000)
             body=page.locator('body').inner_text()
-            problem=problem or blocked(body)
+            problem=problem or blocked(body,html=page.content())
             result.status=problem or 'partial'
             result.reason=('Источник ограничил автоматический доступ.' if problem else
                            'Доступ проверен; полнота поиска и карточек не подтверждена.')
@@ -128,7 +128,7 @@ class PublicBrowser:
             result.diagnostics.update(stage=stage,error=error_code(exc))
             try:
                 capture(page,result)
-                problem=blocked(page.locator('body').inner_text())
+                problem=blocked(page.locator('body').inner_text(),html=page.content())
                 if problem:
                     result.status=problem;self.blocked_hosts[host]=problem
             except Exception:pass
