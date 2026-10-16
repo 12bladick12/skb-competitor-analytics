@@ -7,6 +7,7 @@ on:
       - 'courts/browser_access.py'
       - 'courts/browser_worker.py'
       - 'courts/public_forms.py'
+      - 'courts/supreme_public.py'
       - 'courts/parsers.py'
       - 'scripts/probe_court_sources.py'
       - '.github/workflows/court-sources.yml'
@@ -38,6 +39,10 @@ jobs:
         run: >-
           python scripts/probe_court_sources.py --output data/fns-access
           --sources fns --entity all --pages 1
+      - name: Public Supreme Court pages and aliases for all five entities
+        run: >-
+          python scripts/probe_court_sources.py --output data/supreme-http
+          --sources vsrf_http --entity all --pages 10
       - name: Distinguish FNS connection timeout from IPv6 routing
         run: >-
           python scripts/diagnose_court_access.py --mode http --sources fns

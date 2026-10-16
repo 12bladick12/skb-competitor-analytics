@@ -13,6 +13,7 @@ CATALOG={
     'sudrf':('general','https://sudrf.ru/index.php?id=300'),
     'magistrates':('magistrate','https://sudrf.ru/index.php?id=300'),
     'vsrf':('supreme','https://www.vsrf.ru/lk/practice/claims'),
+    'vsrf_http':('supreme','https://www.vsrf.ru/lk/practice/claims'),
     'ksrf':('constitutional','https://www.ksrf.ru/Decision/extsearch.php'),
     'fssp':('enforcement','https://fssp.gov.ru/iss/ip/'),
     'fedresurs':('bankruptcy','https://fedresurs.ru/'),
@@ -61,10 +62,11 @@ class PublicBrowser:
         if host in self.blocked_hosts:
             result.status=self.blocked_hosts[host];result.reason='Повторные запросы остановлены после ограничения доступа.'
             return result
-        if source in ('fns','fssp'):
+        if source in ('fns','fssp','vsrf_http'):
             from .public_forms import fetch_fns,fetch_fssp
+            from .supreme_public import fetch_supreme
             time.sleep(self.delay)
-            result=(fetch_fns if source=='fns' else fetch_fssp)(entity)
+            result=fetch_supreme(entity,cursor) if source=='vsrf_http' else (fetch_fns if source=='fns' else fetch_fssp)(entity)
             if result.status in ('challenge','access_denied','rate_limited'):self.blocked_hosts[host]=result.status
             return result
         page=self.context.new_page()

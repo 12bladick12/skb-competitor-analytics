@@ -1,7 +1,7 @@
 """A hard deadline also bounds DNS, browser protocol and page cleanup hangs.
 
-Only public-source observations cross the process boundary. The child never
-receives database/Drive credentials and cannot commit a partial checkpoint.
+Only public-source observations cross the pipe. Database/Drive clients and
+checkpoint writes stay in the parent; browser descendants receive no court config.
 """
 import multiprocessing
 import os
@@ -14,6 +14,7 @@ from .sources import CATALOG, PublicBrowser
 
 
 def _serve(connection, options):
+    os.environ.pop('SKB_COURT_CONFIG',None)
     if os.name!='nt':os.setsid()
     try:
         with PublicBrowser(**options) as browser:
