@@ -1,6 +1,7 @@
 import json
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+import requests
 from courts.registry import entities
 from courts.supreme_public import fetch_supreme
 
@@ -60,6 +61,29 @@ class SupremeTests(unittest.TestCase):
         cursor={'query_index':1,'page':2,'seen_ids':['A']}
         result=fetch_supreme(self.entity,cursor,session)
         self.assertEqual(result.status,'error');self.assertEqual(result.next_cursor,cursor)
+
+    @patch('courts.supreme_public.time.sleep')
+    def test_temporary_timeout_retries_once_but_tls_and_access_denial_do_not(self,_):
+        session=Mock();session.get.side_effect=[requests.ConnectTimeout('private detail'),
+                                               response(self.entity['inn'],['A'],1,True)]
+        result=fetch_supreme(self.entity,session=session)
+        self.assertEqual(result.status,'partial');self.assertEqual(session.get.call_count,2)
+        self.assertEqual(result.diagnostics['attempts'],2)
+        self.assertNotIn('private detail',json.dumps(result.diagnostics))
+        session=Mock();session.get.side_effect=requests.exceptions.SSLError('private certificate detail')
+        result=fetch_supreme(self.entity,session=session)
+        self.assertEqual(result.status,'error');self.assertEqual(session.get.call_count,1)
+        session=Mock();session.get.return_value=Mock(status_code=451,text='Access denied')
+        result=fetch_supreme(self.entity,session=session)
+        self.assertEqual(result.status,'access_denied');self.assertEqual(session.get.call_count,1)
+
+    @patch('courts.supreme_public.time.sleep')
+    def test_repeated_timeout_exhausts_budget_and_preserves_cursor(self,_):
+        session=Mock();session.get.side_effect=requests.ReadTimeout('private detail')
+        cursor={'query_index':1,'page':2,'seen_ids':['A']}
+        result=fetch_supreme(self.entity,cursor,session)
+        self.assertEqual(result.status,'error');self.assertEqual(session.get.call_count,2)
+        self.assertEqual(result.next_cursor,cursor);self.assertFalse(result.complete)
 
 
 if __name__=='__main__':unittest.main()

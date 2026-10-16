@@ -28,7 +28,15 @@ def fetch_supreme(entity,cursor=None,session=None):
     gaps=list(cursor.get('unresolved_queries',[]))
     result.diagnostics={'stage':'http_search','transport':'public_search_page','query_index':index,'page':number}
     try:
-        response=session.get(result.url,timeout=(10,25));response.encoding='utf-8'
+        for attempt in range(2):
+            result.diagnostics['attempts']=attempt+1
+            try:
+                response=session.get(result.url,timeout=(15,25));break
+            except (requests.ConnectTimeout,requests.ReadTimeout) as exc:
+                result.diagnostics.setdefault('transient_errors',[]).append(type(exc).__name__)
+                if attempt:raise
+                time.sleep(2)
+        response.encoding='utf-8'
         result.diagnostics['http_status']=response.status_code
         proof=save_evidence(result,response.text)
         soup=BeautifulSoup(response.text,'html.parser')
