@@ -40,11 +40,11 @@ def render_jobs(import_id, settings, identity, can_write, *, period=None):
             st.rerun()
         selected=[r for r in current if not period or r['period']==period]
         for row in selected[:10]:
-            title=('Выпуск Word/PDF/ZIP' if row['kind']=='export' else 'Сбор данных')+' · '+row['period']
+            title={'export':'Выпуск Word/PDF/ZIP','court_collect':'Судебные дела и исполнительные производства','collect':'Сбор новостей'}[row['kind']]+' · '+row['period']
             with st.container(border=True):
                 st.markdown('**'+title+' — '+LABELS[row['status']]+'**')
                 st.caption(local_time(str(row['created_at']))+' · '+row['stage'])
-                if row['kind']=='collect':
+                if row['kind'] in ('collect','court_collect'):
                     st.write(f"Проверено источников: {row['completed']}")
                     if row['source']:
                         st.caption('Текущий источник: '+row['source'])

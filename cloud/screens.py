@@ -17,6 +17,8 @@ from .coverage import monitored, outside_scope
 
 
 KINDS = {"news": "Новости сайтов", "telegram": "Telegram", "products": "Продукция и предложения"}
+from courts.model import KINDS as COURT_KINDS
+KINDS.update(COURT_KINDS)
 SOURCE_KINDS = {**KINDS, "promotions": "Акции", "website": "Сайт"}
 STATUS = {"success": "Проверен", "partial": "Сбор неполный", "error": "Ошибка",
           "not_configured": "Канал не подтверждён", "running": "Выполнялся при переносе",
@@ -140,7 +142,12 @@ def file_bytes(settings, identity, library_id, asset_id):
 
 
 def render_library(library, access, settings, identity):
+    from courts.gate import released
+    from courts.dispatch import enabled as court_enabled
+    from courts.ui import TITLE as COURT_TITLE
+    court_visible=released(library.get('court_release',{}).get('public')) or (access.role=='admin' and court_enabled(settings()))
     pages = ["Обзор", "Публикации", "Конкуренты"]
+    if court_visible:pages.append(COURT_TITLE)
     if access.role in ('admin','editor'):
         pages.extend(['Сбор данных','Черновики'])
     pages.append('Архив')
@@ -148,6 +155,7 @@ def render_library(library, access, settings, identity):
         pages.extend(["Пользователи","Подключения"])
     icons={'Обзор':'▦','Публикации':'≡','Конкуренты':'◈','Сбор данных':'↻',
            'Черновики':'▤','Архив':'▣','Пользователи':'♙','Подключения':'⚙'}
+    icons[COURT_TITLE]='⚖'
     html('<style>'+''.join(f'[data-testid="stSidebar"] [data-testid="stRadioGroup"]>div:nth-child({i}) label::before '
          +'{content:"'+icons[name]+'";}' for i,name in enumerate(pages,1))+'</style>')
     selected = st.query_params.get("section", "Обзор")
@@ -176,7 +184,10 @@ def render_library(library, access, settings, identity):
     events = period_events(library, period)
     checks = library['period'].get(period,{}).get('checks',[])
 
-    if page == "Обзор":
+    if page == COURT_TITLE:
+        from courts.ui import render
+        render(library,settings,identity)
+    elif page == "Обзор":
         st.subheader("Обзор · " + period_label(period))
         st.caption("Публикации конкурентов и состояние источников за выбранный период")
         with st.container(key='metrics'):
@@ -184,6 +195,16 @@ def render_library(library, access, settings, identity):
             cols[0].metric("Подтверждённые материалы", len(events))
             for col, (kind, label) in zip(cols[1:], KINDS.items()):
                 col.metric(label, sum(e['kind'] == kind for e in events))
+        legal=[e for e in events if e['kind'] in COURT_KINDS]
+        if legal:
+            st.caption(f"Судебных дел: {len({e['case_id'] for e in legal if e['kind']=='court'})}; "
+                       f"исполнительных производств: {len({e.get('enforcement_id') for e in legal if e['kind']=='enforcement'})}; "
+                       f"процессуальных событий: {len(legal)}.")
+            with st.expander('Все судебные события периода'):
+                for case_id in dict.fromkeys(e['case_id'] for e in legal):
+                    group=[e for e in legal if e['case_id']==case_id]
+                    st.markdown('**'+group[0]['title'].split(' · ')[0]+'**')
+                    for event in group:event_card(event,KINDS[event['kind']],compact=True)
         if not events:
             st.info("Подтверждённых материалов за этот период нет. Полнота проверки источников показана ниже.")
         feed, summary = st.columns([1.35, 1], gap='large')
@@ -240,7 +261,7 @@ def render_library(library, access, settings, identity):
                     event_card(event, KINDS.get(event['kind'],event['kind']))
                     source = url(event['provenance'].get('article_url') or event['url'])
                     if source:
-                        st.link_button("Открыть первоисточник ↗", source)
+                        st.link_button("Открыть источник ↗" if event['kind'] in COURT_KINDS else "Открыть первоисточник ↗", source)
                     with st.expander("Исходный текст и подтверждение"):
                         st.caption("Основание даты: " + str(event['provenance'].get('date_evidence') or '—'))
                         st.text(event['original_text'])
@@ -277,12 +298,16 @@ def render_library(library, access, settings, identity):
         chosen=st.text_input('Месяц сбора',value=period[:7],help='Формат ГГГГ-ММ. По умолчанию выбран период из меню.')
         if access.role in ('admin','editor') and st.button('Запустить сбор',type='primary'):
             try:
-                JobService(settings,identity).collect(library['id'],chosen)
+                result=JobService(settings,identity).collect(library['id'],chosen)
+                if result.get('court_dispatched') is False:
+                    st.session_state['court_dispatch_pending']=True
                 launch(settings)
                 st.rerun()
             except (StorageError,PermissionError,ValueError) as exc:
                 st.error(str(exc))
         render_jobs(library['id'],settings,identity,access.role in ('admin','editor'))
+        if st.session_state.pop('court_dispatch_pending',False):
+            st.warning('Судебное задание сохранено в очереди. Запуск внешнего сборщика не подтверждён; ближайшее расписание подхватит задание после настройки подключения.')
         st.subheader("История сборов")
         for run in sorted(library['run'].values(), key=lambda r: r['id'], reverse=True):
             label = f"№ {run['id']} · {local_time(run['started_at'])} · {STATUS.get(run['status'],run['status'])}"

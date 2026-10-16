@@ -266,3 +266,10 @@ python scripts/check_cloud_readiness.py
 - [Настройка OIDC](https://docs.streamlit.io/develop/api-reference/user/st.login)
 - [Google OAuth](https://developers.google.com/workspace/guides/create-credentials)
 - [Хранение секретов](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management)
+# Судебный мониторинг
+
+Внутренний модуль судебных дел и исполнительных производств подготовлен внутри
+«Новостей». Публичное включение закрыто до проверки источников и 14 дней устойчивого
+автоматического сбора. [Состояние реализации и настройка](docs/COURT_ROLLOUT.md),
+[подготовка сравнения API](docs/COURT_PROVIDER_COMPARISON.md).
+

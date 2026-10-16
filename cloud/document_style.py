@@ -85,7 +85,7 @@ class EditorialStyle(ReportBuilder):
         target = source.get('provenance', {}).get('article_url') or source['url']
         if urlsplit(target).scheme in ('http', 'https'):
             p = doc.add_paragraph(style='Meta')
-            self._add_hyperlink(p, target, 'Первоисточник ↗')
+            self._add_hyperlink(p, target, 'Источник ↗' if source['kind'] in ('court','enforcement') else 'Первоисточник ↗')
 
     def summary(self, doc, snapshot):
         doc.styles.add_style('Summary', 3)
@@ -105,6 +105,12 @@ class EditorialStyle(ReportBuilder):
             shading.set(qn('w:fill'), 'F7F3F4')
             cell._tc.get_or_add_tcPr().append(shading)
         doc.add_paragraph().paragraph_format.space_after = Pt(0)
+        legal=[i for i in snapshot['items'] if i['source']['kind'] in ('court','enforcement')]
+        if legal:
+            cases=len({i['source'].get('case_id') for i in legal if i['source']['kind']=='court'})
+            doc.add_paragraph(f'Судебных дел в материалах: {cases}; судебных событий: '
+                              f"{sum(i['source']['kind']=='court' for i in legal)}; событий исполнения: "
+                              f"{sum(i['source']['kind']=='enforcement' for i in legal)}.",style='Meta')
 
     def _table(self, doc, rows):
         super()._table(doc, rows)

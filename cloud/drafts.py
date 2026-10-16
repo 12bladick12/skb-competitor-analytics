@@ -95,7 +95,10 @@ class DraftStore:
             INSERT INTO skb_analytics.draft_heads(import_id,id,period,revision,payload,updated_by)
             SELECT $1,$2,$3,1,$4::jsonb,$5 WHERE EXISTS (
                 SELECT 1 FROM skb_analytics.state s JOIN skb_analytics.records r ON r.import_id=s.import_id
-                WHERE s.key='active' AND s.import_id=$1 AND r.kind='period' AND r.key=$3)
+                WHERE s.key='active' AND s.import_id=$1 AND r.key=$3 AND (r.kind='period' OR
+                    (r.kind='court_period' AND EXISTS(SELECT 1 FROM skb_analytics.records release
+                        WHERE release.import_id=$1 AND release.kind='court_release' AND release.key='public'
+                          AND release.payload->>'enabled'='true'))))
             ON CONFLICT(import_id,id) DO NOTHING RETURNING *
         ), history AS (
             INSERT INTO skb_analytics.draft_revisions

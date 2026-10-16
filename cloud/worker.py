@@ -63,7 +63,7 @@ def execute(store, drive, job, root, alive=lambda: None):
             'created_at':datetime.now(timezone.utc).isoformat(),**identifiers,'snapshot':value}
         alive()
         store.publish(job,[{'kind':'report','key':report_id,'payload':report}],assets,result_id=report_id)
-    else:
+    elif job['kind']=='collect':
         from .collection import collect
         progress('Подготовка сохранённых материалов')
         baselines=[r['payload'] for r in store.query("SELECT payload FROM skb_analytics.records WHERE import_id=$1 AND kind='collector_baseline'",[job['import_id']])]
@@ -71,6 +71,8 @@ def execute(store, drive, job, root, alive=lambda: None):
         assets=upload_objects(store,drive,job,objects)
         alive()
         store.publish(job,records,assets,status='partial' if result['status']=='partial' else 'success',result_id=str(result['run_id']))
+    else:
+        raise ValueError('Это задание выполняет отдельный судебный сборщик.')
 
 
 def run(config):

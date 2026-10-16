@@ -13,6 +13,7 @@ from src.utils import parse_report_period
 from .coverage import monitored
 
 KINDS = {'news':'Новости сайтов','telegram':'Новости Telegram-каналов','products':'Продукция и предложения'}
+from courts.model import KINDS as COURT_KINDS
 STATES = {'success':'Проверен','partial':'Сбор неполный','error':'Ошибка'}
 
 
@@ -45,7 +46,8 @@ def render(snapshot, evidence, competitors, *, include_pdf=False):
                 'content="default-src \'none\'; script-src \'none\'; sandbox"><title>Сохранённый первоисточник</title><pre>'
                 +escape(content.decode('utf-8',errors='replace'))+'</pre>').encode()
             item['source']['evidence_files'].append({'original':raw,'view':view,'sha256':asset_id})
-    for number,(kind,label) in enumerate(KINDS.items(),1):
+    kinds={**KINDS,**{k:v for k,v in COURT_KINDS.items() if any(i['source']['kind']==k for i in portable['items'])}}
+    for number,(kind,label) in enumerate(kinds.items(),1):
         builder._heading(doc,f'{number}. {label}')
         selected=[i for i in portable['items'] if i['source']['kind']==kind]
         if not selected:

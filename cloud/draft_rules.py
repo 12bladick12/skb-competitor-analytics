@@ -65,7 +65,8 @@ def save_payload(draft, library, conclusions, changes, asset_ids=None):
         if not isinstance(change, dict) or set(change) - {'event_id', 'included', 'title', 'description', 'accept_version'}:
             raise ValueError('Даты, ссылки и сведения о проверке нельзя редактировать.')
         event_id = change.get('event_id')
-        if type(event_id) is not int or event_id not in items or event_id in seen:
+        valid_id=type(event_id) is int or (isinstance(event_id,str) and re.fullmatch(r'court:[a-f0-9]{64}',event_id))
+        if not valid_id or event_id not in items or event_id in seen:
             raise ValueError('Материал не принадлежит черновику или указан дважды.')
         seen.add(event_id)
         if type(change.get('included')) is not bool:
