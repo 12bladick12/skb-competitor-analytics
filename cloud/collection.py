@@ -84,6 +84,8 @@ def collect(library, period, root, read, progress, baselines=(), monitor_factory
         for c in competitors:
             storage.upsert_competitor(c)
         for event in library['event'].values():
+            if event.get('kind') in ('court','enforcement'):
+                continue  # Separate durable registry; never restore string IDs to SQLite.
             value=dict(event)
             value['evidence_json']=json.dumps({**event.get('evidence',{}),**{k:v for k,v in event['provenance'].items() if v},
                 'snapshots':[materialize(i) for i in event['evidence_ids']]})

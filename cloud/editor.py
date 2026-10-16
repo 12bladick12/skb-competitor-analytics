@@ -281,6 +281,8 @@ def render_editor(library, access, settings, identity, period):
             problem = {i['event_id']: i for i in pending}
             if items:
                 groups = {'news': 'Новости сайтов', 'telegram': 'Telegram', 'products': 'Продукция и предложения'}
+                from courts.model import KINDS as COURT_KINDS
+                groups.update(COURT_KINDS)
                 available = [k for k in groups if any(s['kind'] == k for s in sources.values())]
                 group = st.radio('Группа материалов', available, horizontal=True, key='draft_group_'+state['epoch'],
                     format_func=lambda k: f'{groups[k]} · {sum(s["kind"] == k for s in sources.values())}')

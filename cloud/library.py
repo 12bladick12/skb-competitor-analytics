@@ -12,7 +12,7 @@ from .readiness import neon_parameters, section
 from .neon_http import MigrationConnection, NeonError, NeonHTTP
 
 
-VISIBLE_KINDS = ("event", "period", "competitor", "run", "report", "draft")
+VISIBLE_KINDS = ("event", "period", "competitor", "run", "report", "draft", "court_release")
 
 
 def canonical(value):
@@ -141,7 +141,7 @@ class Repository:
                 rows=self.http.query("""SELECT i.id,i.manifest,r.kind,r.key,r.payload
                     FROM skb_analytics.state s JOIN skb_analytics.imports i ON i.id=s.import_id
                     LEFT JOIN skb_analytics.records r ON r.import_id=i.id
-                    AND r.kind IN ('event','period','competitor','run','report','draft')
+                    AND r.kind IN ('event','period','competitor','run','report','draft','court_release')
                     WHERE s.key='active'""")
             except NeonError as exc:
                 if exc.sqlstate == '42P01':
@@ -153,7 +153,8 @@ class Repository:
             for row in rows:
                 if row['kind'] in result:
                     result[row['kind']][row['key']]=row['payload']
-            return {'id':rows[0]['id'],'manifest':rows[0]['manifest'],**result}
+            from courts.projection import load_released
+            return load_released(self, {'id':rows[0]['id'],'manifest':rows[0]['manifest'],**result})
         with self.transaction() as conn:
             if not conn.execute("SELECT to_regclass('skb_analytics.state')").fetchone()[0]:
                 return None
@@ -166,7 +167,8 @@ class Repository:
         result = {kind: {} for kind in VISIBLE_KINDS}
         for kind, key, payload in rows:
             result[kind][key] = payload
-        return {"id": active[0], "manifest": active[1], **result}
+        from courts.projection import load_released
+        return load_released(self, {"id": active[0], "manifest": active[1], **result})
 
     def asset(self, import_id, asset_id):
         if not re.fullmatch(r"[a-f0-9]{64}", str(asset_id)):

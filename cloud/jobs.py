@@ -14,7 +14,7 @@ DDL = """DO $jobs$ BEGIN
  PERFORM pg_advisory_xact_lock(847263916);
  CREATE TABLE IF NOT EXISTS skb_analytics.jobs (
   id text PRIMARY KEY, import_id text NOT NULL REFERENCES skb_analytics.imports(id),
-  kind text NOT NULL CHECK(kind IN ('export','collect')), period text NOT NULL,
+  kind text NOT NULL CHECK(kind IN ('export','collect','court_collect')), period text NOT NULL,
   request_key text NOT NULL, payload jsonb NOT NULL, created_by text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(), started_at timestamptz, finished_at timestamptz,
   status text NOT NULL DEFAULT 'queued' CHECK(status IN ('queued','running','success','partial','error','interrupted')),
@@ -27,6 +27,10 @@ DDL = """DO $jobs$ BEGIN
  CREATE TABLE IF NOT EXISTS skb_analytics.job_uploads (
   job_id text REFERENCES skb_analytics.jobs(id), digest text NOT NULL, drive_id text NOT NULL,
   PRIMARY KEY(job_id,digest));
+ ALTER TABLE skb_analytics.jobs DROP CONSTRAINT IF EXISTS jobs_kind_check;
+ ALTER TABLE skb_analytics.jobs ADD CONSTRAINT jobs_kind_check CHECK(kind IN ('export','collect','court_collect'));
+ CREATE UNIQUE INDEX IF NOT EXISTS single_court_collection ON skb_analytics.jobs(import_id)
+  WHERE kind='court_collect' AND status IN ('queued','running');
 END $jobs$;"""
 
 CLAIM = """CREATE OR REPLACE FUNCTION skb_analytics.claim_job(worker_token text)
@@ -39,7 +43,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM skb_analytics.jobs WHERE status='running') THEN RETURN; END IF;
  RETURN QUERY UPDATE skb_analytics.jobs j SET status='running',token=worker_token,
   lease_until=now()+interval '3 minutes',started_at=now(),stage='Подготовка'
-  WHERE j.id=(SELECT q.id FROM skb_analytics.jobs q WHERE q.status='queued'
+  WHERE j.id=(SELECT q.id FROM skb_analytics.jobs q WHERE q.status='queued' AND q.kind IN ('collect','export')
               ORDER BY q.created_at,q.id LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING j.*;
 END $claim$;"""
 
@@ -56,6 +60,8 @@ class JobStore(DraftStore):
             # HTTPS migration adapter accepts DO blocks.
             from psycopg import sql
             conn.execute(sql.SQL('DO {}').format(sql.Literal('BEGIN EXECUTE ' + sql.Literal(CLAIM).as_string(conn) + '; END;')))
+            court_claim=CLAIM.replace('claim_job(worker_token', 'claim_court_job(worker_token').replace("q.kind IN ('collect','export')", "q.kind='court_collect'")
+            conn.execute(sql.SQL('DO {}').format(sql.Literal('BEGIN EXECUTE ' + sql.Literal(court_claim).as_string(conn) + '; END;')))
 
     def enqueue(self, import_id, kind, period, payload, email, request_key):
         rows = self.query('''INSERT INTO skb_analytics.jobs(id,import_id,kind,period,payload,created_by,request_key)
@@ -65,7 +71,8 @@ class JobStore(DraftStore):
           [uuid4().hex, import_id, kind, period, canonical(payload), email, request_key], write=True)
         if not rows:
             rows = self.query('''SELECT * FROM skb_analytics.jobs WHERE import_id=$1 AND kind=$2
-               AND (request_key=$3 OR (kind='collect' AND period=$4 AND status IN ('queued','running')))
+               AND (request_key=$3 OR (kind='collect' AND period=$4 AND status IN ('queued','running'))
+                 OR (kind='court_collect' AND status IN ('queued','running')))
                ORDER BY created_at DESC LIMIT 1''', [import_id, kind, request_key, period])
         if not rows:
             raise StorageError('Набор данных изменился. Обновите страницу.')
@@ -115,7 +122,7 @@ class JobStore(DraftStore):
           IF j.kind='export' THEN
             FOR expected IN SELECT value FROM jsonb_array_elements(j.payload->'items') LOOP
               IF NOT EXISTS(SELECT 1 FROM skb_analytics.records r WHERE r.import_id=j.import_id
-                AND r.kind='event' AND r.key=expected->>'event_id'
+                AND r.kind IN ('event','court_news') AND r.key=expected->>'event_id'
                 AND r.payload->>'version'=expected->>'version' AND r.payload->>'status'='confirmed')
               THEN RAISE EXCEPTION 'Source changed before release'; END IF;
             END LOOP;
@@ -160,6 +167,13 @@ class JobService:
         store,access=self.context(write=True)
         from web.facts import month
         period,_=month(period)
+        from courts.dispatch import enabled, dispatch
+        if enabled(self.settings()):
+            from courts.store import CourtStore
+            court=CourtStore({},repository=store.repository)
+            rows=court.enqueue_pair(import_id,period,access.email,uuid4().hex)
+            started=dispatch(self.settings())
+            return {'jobs':rows,'court_dispatched':started}
         return store.enqueue(import_id,'collect',period,{},access.email,uuid4().hex)
 
     def list(self, import_id):
@@ -181,4 +195,8 @@ class JobService:
             value=DraftService(self.settings,self.identity).preview(import_id,old['period'],view['draft']['revision'],draft_id)
         else:
             value={}
-        return store.enqueue(import_id,old['kind'],old['period'],value,access.email,uuid4().hex)
+        result=store.enqueue(import_id,old['kind'],old['period'],value,access.email,uuid4().hex)
+        if old['kind']=='court_collect':
+            from courts.dispatch import dispatch
+            dispatch(self.settings())
+        return result

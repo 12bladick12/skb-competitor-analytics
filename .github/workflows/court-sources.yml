@@ -1,0 +1,59 @@
+name: Public court source access audit
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'courts/sources.py'
+      - 'courts/browser_access.py'
+      - 'courts/browser_worker.py'
+      - 'courts/public_forms.py'
+      - 'courts/supreme_public.py'
+      - 'courts/parsers.py'
+      - 'scripts/probe_court_sources.py'
+      - '.github/workflows/court-sources.yml'
+permissions:
+  contents: read
+concurrency:
+  group: court-access-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Public forms only; no database or account credentials
+        run: >-
+          python scripts/probe_court_sources.py --output data/court-access
+          --sources kad ras mkad sudrf magistrates vsrf ksrf fssp fedresurs sudact_arbitral sudact_regular sudact_magistrate
+          --pages 1
+      - name: Public FNS form for all five legal entities
+        run: >-
+          python scripts/probe_court_sources.py --output data/fns-access
+          --sources fns --entity all --pages 1
+      - name: Public Supreme Court pages and aliases for all five entities
+        run: >-
+          python scripts/probe_court_sources.py --output data/supreme-http
+          --sources vsrf_http --entity all --pages 10
+      - name: Distinguish FNS connection timeout from IPv6 routing
+        run: >-
+          python scripts/diagnose_court_access.py --mode http --sources fns
+          --output data/fns-ipv4 --ipv4 --connect-timeout 30
+      - name: Ordinary headed Chromium with a dedicated persistent session
+        run: |
+          if command -v xvfb-run >/dev/null; then
+            xvfb-run -a python scripts/probe_court_sources.py --output data/court-headed \
+              --sources kad ras vsrf --headed --persistent-profile --unfiltered --pages 1
+          else
+            echo 'Xvfb is unavailable; headed probe skipped without installing extra packages.'
+          fi
+      # Only status/count/reason are written to logs. Collected HTML stays on the
+      # ephemeral runner; source documents are never uploaded as public artifacts.

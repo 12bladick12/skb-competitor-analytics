@@ -1,0 +1,42 @@
+# Copy only this workflow to .github/workflows/courts.yml in the PRIVATE operations repository.
+# Enable COURT_WORKER_ENABLED only after confirming included minutes and zero paid overage.
+name: Court monitoring
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4,10,16 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: court-monitor
+  cancel-in-progress: false
+jobs:
+  collect:
+    if: vars.COURT_WORKER_ENABLED == 'true' && vars.COURT_FREE_BUDGET_VERIFIED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Check immutable application revision
+        env:
+          COURT_CODE_SHA: ${{ vars.COURT_CODE_SHA }}
+        run: '[[ "$COURT_CODE_SHA" =~ ^[0-9a-f]{40}$ ]]'
+      - uses: actions/checkout@v4
+        with:
+          repository: 12bladick12/skb-competitor-analytics
+          ref: ${{ vars.COURT_CODE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Collect and checkpoint privately
+        env:
+          SKB_COURT_CONFIG: ${{ secrets.SKB_COURT_CONFIG }}
+        run: python -m courts.runner --schedule --seconds 600
+      - name: Evaluate release conditions
+        env:
+          SKB_COURT_CONFIG: ${{ secrets.SKB_COURT_CONFIG }}
+        run: python -m courts.runner --check-release
+# No source documents, secrets, database dumps or browser traces are uploaded as Actions artifacts.
