@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'courts/sources.py'
+      - 'courts/browser_access.py'
+      - 'courts/public_forms.py'
       - 'courts/parsers.py'
       - 'scripts/probe_court_sources.py'
       - '.github/workflows/court-sources.yml'
@@ -12,7 +14,7 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,7 +28,11 @@ jobs:
       - name: Public forms only; no database or account credentials
         run: >-
           python scripts/probe_court_sources.py --output data/court-access
-          --sources kad ras sudrf magistrates vsrf ksrf fssp fedresurs fns sudact_arbitral
+          --sources kad ras mkad sudrf magistrates vsrf ksrf fssp fedresurs sudact_arbitral sudact_regular sudact_magistrate
           --pages 1
+      - name: Public FNS form for all five legal entities
+        run: >-
+          python scripts/probe_court_sources.py --output data/fns-access
+          --sources fns --entity all --pages 1
       # Only status/count/reason are written to logs. Collected HTML stays on the
       # ephemeral runner; source documents are never uploaded as public artifacts.

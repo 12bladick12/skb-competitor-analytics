@@ -80,6 +80,7 @@ class Page:
     coverage_to: str | None = None
     history_complete: bool = False
     known_cases_refreshed: bool = False
+    diagnostics: dict = field(default_factory=dict)
 
     def validate(self):
         if self.status == 'success' and (not self.complete or self.next_cursor is not None):

@@ -100,7 +100,7 @@ def ingest(store, drive, job, entity, page, previous_check=None, extra_records=(
            'last_success_at':page.checked_at if page.complete else old.get('last_success_at'),
            'complete':page.complete,'all_history':page.history_complete,
            'known_cases_refreshed':page.known_cases_refreshed,'coverage_from':page.coverage_from,'coverage_to':page.coverage_to,
-           'pages':old.get('pages',0)+1,'next_cursor':page.next_cursor,
+           'pages':old.get('pages',0)+1,'next_cursor':page.next_cursor,'diagnostics':page.diagnostics,
            'evidence_ids':list(page.objects), 'items':len(page.cases)+len(page.enforcement)}
     if persist_check:records.append(record('court_check',entity['id']+':'+page.source,check))
     records.extend(extra_records)

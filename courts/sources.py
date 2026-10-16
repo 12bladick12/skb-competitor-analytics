@@ -4,9 +4,11 @@ import time
 from urllib.parse import urlsplit
 from .model import Page, digest
 from .parsers import blocked, total, sudact_links, sudact_document
+from .browser_access import route_optional, error_code, navigate, capture
 
 CATALOG={
     'kad':('arbitral','https://kad.arbitr.ru/'),
+    'mkad':('arbitral','https://mkad.arbitr.ru/'),
     'ras':('arbitral','https://ras.arbitr.ru/'),
     'sudrf':('general','https://sudrf.ru/index.php?id=300'),
     'magistrates':('magistrate','https://sudrf.ru/index.php?id=300'),
@@ -32,6 +34,7 @@ class PublicBrowser:
             if self.channel:options['channel']=self.channel
             self.browser=self.engine.chromium.launch(**options)
             self.context=self.browser.new_context(locale='ru-RU')
+            self.context.route('**/*',route_optional)
         except Exception:
             self.engine.stop();raise
         return self
@@ -47,56 +50,87 @@ class PublicBrowser:
         if host in self.blocked_hosts:
             result.status=self.blocked_hosts[host];result.reason='Повторные запросы остановлены после ограничения доступа.'
             return result
+        if source in ('fns','fssp'):
+            from .public_forms import fetch_fns,fetch_fssp
+            time.sleep(self.delay)
+            result=(fetch_fns if source=='fns' else fetch_fssp)(entity)
+            if result.status in ('challenge','access_denied','rate_limited'):self.blocked_hosts[host]=result.status
+            return result
         page=self.context.new_page()
-        page.set_default_timeout(10000);page.set_default_navigation_timeout(25000)
+        page.set_default_timeout(15000);page.set_default_navigation_timeout(40000)
+        stage='navigation';started=time.monotonic()
+        result.diagnostics={'stage':stage}
+        def script_error(error):
+            errors=result.diagnostics.setdefault('script_errors',[])
+            if len(errors)<10:errors.append('WASM_TRAP' if str(error).strip()=='unreachable' else type(error).__name__)
+        page.on('pageerror',script_error)
         try:
             time.sleep(self.delay)
             if source.startswith('sudact_'):
                 return self._sudact(page,source,entity,cursor or {})
-            response=page.goto(url,wait_until='domcontentloaded')
+            response=navigate(page,url)
+            result.diagnostics['http_status']=response.status if response else None
             page.wait_for_timeout(1000)
             body=page.locator('body').inner_text()
             problem=blocked(body,response.status if response else 500)
             if not problem:
+                stage='form_ready'
                 if source=='vsrf':
                     page.get_by_placeholder('ФИО (наименование)',exact=True).fill(entity['names'][-1])
-                    page.get_by_text('Найти',exact=True).click()
+                    stage='search_response';page.get_by_text('Найти',exact=True).click()
                     page.get_by_text('Результаты поиска',exact=True).wait_for(timeout=20000)
                     page.wait_for_timeout(1000)
-                elif source=='kad':
+                elif source in ('kad','ras'):
+                    page.wait_for_function('window.jQuery && window.jQuery.isReady',timeout=25000)
                     close=page.locator('.js-promo_notification-popup-close')
+                    page.add_locator_handler(close,lambda control:control.click())
                     if close.is_visible():close.click()
                     field=page.locator('#sug-participants textarea');field.fill(entity['inn']);field.press('Tab')
-                    with page.expect_response(lambda r:'/Kad/SearchInstances' in r.url,timeout=20000) as waiting:
-                        page.locator('#b-form-submit').click()
+                    stage='search_response'
+                    endpoint='/Kad/SearchInstances' if source=='kad' else '/Ras/Search'
+                    with page.expect_response(lambda r:endpoint.lower() in r.url.lower(),timeout=45000) as waiting:
+                        page.get_by_role('button',name='Найти',exact=True).click()
                     problem=blocked('',waiting.value.status)
-                elif source=='fssp':
-                    page.locator('label[for=r5]').click();page.locator('#input10').fill(entity['inn'])
-                    page.locator('#btn-sbm').click();page.wait_for_timeout(3500)
+                    result.diagnostics['search_http_status']=waiting.value.status
+                    page.wait_for_timeout(1500)
+                elif source=='mkad':
+                    page.get_by_placeholder('Название или ИНН',exact=True).fill(entity['inn'])
+                    stage='search_response'
+                    with page.expect_navigation(wait_until='commit',timeout=45000):
+                        page.locator('input[type=submit]').click()
+                    page.wait_for_timeout(2000)
             body=page.locator('body').inner_text()
             problem=problem or blocked(body)
             result.status=problem or 'partial'
             result.reason=('Источник ограничил автоматический доступ.' if problem else
                            'Доступ проверен; полнота поиска и карточек не подтверждена.')
             if problem in ('challenge','access_denied','rate_limited'):self.blocked_hosts[host]=problem
-            html=page.content().encode();proof=hashlib.sha256(html).hexdigest();result.objects[proof]=html
+            proof=capture(page,result)
+            result.diagnostics['stage']='search_observed' if stage=='search_response' else 'page_only'
+            if source=='mkad' and not problem and not page.locator('a[href*="/Card/"]').count():
+                result.status='error';result.reason='Мобильная форма не вернула распознанный список дел; отсутствие дел не установлено.'
+                result.diagnostics['stage']='results_not_recognized'
+                return result
             # Search observations stay candidates until identity AND role are verified.
-            if source in ('vsrf','kad') and not problem:
+            if source in ('vsrf','kad','ras','mkad') and not problem and stage=='search_response':
                 result.candidates.append({'id':digest([source,entity['id'],body]),'entity_id':entity['id'],
                     'url':page.url,'title':'Результат поиска '+entity['name'],'text':body,
                     'reported_total':total(body,supreme=True) if source=='vsrf' else None,
                     'reason':'Требуется проверка карточек, ролей и всех страниц.','evidence_ids':[proof]})
             return result
         except Exception as exc:
-            result.status='error';result.reason='Не удалось завершить поиск: '+type(exc).__name__
+            result.status='error';result.reason=f'Не удалось завершить этап {stage}: {error_code(exc)}'
+            result.diagnostics.update(stage=stage,error=error_code(exc))
             try:
-                html=page.content().encode();proof=hashlib.sha256(html).hexdigest();result.objects[proof]=html
+                capture(page,result)
                 problem=blocked(page.locator('body').inner_text())
                 if problem:
                     result.status=problem;self.blocked_hosts[host]=problem
             except Exception:pass
             return result
-        finally:page.close()
+        finally:
+            result.diagnostics['elapsed_seconds']=round(time.monotonic()-started,1)
+            page.close()
 
     def _sudact(self,page,source,entity,cursor):
         domain,base=CATALOG[source];section=source.removeprefix('sudact_')
@@ -108,12 +142,12 @@ class PublicBrowser:
         parsed=urlsplit(target)
         if parsed.scheme!='https' or parsed.hostname!='sudact.ru' or not parsed.path.startswith('/'+section+'/'):
             raise ValueError('Недопустимый адрес продолжения поиска.')
-        response=page.goto(target,wait_until='domcontentloaded')
+        response=navigate(page,target)
         body=page.locator('body').inner_text()
         problem=blocked(body,response.status if response else 500)
         if not problem and not pending and not cursor.get('page_url'):
             page.locator('#id_'+section+'-txt').fill(queries[index])
-            with page.expect_navigation(wait_until='domcontentloaded'):
+            with page.expect_navigation(wait_until='commit'):
                 page.locator('input[type=submit]').click()
         if not problem and not pending:
             page.wait_for_function("!document.body.innerText.includes('Идет поиск')",timeout=35000)
