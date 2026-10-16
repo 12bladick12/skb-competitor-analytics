@@ -51,6 +51,16 @@ def wait_for_search_end(page, marker='Идет поиск'):
                            arg=marker,timeout=35000)
 
 
+def wait_for_react_input(page, placeholder):
+    # SSR renders an editable field before React attaches its event handlers.
+    # Filling it sooner loses the value on hydration and submits an empty search.
+    page.wait_for_function('''placeholder => {
+        const input=Array.from(document.querySelectorAll('input')).find(
+            e=>e.getAttribute('placeholder')===placeholder);
+        return input && Object.keys(input).some(k=>k.startsWith('__reactProps'));
+    }''',arg=placeholder,timeout=25000)
+
+
 def capture(page, result):
     import hashlib
     html = page.content().encode()

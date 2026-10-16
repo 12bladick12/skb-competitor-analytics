@@ -4,7 +4,7 @@ import time
 from urllib.parse import urlsplit
 from .model import Page, digest
 from .parsers import blocked, total, sudact_links, sudact_document
-from .browser_access import route_optional, error_code, navigate, capture, wait_for_search_end
+from .browser_access import route_optional, error_code, navigate, capture, wait_for_search_end, wait_for_react_input
 
 CATALOG={
     'kad':('arbitral','https://kad.arbitr.ru/'),
@@ -89,6 +89,7 @@ class PublicBrowser:
             if not problem:
                 stage='form_ready'
                 if source=='vsrf':
+                    wait_for_react_input(page,'ФИО (наименование)')
                     page.get_by_placeholder('ФИО (наименование)',exact=True).fill(entity['names'][-1])
                     stage='search_response';page.get_by_text('Найти',exact=True).click()
                     page.get_by_text('Результаты поиска',exact=True).wait_for(timeout=20000)
@@ -102,8 +103,13 @@ class PublicBrowser:
                     page.wait_for_function('window.jQuery && window.jQuery.isReady',timeout=25000)
                     close=page.locator('.js-promo_notification-popup-close')
                     page.add_locator_handler(close,lambda control:control.click())
-                    if close.is_visible():close.click()
-                    field=page.locator('#sug-participants textarea');field.fill(entity['inn']);field.press('Tab')
+                    # The handler dismisses the popup before the next action. An
+                    # explicit second click would wait on the now-hidden button.
+                    stage='participant_input'
+                    field=page.locator('#sug-participants textarea');field.fill(entity['inn'])
+                    # Blurring onto the next input opens a court suggestion list
+                    # over the search button. A normal click on the label avoids it.
+                    page.get_by_text('Участник дела',exact=True).click()
                     stage='search_response'
                     endpoint='/Kad/SearchInstances' if source=='kad' else '/Ras/Search'
                     with page.expect_response(lambda r:endpoint.lower() in r.url.lower(),timeout=45000) as waiting:

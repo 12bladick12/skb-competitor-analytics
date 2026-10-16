@@ -4,7 +4,7 @@ import sys
 import os
 import time
 from unittest.mock import Mock, patch
-from courts.browser_access import optional_resource, error_code, navigate, wait_for_search_end
+from courts.browser_access import optional_resource, error_code, navigate, wait_for_search_end, wait_for_react_input
 from courts.public_forms import fetch_fns, fetch_fssp
 from courts.registry import entities
 from courts.sources import PublicBrowser
@@ -75,7 +75,33 @@ class AccessTests(unittest.TestCase):
                 }''')
                 wait_for_search_end(page)
                 self.assertEqual(page.locator('body').inner_text(),'Найдено 2 документа')
+                page.set_content('<input placeholder="Company">')
+                page.evaluate('''() => setTimeout(() => {
+                    const input=document.querySelector('input');input.value='';
+                    input.__reactProps$test={};
+                },200)''')
+                wait_for_react_input(page,'Company')
+                page.get_by_placeholder('Company').fill('TEKO')
+                self.assertEqual(page.get_by_placeholder('Company').input_value(),'TEKO')
             finally:browser.close()
+
+    def test_public_search_dismisses_popup_once_and_reaches_search_endpoint(self):
+        html='''<html><head><meta charset="utf-8"></head><body><script>window.jQuery={isReady:true};</script>
+            <div id="popup" style="position:fixed;inset:0;background:white;z-index:99">
+              <button class="js-promo_notification-popup-close"
+                onclick="document.getElementById('popup').remove()">Закрыть</button></div>
+            <h2>Участник дела</h2><div id="sug-participants"><textarea></textarea></div>
+            <button onclick="fetch('/Kad/SearchInstances',{method:'POST'})">Найти</button>
+            </body></html>'''
+        options={'delay':0}
+        if sys.platform=='win32':options['channel']='msedge'
+        with PublicBrowser(**options) as browser:
+            browser.context.route('https://kad.arbitr.ru/**',lambda route:
+                route.fulfill(status=200,content_type='text/html',body=html))
+            result=browser.fetch('kad',self.entity)
+            self.assertEqual(result.status,'partial',result.diagnostics)
+            self.assertEqual(result.diagnostics['stage'],'search_observed')
+            self.assertEqual(result.diagnostics['search_http_status'],200)
 
     @patch('courts.public_forms.time.sleep')
     def test_fns_matches_both_identifiers_and_removes_transient_tokens(self,_):
