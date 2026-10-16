@@ -13,7 +13,8 @@ from .collector import collect
 from .gate import LOCAL, release_reasons
 from .model import now
 from .registry import entities, fingerprint
-from .sources import PublicBrowser, CATALOG
+from .sources import CATALOG
+from .browser_worker import BoundedBrowser
 from .store import CourtStore
 
 
@@ -51,7 +52,7 @@ def run_job(store, config, job, *, channel=None, sources=None, max_pages=25, sec
     thread=threading.Thread(target=heartbeat,daemon=True);thread.start()
     drive=DriveStore(config)
     try:
-        with PublicBrowser(channel=channel) as browser:
+        with BoundedBrowser(channel=channel) as browser:
             return collect(store,drive,job,browser,alive,sources=sources,max_pages=max_pages,seconds=seconds)
     except Exception as exc:
         # The exception may contain credentials from an upstream URL; only persist its class.

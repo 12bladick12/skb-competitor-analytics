@@ -1,12 +1,31 @@
 import json
 import unittest
 import sys
+import os
+import time
 from unittest.mock import Mock, patch
 from courts.browser_access import optional_resource, error_code, navigate, wait_for_search_end
 from courts.public_forms import fetch_fns, fetch_fssp
 from courts.registry import entities
 from courts.sources import PublicBrowser
 from courts.parsers import blocked
+from courts.browser_worker import BoundedBrowser
+
+
+def isolated_test_worker(connection,options):
+    if os.name!='nt':os.setsid()
+    from courts.model import Page
+    try:
+        while True:
+            request=connection.recv()
+            if request is None:return
+            source,entity,cursor=request
+            if cursor and cursor.get('hang'):time.sleep(60)
+            if cursor and cursor.get('crash'):os._exit(7)
+            result=Page(source,'arbitral',entity['id'],'https://kad.arbitr.ru/')
+            result.status='challenge' if cursor and cursor.get('challenge') else 'partial'
+            connection.send(result)
+    finally:connection.close()
 
 
 def response(text='', payload=None, status=200):
@@ -100,6 +119,54 @@ class AccessTests(unittest.TestCase):
         browser=PublicBrowser(delay=0)
         first=browser.fetch('fssp',self.entity);second=browser.fetch('fssp',entities()[1])
         self.assertEqual(first.status,second.status);self.assertEqual(fetch.call_count,1)
+
+    def test_hung_worker_is_stopped_and_another_source_can_continue(self):
+        with BoundedBrowser(timeout=5,worker_target=isolated_test_worker) as browser:
+            self.assertEqual(browser.fetch('kad',self.entity).status,'partial')
+            process=browser.process;browser.timeout=.3;started=time.monotonic()
+            cursor={'hang':True,'query_index':2}
+            result=browser.fetch('kad',self.entity,cursor)
+            self.assertLess(time.monotonic()-started,12)
+            self.assertEqual(result.diagnostics['error'],'SOURCE_DEADLINE')
+            self.assertEqual(result.next_cursor,cursor);self.assertFalse(result.complete)
+            self.assertIsNone(browser.process)
+            browser.timeout=5
+            self.assertEqual(browser.fetch('ras',self.entity).status,'partial')
+            self.assertIsNot(browser.process,process)
+
+    def test_crashed_worker_preserves_cursor_and_access_denials_survive_restart(self):
+        with BoundedBrowser(timeout=5,worker_target=isolated_test_worker) as browser:
+            self.assertEqual(browser.fetch('kad',self.entity,{'challenge':True}).status,'challenge')
+            cursor={'crash':True,'query_index':2}
+            result=browser.fetch('ras',self.entity,cursor)
+            self.assertEqual(result.status,'error');self.assertEqual(result.next_cursor,cursor)
+            self.assertEqual(browser.fetch('kad',self.entity).status,'challenge')
+            self.assertIsNone(browser.process)
+            self.assertEqual(browser.fetch('ras',self.entity).status,'partial')
+
+    @patch('courts.sources.wait_for_search_end')
+    @patch('courts.sources.navigate')
+    def test_inconsistent_search_advances_alias_and_retains_gap_to_end_of_pass(self,navigate,_):
+        page=Mock();page.url='https://sudact.ru/regular/'
+        page.locator.return_value.inner_text.return_value='Найден 1 документ. Список отсутствует.'
+        page.content.return_value='<html><body>Найден 1 документ. Список отсутствует.</body></html>'
+        page.expect_navigation.return_value.__enter__=Mock()
+        page.expect_navigation.return_value.__exit__=Mock()
+        navigate.return_value.status=200
+        browser=PublicBrowser(delay=0)
+        first=browser._sudact(page,'sudact_regular',self.entity,{})
+        self.assertEqual(first.next_cursor['query_index'],1)
+        self.assertEqual(len(first.next_cursor['unresolved_queries']),1)
+        page.locator.return_value.inner_text.return_value='Документы не найдены'
+        page.content.return_value='<html><body>Документы не найдены</body></html>'
+        cursor=first.next_cursor
+        for _ in range(len(self.entity['names'])+1):
+            result=browser._sudact(page,'sudact_regular',self.entity,cursor)
+            self.assertEqual(result.status,'partial');self.assertFalse(result.complete)
+            self.assertEqual(len(result.diagnostics['unresolved_queries']),1)
+            cursor=result.next_cursor
+            if cursor is None:break
+        self.assertIsNone(cursor)
 
 
 if __name__=='__main__':unittest.main()

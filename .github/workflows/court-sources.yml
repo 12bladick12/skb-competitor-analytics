@@ -5,6 +5,7 @@ on:
     paths:
       - 'courts/sources.py'
       - 'courts/browser_access.py'
+      - 'courts/browser_worker.py'
       - 'courts/public_forms.py'
       - 'courts/parsers.py'
       - 'scripts/probe_court_sources.py'
@@ -17,7 +18,7 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,5 +42,13 @@ jobs:
         run: >-
           python scripts/diagnose_court_access.py --mode http --sources fns
           --output data/fns-ipv4 --ipv4 --connect-timeout 30
+      - name: Ordinary headed Chromium with a dedicated persistent session
+        run: |
+          if command -v xvfb-run >/dev/null; then
+            xvfb-run -a python scripts/probe_court_sources.py --output data/court-headed \
+              --sources kad ras vsrf --headed --persistent-profile --unfiltered --pages 1
+          else
+            echo 'Xvfb is unavailable; headed probe skipped without installing extra packages.'
+          fi
       # Only status/count/reason are written to logs. Collected HTML stays on the
       # ephemeral runner; source documents are never uploaded as public artifacts.

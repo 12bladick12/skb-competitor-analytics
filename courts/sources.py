@@ -23,28 +23,36 @@ CATALOG={
 
 
 class PublicBrowser:
-    def __init__(self, channel=None, delay=2, browser_name='chromium'):
+    def __init__(self, channel=None, delay=2, browser_name='chromium', *, headless=True,
+                 profile=None, filter_optional=True):
         if browser_name not in ('chromium','firefox'):raise ValueError('Unsupported browser')
         if channel and browser_name!='chromium':raise ValueError('Channel requires Chromium')
         self.browser_name=browser_name
         self.channel=channel;self.delay=delay;self.blocked_hosts={};self.context=None
+        self.headless=headless;self.profile=profile;self.filter_optional=filter_optional
+        self.browser=None
 
     def __enter__(self):
         from playwright.sync_api import sync_playwright
         self.engine=sync_playwright().start()
         try:
-            options={'headless':True}
+            options={'headless':self.headless}
             if self.channel:options['channel']=self.channel
-            self.browser=getattr(self.engine,self.browser_name).launch(**options)
-            self.context=self.browser.new_context(locale='ru-RU')
-            self.context.route('**/*',route_optional)
+            launcher=getattr(self.engine,self.browser_name)
+            if self.profile:
+                self.context=launcher.launch_persistent_context(str(self.profile),locale='ru-RU',**options)
+            else:
+                self.browser=launcher.launch(**options)
+                self.context=self.browser.new_context(locale='ru-RU')
+            if self.filter_optional:self.context.route('**/*',route_optional)
         except Exception:
             self.engine.stop();raise
         return self
 
     def __exit__(self,*_):
         if self.context:self.context.close()
-        self.browser.close();self.engine.stop()
+        if self.browser:self.browser.close()
+        self.engine.stop()
 
     def fetch(self, source, entity, cursor=None):
         domain,url=CATALOG[source]
@@ -86,6 +94,11 @@ class PublicBrowser:
                     page.get_by_text('Результаты поиска',exact=True).wait_for(timeout=20000)
                     page.wait_for_timeout(1000)
                 elif source in ('kad','ras'):
+                    result.diagnostics['readiness']=page.evaluate('''() => ({
+                        document:document.readyState, jquery:!!window.jQuery,
+                        jquery_ready:!!(window.jQuery && window.jQuery.isReady),
+                        participant_fields:document.querySelectorAll('#sug-participants textarea').length
+                    })''')
                     page.wait_for_function('window.jQuery && window.jQuery.isReady',timeout=25000)
                     close=page.locator('.js-promo_notification-popup-close')
                     page.add_locator_handler(close,lambda control:control.click())
@@ -142,6 +155,7 @@ class PublicBrowser:
         queries=list(dict.fromkeys([entity['inn'],*entity['names']]))
         index=cursor.get('query_index',0)
         result=Page(source,domain,entity['id'],base)
+        gaps=list(cursor.get('unresolved_queries',[]))
         pending=cursor.get('pending',[])
         target=pending[0]['url'] if pending else cursor.get('page_url') or base
         parsed=urlsplit(target)
@@ -170,13 +184,23 @@ class PublicBrowser:
             count=total(body)
             if count is None or (count>0 and not remaining):
                 result.reason='Результаты не распознаны или список документов отсутствует.'
-                result.next_cursor=cursor or {'query_index':index};return result
+                gap={'query_index':index,'url':page.url,'reason':result.reason,'evidence_id':proof}
+                if gap not in gaps:gaps.append(gap)
+                result.diagnostics.update(stage='results_not_recognized',unresolved_queries=gaps)
+                # Keep the gap explicit, but let other aliases be searched. Once the
+                # pass ends, the next collection starts again and retries these gaps.
+                if index+1<len(queries):
+                    result.next_cursor={'query_index':index+1,'unresolved_queries':gaps}
+                return result
         if remaining:
             result.next_cursor={'query_index':index,'pending':remaining,'after_url':after}
         elif after:
             result.next_cursor={'query_index':index,'page_url':after}
         elif index+1<len(queries):
             result.next_cursor={'query_index':index+1}
+        if gaps:
+            result.diagnostics['unresolved_queries']=gaps
+            if result.next_cursor is not None:result.next_cursor['unresolved_queries']=gaps
         result.reason=result.reason or 'Обход опубликованных копий; полнота первичных реестров не подтверждена.'
         result.diagnostics['stage']='document_parsed' if pending else 'search_observed'
         return result

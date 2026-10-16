@@ -7,7 +7,8 @@ import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from courts.registry import entities
-from courts.sources import PublicBrowser, CATALOG
+from courts.sources import CATALOG
+from courts.browser_worker import BoundedBrowser
 
 
 def main():
@@ -18,11 +19,17 @@ def main():
     parser.add_argument('--channel',choices=['msedge','chrome'])
     parser.add_argument('--browser',choices=['chromium','firefox'],default='chromium')
     parser.add_argument('--pages',type=int,default=1)
+    parser.add_argument('--headed',action='store_true',help='Use an existing display, e.g. Xvfb in CI')
+    parser.add_argument('--persistent-profile',action='store_true',help='Reuse an isolated profile inside the output directory')
+    parser.add_argument('--unfiltered',action='store_true',help='Load optional analytics/widgets as well')
+    parser.add_argument('--timeout',type=int,default=90,help='Hard deadline per page, including browser startup and cleanup')
     args=parser.parse_args();registry=entities()
     selected=registry if args.entity=='all' else [next(e for e in registry if e['id']==args.entity)]
     args.output.mkdir(parents=True,exist_ok=True)
     results=[]
-    with PublicBrowser(channel=args.channel,browser_name=args.browser) as browser:
+    with BoundedBrowser(channel=args.channel,browser_name=args.browser,headless=not args.headed,
+                        profile=str((args.output/'browser-profile').resolve()) if args.persistent_profile else None,
+                        filter_optional=not args.unfiltered,timeout=max(10,min(args.timeout,180))) as browser:
       for entity in selected:
         for source in args.sources:
             cursor=None
