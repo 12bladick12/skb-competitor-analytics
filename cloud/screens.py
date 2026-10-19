@@ -12,7 +12,7 @@ from .drive_store import DriveStore, StorageError
 from .library import Repository, period_events, read_asset
 from .readiness import section
 from .presentation import html, safe, note, section_heading, event_card, coverage_summary, competitor_bars
-from .editor import render_editor, navigation_guard
+from .editor import render_editor, navigation_guard, dirty
 from .coverage import monitored, outside_scope
 
 
@@ -140,6 +140,14 @@ def file_bytes(settings, identity, library_id, asset_id):
 
 
 def render_library(library, access, settings, identity):
+    if st.query_params.get('section') == 'Арбитражные дела' and not (
+            dirty() and st.session_state.get('nav_page') == 'Черновики'):
+        st.sidebar.button('← К рабочему пространству', on_click=navigate, args=('Обзор',))
+        if navigation_guard('Арбитражные дела', st.session_state.get('nav_period', '')):
+            return True
+        from .arbitration import render_arbitration
+        render_arbitration(settings, identity)
+        return True
     pages = ["Обзор", "Публикации", "Конкуренты"]
     if access.role in ('admin','editor'):
         pages.extend(['Сбор данных','Черновики'])
@@ -179,6 +187,8 @@ def render_library(library, access, settings, identity):
     if page == "Обзор":
         st.subheader("Обзор · " + period_label(period))
         st.caption("Публикации конкурентов и состояние источников за выбранный период")
+        st.button('Арбитражные дела →', key='overview_arbitration', on_click=navigate,
+                  args=('Арбитражные дела',))
         with st.container(key='metrics'):
             cols = st.columns(4)
             cols[0].metric("Подтверждённые материалы", len(events))
@@ -318,3 +328,4 @@ def render_library(library, access, settings, identity):
                         data=asset_download(settings, identity, library['id'], report[field]),
                         file_name=name, mime=mime, key=key+'_download', on_click='ignore')
     return True
+
