@@ -11,8 +11,8 @@ from .access import current_access
 from .drive_store import DriveStore, StorageError
 from .library import Repository, period_events, read_asset
 from .readiness import section
-from .presentation import html, safe, note, section_heading, event_card, coverage_summary, competitor_bars
-from .editor import render_editor, navigation_guard, dirty
+from .presentation import html, safe, note, section_heading, event_card, research_card, coverage_summary, competitor_bars
+from .editor import render_editor, navigation_guard
 from .coverage import monitored, outside_scope
 
 
@@ -54,6 +54,19 @@ def period_label(value):
     if len(value) == 7:
         return f"{MONTHS[int(value[5:])]} {value[:4]}"
     return value.replace("__", " — ")
+
+
+def available_periods(library, current):
+    periods = set(library['period'])
+    for name in ('research_run', 'research_item'):
+        for record in (library.get(name) or {}).values():
+            if not isinstance(record, dict):
+                continue
+            candidate = record.get('period')
+            if (isinstance(candidate, str) and re.fullmatch(r'\d{4}-(0[1-9]|1[0-2])', candidate)
+                    and candidate[:4] != '0000'):
+                periods.add(candidate)
+    return sorted(periods, reverse=True) or [current]
 
 
 def report_label(report):
@@ -139,15 +152,77 @@ def file_bytes(settings, identity, library_id, asset_id):
         drive.close()
 
 
+RESEARCH_CATEGORIES = {'arbitration': 'Арбитражные дела', 'media': 'Упоминания в СМИ'}
+
+
+def research_items(library, period=None, category=None):
+    """Keep research separate from confirmed events and from undated material."""
+    items = library.get('research_item') or {}
+    return sorted((item for item in items.values() if isinstance(item, dict)
+                   and not item.get('superseded_by')
+                   and (category is None or item.get('category') == category)
+                   and item.get('period') == period),
+                  key=lambda item: (str(item.get('published_at') or ''), str(item.get('id') or '')),
+                  reverse=True)
+
+
+def latest_research_run(library, period, category):
+    runs = library.get('research_run') or {}
+    matching = [run for run in runs.values() if isinstance(run, dict)
+                and run.get('period') == period and run.get('category') == category]
+    return max(matching, key=lambda run: (str(run.get('finished_at') or run.get('started_at') or ''),
+                                          str(run.get('id') or '')), default=None)
+
+
+def research_panel(library, period, category):
+    items = research_items(library, period, category)
+    run = latest_research_run(library, period, category)
+    section_heading(RESEARCH_CATEGORIES[category], f'Материалов {len(items)}' if items else '')
+    if run is None:
+        st.info('Исследование за этот период ещё не проводилось.')
+    else:
+        status = run.get('status')
+        if status == 'error':
+            st.error('Исследование завершилось с ошибкой. Сохранённые материалы показаны ниже; полнота не подтверждена.')
+        elif status == 'partial':
+            st.warning('Исследование выполнено не полностью. Сохранённые материалы показаны ниже.')
+        elif status != 'success':
+            st.info('Исследование ещё не завершено. Показаны только сохранённые материалы.')
+        if status == 'success' and not items:
+            st.info('В сохранённом результате материалов за этот период нет. Это не доказывает их отсутствие в других источниках.')
+        coverage = run.get('coverage') or []
+        unavailable = [entry for entry in coverage if isinstance(entry, dict)
+                       and entry.get('status') in ('error', 'partial', 'unavailable', 'blocked')]
+        if unavailable:
+            st.caption(f'Неполный охват: {len(unavailable)} источников требуют проверки.')
+        limitations = run.get('limitations') or []
+        if coverage or limitations:
+            with st.expander('Охват и ограничения исследования'):
+                for entry in coverage:
+                    if isinstance(entry, dict):
+                        st.write(f"{entry.get('source') or 'Источник'} · {entry.get('status') or 'нет статуса'}"
+                                 + (f" · {entry['detail']}" if entry.get('detail') else ''))
+                for limit in limitations:
+                    st.write(str(limit))
+    for item in items[:3]:
+        research_card(item, url(item.get('source_url')), url(item.get('case_url')))
+    if len(items) > 3:
+        with st.expander(f'Все материалы · {len(items)}'):
+            for item in items[3:]:
+                research_card(item, url(item.get('source_url')), url(item.get('case_url')))
+
+
+def undated_research(library):
+    items = research_items(library)
+    if not items:
+        return
+    with st.expander(f'Материалы без установленной даты · {len(items)}'):
+        st.caption('Дата публикации или события не установлена. Эти записи не относятся к выбранному месяцу.')
+        for item in items:
+            research_card(item, url(item.get('source_url')), url(item.get('case_url')))
+
+
 def render_library(library, access, settings, identity):
-    if st.query_params.get('section') == 'Арбитражные дела' and not (
-            dirty() and st.session_state.get('nav_page') == 'Черновики'):
-        st.sidebar.button('← К рабочему пространству', on_click=navigate, args=('Обзор',))
-        if navigation_guard('Арбитражные дела', st.session_state.get('nav_period', '')):
-            return True
-        from .arbitration import render_arbitration
-        render_arbitration(settings, identity)
-        return True
     pages = ["Обзор", "Публикации", "Конкуренты"]
     if access.role in ('admin','editor'):
         pages.extend(['Сбор данных','Черновики'])
@@ -172,7 +247,7 @@ def render_library(library, access, settings, identity):
             return True
         return False
     current = datetime.now(LOCAL).strftime('%Y-%m')
-    periods = sorted(library['period'], reverse=True) or [current]
+    periods = available_periods(library, current)
     initial = st.query_params.get("period", current)
     if st.session_state.get('nav_period') not in periods:
         st.session_state['nav_period']=initial if initial in periods else periods[0]
@@ -187,16 +262,16 @@ def render_library(library, access, settings, identity):
     if page == "Обзор":
         st.subheader("Обзор · " + period_label(period))
         st.caption("Публикации конкурентов и состояние источников за выбранный период")
-        st.button('Арбитражные дела →', key='overview_arbitration', on_click=navigate,
-                  args=('Арбитражные дела',))
         with st.container(key='metrics'):
             cols = st.columns(4)
             cols[0].metric("Подтверждённые материалы", len(events))
             for col, (kind, label) in zip(cols[1:], KINDS.items()):
                 col.metric(label, sum(e['kind'] == kind for e in events))
         if not events:
-            st.info("Подтверждённых материалов за этот период нет. Полнота проверки источников показана ниже.")
-        feed, summary = st.columns([1.35, 1], gap='large')
+            st.info("Подтверждённых материалов за этот период нет. " +
+                    ("Полнота проверки источников показана ниже." if checks else
+                     "Проверки официальных источников за этот месяц не сохранены."))
+        feed, arbitration, media = st.columns([1.4, 1, 1], gap='medium')
         with feed:
             with st.container(key='overview-feed'):
                 section_heading("Материалы периода", f"Всего {len(events)}")
@@ -206,13 +281,25 @@ def render_library(library, access, settings, identity):
                     st.caption("Здесь появятся подтверждённые публикации выбранного периода.")
                 st.button("Все публикации →", key='overview_publications', on_click=navigate,
                           args=('Публикации',), width='stretch')
-        with summary:
+        with arbitration:
+            with st.container(key='overview-arbitration'):
+                research_panel(library, period, 'arbitration')
+        with media:
+            with st.container(key='overview-media'):
+                research_panel(library, period, 'media')
+        coverage_column, competitors_column = st.columns(2, gap='medium')
+        with coverage_column:
             with st.container(key='overview-coverage'):
                 section_heading("Проверка источников", f"{len(monitored(checks))} источников")
-                coverage_summary(checks)
+                if checks:
+                    coverage_summary(checks)
+                else:
+                    st.caption('За этот период проверки официальных источников не сохранены.')
+        with competitors_column:
             with st.container(key='overview-competitors'):
                 section_heading("Публикации по конкурентам", "Топ-5 за период")
                 competitor_bars(events, library['competitor'])
+        undated_research(library)
         with st.expander("Полнота проверки источников · подробная таблица"):
             coverage_table(checks,diagnostic=access.role=='admin')
     elif page == "Публикации":
@@ -328,4 +415,3 @@ def render_library(library, access, settings, identity):
                         data=asset_download(settings, identity, library['id'], report[field]),
                         file_name=name, mime=mime, key=key+'_download', on_click='ignore')
     return True
-

@@ -12,7 +12,8 @@ from .readiness import neon_parameters, section
 from .neon_http import MigrationConnection, NeonError, NeonHTTP
 
 
-VISIBLE_KINDS = ("event", "period", "competitor", "run", "report", "draft")
+VISIBLE_KINDS = ("event", "period", "competitor", "run", "report", "draft",
+                 "research_item", "research_run")
 
 
 def canonical(value):
@@ -141,7 +142,8 @@ class Repository:
                 rows=self.http.query("""SELECT i.id,i.manifest,r.kind,r.key,r.payload
                     FROM skb_analytics.state s JOIN skb_analytics.imports i ON i.id=s.import_id
                     LEFT JOIN skb_analytics.records r ON r.import_id=i.id
-                    AND r.kind IN ('event','period','competitor','run','report','draft')
+                    AND r.kind IN ('event','period','competitor','run','report','draft',
+                                   'research_item','research_run')
                     WHERE s.key='active'""")
             except NeonError as exc:
                 if exc.sqlstate == '42P01':
