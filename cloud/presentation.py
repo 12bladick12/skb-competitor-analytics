@@ -62,6 +62,35 @@ def event_card(event, kind_label, *, compact=False):
          '<span class="verified"><span aria-hidden="true">✓</span> Подтверждённый материал</span></article>')
 
 
+def research_card(item, source_url='', case_url=''):
+    """Present saved research without promoting a candidate to a confirmed event."""
+    precision = item.get('published_precision')
+    published = item.get('published_at')
+    date_label = str(published)[:10] if precision == 'day' and published else (
+        str(published)[:7] if precision == 'month' and published else 'Дата не установлена')
+    status = ('Цитата подтверждена снимком' if item.get('status') == 'verified'
+              else 'Требует проверки')
+    status_class = 'research-verified' if item.get('status') == 'verified' else 'research-candidate'
+    title = item.get('title') or 'Без названия'
+    summary = item.get('summary') or ''
+    source = item.get('source_name') or 'Источник не указан'
+    company = item.get('competitor_name') or item.get('competitor_code') or 'Конкурент не указан'
+    case_number = item.get('case_number')
+    source_link = (f'<a href="{safe(source_url)}" target="_blank" rel="noopener noreferrer">'
+                   'Первоисточник ↗</a>') if source_url else '<span>Ссылка на первоисточник не сохранена</span>'
+    case_link = (f'<a href="{safe(case_url)}" target="_blank" rel="noopener noreferrer">'
+                 f'{safe(case_number or "Карточка дела")} ↗</a>') if case_url else (
+                     f'<span>Дело {safe(case_number)}</span>' if case_number else '')
+    evidence = item.get('evidence') or {}
+    quote = evidence.get('quote') if isinstance(evidence, dict) else None
+    quote_html = f'<blockquote>{safe(quote)}</blockquote>' if quote else ''
+    html(f'<article class="research-item"><div class="research-meta">'
+         f'<span class="company-label">{safe(company)}</span><span>{safe(date_label)}</span></div>'
+         f'<h4>{safe(title)}</h4><p>{safe(summary)}</p>{quote_html}'
+         f'<div class="research-source"><span>{safe(source)}</span>{source_link}{case_link}</div>'
+         f'<span class="research-status {status_class}">{safe(status)}</span></article>')
+
+
 def coverage_summary(checks):
     excluded = outside_scope(checks)
     checks = monitored(checks)

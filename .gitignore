@@ -21,3 +21,4 @@ tmp*/
 *.session*
 analysis/
 .venv-passports/
+.local-research/
