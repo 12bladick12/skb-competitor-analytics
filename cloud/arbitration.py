@@ -172,7 +172,8 @@ def render_metrics(metrics):
         return
     rows = []
     for key, raw in metrics.items():
-        value = raw.get('data') if isinstance(raw, dict) and 'data' in raw else raw
+        # A flag-only object means the provider did not supply a numeric value.
+        value = raw.get('data') if isinstance(raw, dict) else raw
         if value is not None and value != '' and value != {}:
             rows.append({'Показатель': metric_label(key), 'Значение': shown(value),
                          'Актуальность': ('Неактуален' if isinstance(raw, dict) and raw.get('isActual') is False
@@ -185,7 +186,7 @@ def render_metrics(metrics):
     with st.expander('Все показатели API и признаки актуальности'):
         st.caption('Поля без значения сохранены в снимке и показаны здесь как «Не передано».')
         for key, raw in metrics.items():
-            value = raw.get('data') if isinstance(raw, dict) and 'data' in raw else raw
+            value = raw.get('data') if isinstance(raw, dict) else raw
             actuality = raw.get('isActual') if isinstance(raw, dict) else None
             st.write(f'**{metric_label(key)} ({key}):** {shown(value)} · актуальность: {shown(actuality)}')
             if isinstance(raw, dict):
