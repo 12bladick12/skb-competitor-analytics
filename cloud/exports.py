@@ -12,7 +12,8 @@ from .document_style import EditorialStyle, render_pdf
 from src.utils import parse_report_period
 from .coverage import monitored
 
-KINDS = {'news':'Новости сайтов','telegram':'Новости Telegram-каналов','products':'Продукция и предложения'}
+KINDS = {'news':'Новости сайтов','telegram':'Новости Telegram-каналов','products':'Продукция и предложения',
+         'arbitration':'Арбитражные дела','media':'Упоминания в СМИ'}
 STATES = {'success':'Проверен','partial':'Сбор неполный','error':'Ошибка'}
 
 
@@ -64,6 +65,23 @@ def render(snapshot, evidence, competitors, *, include_pdf=False):
             status+='; публикаций нет'
         rows.append([check.get('competitor_name',check['competitor_code']), check['url'],status])
     builder._table(doc,rows)
+    builder._heading(doc,'Полнота исследования арбитражных дел и СМИ')
+    research = snapshot.get('research_coverage') or []
+    present = {run.get('category') for run in research}
+    for category in ('arbitration', 'media'):
+        if category not in present:
+            doc.add_paragraph(f'{KINDS[category]}: исследование за период не сохранено.', style='Meta')
+    for run in research:
+        label = KINDS.get(run.get('category'),str(run.get('category') or 'Исследование'))
+        status = STATES.get(run.get('status'),str(run.get('status') or 'Не проверено'))
+        doc.add_paragraph(f'{label}: {status}', style='Meta')
+        for entry in run.get('coverage') or []:
+            source = str(entry.get('source') or 'Источник')
+            state = str(entry.get('status') or 'Не проверено')
+            detail = str(entry.get('detail') or '')
+            doc.add_paragraph(f'{source} — {state}' + (f'; {detail}' if detail else ''))
+        for limitation in run.get('limitations') or []:
+            doc.add_paragraph('Ограничение: ' + str(limitation))
     builder._heading(doc,'Сохранённые доказательства')
     doc.add_paragraph('Относительные ссылки открываются после распаковки ZIP. Сохранённые страницы показаны как текст без выполнения скриптов.')
     for item in portable['items']:

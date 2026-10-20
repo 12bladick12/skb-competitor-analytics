@@ -1,9 +1,10 @@
 """Editorial rules for portable facts. Never modify collected events."""
 from collections import Counter
 from copy import deepcopy
+from datetime import datetime, timezone
 import re
 
-from .library import period_events
+from .library import period_events, period_event_map
 from .coverage import monitored
 
 
@@ -30,9 +31,9 @@ def create_payload(library, period, asset_ids=None):
 
 def issues(draft, library, asset_ids=None):
     result = []
-    members = set(library['period'].get(draft['period'], {}).get('event_ids', []))
+    members = period_event_map(library, draft['period'])
     for item in draft['items']:
-        current = library['event'].get(str(item['event_id']))
+        current = members.get(item['event_id'])
         reason, can_accept = '', False
         if not current or not confirmed(current, asset_ids):
             reason = 'Материал больше не подтверждён или отсутствует доказательство'
@@ -60,7 +61,7 @@ def save_payload(draft, library, conclusions, changes, asset_ids=None):
         raise ValueError('Некорректный список изменений.')
     items = {i['event_id']: i for i in result['items']}
     seen = set()
-    members = set(library['period'].get(draft['period'], {}).get('event_ids', []))
+    members = period_event_map(library, draft['period'])
     for change in changes:
         if not isinstance(change, dict) or set(change) - {'event_id', 'included', 'title', 'description', 'accept_version'}:
             raise ValueError('Даты, ссылки и сведения о проверке нельзя редактировать.')
@@ -75,7 +76,7 @@ def save_payload(draft, library, conclusions, changes, asset_ids=None):
                     description=_text(change.get('description'), 10000, 'Краткое описание'))
         accepted = change.get('accept_version')
         if accepted:
-            current = library['event'].get(str(event_id))
+            current = members.get(event_id)
             if (not current or not confirmed(current, asset_ids) or event_id not in members
                     or accepted != current['version']):
                 raise DraftConflict('Источник снова изменился. Откройте актуальную версию и проверьте различия.')
@@ -99,11 +100,28 @@ def snapshot(draft, library, asset_ids=None):
         raise DraftConflict('Проверьте изменённые материалы или исключите неподтверждённые перед предварительным просмотром.')
     selected = [deepcopy(i) for i in draft['items'] if i['included']]
     # Use current equivalent evidence, while preserving reviewed editorial text.
+    members = period_event_map(library, draft['period'])
     for item in selected:
-        item['source'] = deepcopy(library['event'][str(item['event_id'])])
+        item['source'] = deepcopy(members[item['event_id']])
     period = library['period'][draft['period']]
+    runs = [run for run in library.get('research_run', {}).values()
+            if run.get('period') == draft['period'] and run.get('category') in ('arbitration', 'media')]
+    def finished(value):
+        try:
+            return datetime.fromisoformat(value.get('finished_at', '')).astimezone(timezone.utc)
+        except (TypeError, ValueError):
+            return datetime.min.replace(tzinfo=timezone.utc)
+    latest = {}
+    for run in runs:
+        category = run['category']
+        if category not in latest or (finished(run), run.get('id', '')) > (finished(latest[category]), latest[category].get('id', '')):
+            latest[category] = run
+    research_coverage = [deepcopy(latest[category]) for category in ('arbitration', 'media') if category in latest]
     return {'draft_id': draft['id'], 'revision': draft['revision'], 'period': draft['period'],
             'name': draft.get('name') or 'Основной черновик',
             'conclusions': draft['conclusions'], 'items': selected, 'checks': deepcopy(monitored(period['checks'])),
             'counts': dict(Counter(i['source']['kind'] for i in selected)),
-            'incomplete': any(c['status'] in ('partial', 'error') for c in period['checks'])}
+            'research_coverage': research_coverage,
+            'incomplete': (any(c['status'] in ('partial', 'error') for c in period['checks'])
+                           or any(run.get('status') != 'success' for run in research_coverage)
+                           or len(research_coverage) < 2)}

@@ -65,6 +65,62 @@ class JobPostgresTests(unittest.TestCase):
         self.assertEqual(self.store.read(self.import_id,'2026-09'),original)
         self.assertEqual(self.jobs.list(self.import_id)[0]['status'],'partial')
 
+    def test_research_export_fence_preserves_release_and_rejects_stale_version(self):
+        from cloud.research import ResearchStore
+        from cloud.draft_rules import create_payload
+        from test_cloud_research import bundle
+        data = bundle()
+        data['items'][0]['competitor_code'] = 'a'
+        data['run'].update(started_at='2026-09-20T10:00:00+05:00',
+                           finished_at='2026-09-20T10:05:00+05:00')
+        data['items'][0]['discovered_at'] = '2026-09-20T10:04:00+05:00'
+        data['items'][0]['evidence']['captured_at'] = '2026-09-20T10:04:00+05:00'
+        ResearchStore({},repository=self.repo).import_bundle(data)
+        library = self.repo.load()
+        payload = create_payload(library, '2026-09', self.store.asset_ids(self.import_id))
+        draft = {'id': 'r'*32, 'period': '2026-09', 'revision': 1, **payload}
+        saved = snapshot(draft, library, self.store.asset_ids(self.import_id))
+        research = [i for i in saved['items'] if i['source']['kind'] == 'arbitration']
+        self.assertEqual(len(research), 1)
+        self.queue('export', saved, key='research-1')
+        first = self.jobs.claim('research-worker-1')
+        self.jobs.publish(first,[{'kind':'report','key':'research-release',
+                                  'payload':{'revision':1,'snapshot':saved}}],{},result_id='research-release')
+        original = self.repo.load()['report']['research-release']
+        corrected = bundle()
+        corrected['items'][0]['competitor_code'] = 'a'
+        corrected['run'].update(started_at='2026-09-20T11:00:00+05:00',
+                                finished_at='2026-09-20T11:05:00+05:00')
+        corrected['items'][0]['discovered_at'] = '2026-09-20T11:04:00+05:00'
+        corrected['items'][0]['evidence']['captured_at'] = '2026-09-20T11:04:00+05:00'
+        corrected['items'][0]['summary'] = 'Исправленное описание'
+        ResearchStore({},repository=self.repo).import_bundle(corrected)
+        self.queue('export', saved, key='research-stale')
+        stale = self.jobs.claim('research-worker-stale')
+        with self.assertRaises(Exception):
+            self.jobs.publish(stale,[{'kind':'report','key':'stale-release',
+                                      'payload':{'revision':1,'snapshot':saved}}],{})
+        self.assertNotIn('stale-release', self.repo.load()['report'])
+        self.assertEqual(self.repo.load()['report']['research-release'], original)
+
+    def test_research_only_month_stub_is_idempotent(self):
+        from cloud.research import ResearchStore
+        from test_cloud_research import bundle
+        data = bundle()
+        data['run']['period'] = '2026-08'
+        data['items'][0].update(competitor_code='a', published_at='2026-08-15',
+                                period='2026-08', status='candidate')
+        data['items'][0].pop('event_key')
+        data['run'].update(started_at='2026-09-20T10:00:00+05:00',
+                           finished_at='2026-09-20T10:05:00+05:00')
+        data['items'][0]['discovered_at'] = '2026-09-20T10:04:00+05:00'
+        data['items'][0]['evidence']['captured_at'] = '2026-09-20T10:04:00+05:00'
+        store = ResearchStore({}, repository=self.repo)
+        store.import_bundle(data)
+        store.import_bundle(data)
+        period = self.repo.load()['period']['2026-08']
+        self.assertEqual(period, {'key': '2026-08', 'event_ids': [], 'checks': [], 'links': {}})
+
     def test_saved_revision_worker_export_download_and_second_release(self):
         import hashlib
         from io import BytesIO

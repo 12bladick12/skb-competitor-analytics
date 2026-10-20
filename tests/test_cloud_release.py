@@ -133,6 +133,35 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(saved,before)
         with self.assertRaises(ValueError):render(saved,{digest:b'changed'},data['competitor'])
 
+    def test_verified_research_sections_and_proof_survive_word_and_zip(self):
+        proof='<html><body><p>Подтверждённое событие</p></body></html>'.encode('utf-8')
+        digest=hashlib.sha256(proof).hexdigest()
+        def item(ident,kind,title):
+            source={'id':ident,'kind':kind,'status':'confirmed','competitor_code':'sensor',
+                    'competitor_name':'СЕНСОР','date_label':'20.10.2026','title':title,
+                    'description':'Описание аналитика','original_text':'Исходный текст',
+                    'url':'https://example.org/source/'+str(ident),'evidence_ids':[digest],
+                    'provenance':{'article_url':'https://example.org/source/'+str(ident)}}
+            return {'event_id':ident,'included':True,'title':title,'description':'Описание аналитика',
+                    'version':'v1','source':source}
+        value={'draft_id':'d'*32,'revision':1,'period':'2026-10','name':'Записка',
+               'conclusions':'Вывод редактора','items':[item(101,'arbitration','Судебное событие'),
+                                                  item(102,'media','Публикация в СМИ')],
+               'checks':[],'counts':{'arbitration':1,'media':1},'incomplete':True,
+               'research_coverage':[{'period':'2026-10','category':'arbitration','status':'partial',
+                                     'coverage':[{'source':'Картотека','status':'blocked','detail':'Доступ ограничен'}],
+                                     'limitations':['Проверены не все страницы']} ]}
+        word,bundle=render(value,{digest:proof},{'sensor':{'name':'СЕНСОР'}})
+        paragraphs=' '.join(p.text for p in Document(BytesIO(word)).paragraphs)
+        for label in ('Арбитражные дела','Упоминания в СМИ','Судебное событие',
+                      'Публикация в СМИ','Проверены не все страницы','Вывод редактора'):
+            self.assertIn(label,paragraphs)
+        with ZipFile(BytesIO(bundle)) as archive:
+            manifest=json.loads(archive.read('manifest.json'))
+            self.assertEqual(manifest['research_coverage'],value['research_coverage'])
+            self.assertEqual(archive.read('evidence/'+digest+'.html.txt'),proof)
+            self.assertNotIn(b'<script',archive.read('evidence/'+digest+'.html'))
+
     def test_job_actions_reject_viewer_before_storage(self):
         config={'access':{'viewer_emails':['reader@example.com']}}
         claims={'is_logged_in':True,'email_verified':True,'iss':'https://accounts.google.com','sub':'1','email':'reader@example.com'}
