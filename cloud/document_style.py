@@ -105,6 +105,10 @@ class EditorialStyle(ReportBuilder):
             shading.set(qn('w:fill'), 'F7F3F4')
             cell._tc.get_or_add_tcPr().append(shading)
         doc.add_paragraph().paragraph_format.space_after = Pt(0)
+        doc.add_paragraph(
+            f"Арбитражные дела: {snapshot['counts'].get('arbitration', 0)} · "
+            f"Упоминания в СМИ: {snapshot['counts'].get('media', 0)}",
+            style='Meta')
 
     def _table(self, doc, rows):
         super()._table(doc, rows)

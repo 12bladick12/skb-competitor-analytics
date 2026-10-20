@@ -5,6 +5,7 @@ import hashlib
 from io import BytesIO
 import json
 import re
+from urllib.parse import urlsplit
 from zipfile import ZipFile, BadZipFile
 
 from .drive_store import DriveStore, StorageError
@@ -205,6 +206,15 @@ class AssetIndex:
 
 def read_asset(repository, drive, import_id, asset_id, *, _part=False):
     record = repository.asset(import_id, asset_id)
+    if 'inline_html' in record:
+        html = record['inline_html']
+        if (not isinstance(html, str) or not html or len(html) > 200000
+                or record.get('bytes') != len(html.encode('utf-8'))):
+            raise StorageError('Некорректный сохранённый HTML-снимок.')
+        content = html.encode('utf-8')
+        if hashlib.sha256(content).hexdigest() != asset_id:
+            raise StorageError('Контрольная сумма вложения не совпадает.')
+        return content
     if 'chunks' in record:
         chunks=record['chunks']
         size=record.get('bytes',0)
@@ -232,10 +242,88 @@ def read_asset(repository, drive, import_id, asset_id, *, _part=False):
     return content
 
 
+def research_event(item, competitors):
+    """A verified research observation in the portable editorial event format."""
+    if item.get('status') != 'verified' or not item.get('period') or not item.get('evidence', {}).get('snapshot_sha256'):
+        return None
+    digest = item['evidence']['snapshot_sha256']
+    if not re.fullmatch(r'[a-f0-9]{64}', digest):
+        return None
+    ident = item.get('id', '')
+    if not isinstance(ident, str) or not re.fullmatch(r'[a-f0-9]{64}', ident):
+        return None
+    # The upper half of JSON-safe positive integers is reserved for research.
+    event_id = (1 << 52) + int(ident[:13], 16)
+    precision = item.get('published_precision')
+    published = item.get('published_at')
+    if precision == 'day' and isinstance(published, str) and len(published) == 10:
+        day, month, year = published[8:10], published[5:7], published[:4]
+        label = f'{day}.{month}.{year}'
+    elif precision == 'month' and isinstance(published, str) and len(published) == 7:
+        label = f'{published[5:7]}.{published[:4]} (месяц)'
+    else:
+        return None
+    code = item.get('competitor_code', '')
+    company = competitors.get(code, {})
+    source_url = item.get('source_url', '')
+    return {'id': event_id, 'research_item_id': ident, 'kind': item['category'],
+            'status': 'confirmed', 'competitor_code': code,
+            'competitor_name': company.get('name', code), 'title': item['title'],
+            'description': item.get('summary') or item['original_text'][:10000],
+            'original_text': item['original_text'], 'url': source_url,
+            'source_url': source_url, 'source_name': item.get('source_name', ''),
+            'published_at': published, 'published_precision': precision,
+            'date_label': label, 'date_basis': item.get('date_basis', ''),
+            'detected_at': item.get('discovered_at', ''),
+            'version': item['version'], 'evidence_ids': [digest],
+            'evidence': {key: value for key, value in item['evidence'].items() if key != 'snapshot_html'},
+            'provenance': {'source_url': source_url, 'article_url': source_url,
+                           'date_evidence': item.get('date_basis', '')},
+            'case_number': item.get('case_number', ''), 'case_url': item.get('case_url', ''),
+            'event_key': item.get('event_key', '')}
+
+
+def _article_identity(value):
+    """Compare article URLs without fragments, preserving their significant query."""
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = urlsplit(value)
+        if parsed.scheme not in ('http', 'https') or not parsed.hostname or parsed.username or parsed.password:
+            return None
+        port = parsed.port
+    except ValueError:
+        return None
+    if port == (443 if parsed.scheme == 'https' else 80):
+        port = None
+    return parsed.scheme, parsed.hostname.lower(), port, parsed.path or '/', parsed.query
+
+
+def period_event_map(library, period):
+    result = {event['id']: event for key in library.get('period', {}).get(period, {}).get('event_ids', [])
+              if (event := library.get('event', {}).get(str(key))) is not None}
+    official_urls = {(event.get('competitor_code'),
+                      _article_identity(event.get('provenance', {}).get('article_url') or event.get('url')))
+                     for event in result.values()
+                     if event.get('status') == 'confirmed' and event.get('evidence_ids')}
+    official_urls = {(code, url) for code, url in official_urls if url is not None}
+    for item in sorted(library.get('research_item', {}).values(),
+                       key=lambda value: (value.get('published_at') or '', value.get('id') or '')):
+        if item.get('period') == period:
+            event = research_event(item, library.get('competitor', {}))
+            if event is not None:
+                if (event['kind'] == 'media' and
+                        (event['competitor_code'], _article_identity(event['source_url'])) in official_urls):
+                    continue
+                if event['id'] in result:
+                    raise ValueError('Совпадение идентификаторов событий исследования.')
+                result[event['id']] = event
+    return result
+
+
 def period_events(library, period, *, competitor="", kind="", query=""):
-    ids = library["period"].get(period, {}).get("event_ids", [])
     query = query.strip().casefold()
-    events = [library["event"][str(i)] for i in ids]
+    events = list(period_event_map(library, period).values())
     return [e for e in events if e['status'] == 'confirmed' and e.get('evidence_ids')
             and (not competitor or e['competitor_code'] == competitor)
             and (not kind or e['kind'] == kind)

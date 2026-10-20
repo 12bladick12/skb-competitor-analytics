@@ -67,7 +67,10 @@ def _change(field, key, event_id=None):
         state['working'][field] = st.session_state[key]
     elif field == 'accept_version':
         if st.session_state[key]:
-            state['accepted'][event_id] = state['view']['library']['event'][str(event_id)]['version']
+            issue = next((i for i in state['view']['issues']
+                          if i['event_id'] == event_id and i['can_accept']), None)
+            if issue:
+                state['accepted'][event_id] = issue['current']['version']
         else:
             state['accepted'].pop(event_id, None)
     else:
@@ -133,6 +136,9 @@ def render_editor(library, access, settings, identity, period):
     import_id = library['id']
     st.subheader('Редактор записки')
     st.caption(period_label(period) + ' · Черновики команды')
+    st.caption('В записку включаются только подтверждённые материалы с сохранённым доказательством. '
+               'Кандидаты из исследований арбитражных дел и СМИ здесь не появляются. '
+               'Новые подтверждённые материалы добавляются командой «Обновить материалы».')
     state = st.session_state.get('draft_editor')
     can_write = access.role in ('admin', 'editor')
     if not state or state['import_id'] != import_id or state['period'] != period:
@@ -280,7 +286,8 @@ def render_editor(library, access, settings, identity, period):
             sources = {i['event_id']: i['source'] for i in draft['items']}
             problem = {i['event_id']: i for i in pending}
             if items:
-                groups = {'news': 'Новости сайтов', 'telegram': 'Telegram', 'products': 'Продукция и предложения'}
+                from .screens import KINDS
+                groups = KINDS
                 available = [k for k in groups if any(s['kind'] == k for s in sources.values())]
                 group = st.radio('Группа материалов', available, horizontal=True, key='draft_group_'+state['epoch'],
                     format_func=lambda k: f'{groups[k]} · {sum(s["kind"] == k for s in sources.values())}')

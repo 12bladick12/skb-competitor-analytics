@@ -1,6 +1,7 @@
 """Synthetic checks for the invited-user Focus snapshot screen."""
 
 import base64
+from copy import deepcopy
 import hashlib
 import json
 import unittest
@@ -38,7 +39,190 @@ def parts_fixture():
     return {'key': key, 'payload': manifest}, parts
 
 
+def research_library():
+    import test_cloud_library as fixture
+
+    library = fixture.sample()
+    for event in library['event'].values():
+        event['version'] = 'f' * 64
+    library['research_item'] = {
+        'verified': {
+            'id': 'b' * 64, 'category': 'arbitration', 'period': '2026-09',
+            'title': 'Проверенное судебное событие', 'original_text': 'Текст карточки дела',
+            'summary': 'Краткое описание дела', 'status': 'verified',
+            'competitor_code': 'a', 'source_name': 'Картотека',
+            'source_url': 'https://example.org/case', 'published_at': '2026-09-12',
+            'published_precision': 'day', 'version': 'e' * 64,
+            'evidence': {'snapshot_sha256': 'd' * 64},
+        },
+        'candidate': {
+            'id': 'c' * 64, 'category': 'media', 'period': '2026-09',
+            'title': 'Кандидат из журнала', 'original_text': 'Упоминание конкурента',
+            'status': 'candidate', 'published_at': '2026-09-13',
+            'published_precision': 'day',
+        },
+    }
+    return library
+
+
 class ArbitrationTests(unittest.TestCase):
+    def test_overview_counts_official_sources_once_and_research_stays_in_publications(self):
+        import test_cloud_library as fixture
+        import test_cloud_streamlit as cloud_fixture
+        from cloud.screens import load_library
+
+        library = research_library()
+        app = cloud_fixture.CloudScreenTests().application()
+        app.secrets['cloud'] = fixture.CONFIG['cloud']
+        app.query_params.update(section='Обзор', period='2026-09')
+        load_library.clear()
+        member = {'email': 'reader@example.com', 'subject': 'test-subject',
+                  'status': 'active', 'role': 'viewer'}
+        with patch('streamlit.user', cloud_fixture.CloudScreenTests().user('reader@example.com')), \
+             patch('cloud.library.Repository.load', return_value=library), \
+             patch('cloud.members.MemberStore.find', return_value=member), \
+             patch('cloud.screens.event_card') as event_card, \
+             patch('cloud.screens.section_heading') as section_heading, \
+             patch('cloud.screens.research_card') as research_card, \
+             patch('cloud.screens.competitor_bars') as competitor_bars:
+            app.run()
+            self.assertFalse(app.exception)
+            self.assertEqual([metric.value for metric in app.metric[:4]], ['2', '1', '0', '1'])
+            self.assertIn(('Материалы периода', 'Всего 2'),
+                          [call.args for call in section_heading.call_args_list])
+            self.assertEqual([call.args[0]['id'] for call in event_card.call_args_list], [1, 2])
+            self.assertEqual(competitor_bars.call_args.args[0][0]['id'], 1)
+            self.assertEqual(len(competitor_bars.call_args.args[0]), 2)
+            self.assertEqual([call.args[0]['title'] for call in research_card.call_args_list],
+                             ['Проверенное судебное событие', 'Кандидат из журнала'])
+
+            event_card.reset_mock()
+            app.radio(key='nav_page').set_value('Публикации').run()
+            kind_filter = app.selectbox(key='pub_kind')
+            kind_filter.set_value('arbitration').run()
+            self.assertFalse(app.exception)
+            self.assertEqual([call.args[0]['title'] for call in event_card.call_args_list[-1:]],
+                             ['Проверенное судебное событие'])
+            event_card.reset_mock()
+            app.selectbox(key='pub_kind').set_value('media').run()
+            self.assertFalse(app.exception)
+            self.assertFalse(event_card.call_args_list)
+            self.assertTrue(any('Найдено материалов: 0' in caption.value for caption in app.caption))
+
+    def test_individual_acceptance_uses_research_issue_version(self):
+        import test_cloud_library as fixture
+        import test_cloud_streamlit as cloud_fixture
+        from cloud.draft_rules import create_payload, issues
+        from cloud.screens import load_library
+
+        library = research_library()
+        payload = create_payload(library, '2026-09')
+        draft = {**payload, 'id': 'd' * 32, 'period': '2026-09', 'revision': 1,
+                 'updated_at': '2026-09-18T10:00:00+00:00', 'updated_by': 'editor@example.com'}
+        library['research_item']['verified']['version'] = 'f' * 64
+        library['research_item']['verified']['title'] = 'Обновлённая карточка дела'
+        pending = issues(draft, library)
+        self.assertEqual(len(pending), 1)
+        research_id = pending[0]['event_id']
+        app = cloud_fixture.CloudScreenTests().application({'editor_emails': ['editor@example.com']})
+        app.secrets['cloud'] = fixture.CONFIG['cloud']
+        app.query_params.update(section='Черновики', period='2026-09')
+        load_library.clear()
+        member = {'email': 'editor@example.com', 'subject': 'test-subject',
+                  'status': 'active', 'role': 'editor'}
+        with patch('streamlit.user', cloud_fixture.CloudScreenTests().user('editor@example.com')), \
+             patch('cloud.library.Repository.load', return_value=library), \
+             patch('cloud.members.MemberStore.find', return_value=member), \
+             patch('cloud.drafts.DraftService.open', return_value={
+                 'draft': draft, 'issues': pending, 'library': library,
+             }):
+            app.run()
+            app.radio(key='draft_group_' + app.session_state['draft_editor']['epoch']).set_value('arbitration').run()
+            self.assertFalse(app.exception)
+            checkbox = next(widget for widget in app.checkbox
+                            if widget.label == 'Проверил изменения источника; сохранить мои заголовок и описание')
+            checkbox.set_value(True).run()
+            self.assertFalse(app.exception)
+            self.assertEqual(app.session_state['draft_editor']['accepted'], {research_id: 'f' * 64})
+
+    def test_confirmed_research_events_reach_publications_and_editor_not_candidates(self):
+        import test_cloud_library as fixture
+        import test_cloud_streamlit as cloud_fixture
+        from cloud.draft_rules import create_payload
+        from cloud.screens import load_library
+
+        library = fixture.sample()
+        for event in library['event'].values():
+            event['version'] = 'f' * 64
+        for ident, kind, title, status in [
+            (11, 'arbitration', 'Подтверждённое судебное событие', 'confirmed'),
+            (12, 'media', 'Подтверждённое упоминание в журнале', 'confirmed'),
+            (13, 'media', 'Кандидат из поиска', 'candidate'),
+        ]:
+            library['event'][str(ident)] = {
+                **deepcopy(library['event']['1']), 'id': ident, 'kind': kind,
+                'title': title, 'status': status, 'version': 'f' * 64,
+            }
+            library['period']['2026-09']['event_ids'].append(ident)
+        library['research_item'] = {'13': {
+            'id': 13, 'category': 'media', 'period': '2026-09',
+            'title': 'Кандидат из поиска', 'status': 'candidate',
+            'published_at': '2026-09-03', 'published_precision': 'day',
+        }}
+        payload = create_payload(library, '2026-09')
+        self.assertEqual({item['event_id'] for item in payload['items']} & {11, 12, 13}, {11, 12})
+        draft = {
+            **payload, 'id': 'd' * 32, 'period': '2026-09', 'revision': 1,
+            'updated_at': '2026-09-18T10:00:00+00:00', 'updated_by': 'editor@example.com',
+        }
+        app = cloud_fixture.CloudScreenTests().application({
+            'editor_emails': ['editor@example.com'],
+        })
+        app.secrets['cloud'] = fixture.CONFIG['cloud']
+        app.query_params.update(section='Публикации', period='2026-09')
+        load_library.clear()
+        member = {'email': 'editor@example.com', 'subject': 'test-subject',
+                  'status': 'active', 'role': 'editor'}
+        with patch('streamlit.user', cloud_fixture.CloudScreenTests().user('editor@example.com')), \
+             patch('cloud.library.Repository.load', return_value=library), \
+             patch('cloud.members.MemberStore.find', return_value=member), \
+             patch('cloud.screens.event_card') as event_card, \
+             patch('cloud.drafts.DraftService.open', return_value={
+                 'draft': draft, 'issues': [], 'library': library,
+             }):
+            app.run()
+            self.assertFalse(app.exception)
+            kind_filter = next(select for select in app.selectbox if select.label == 'Тип публикации')
+            self.assertIn('Арбитражные дела', kind_filter.options)
+            self.assertIn('Упоминания в СМИ', kind_filter.options)
+            event_card.reset_mock()
+            kind_filter.set_value('arbitration').run()
+            self.assertFalse(app.exception)
+            self.assertEqual([call.args[0]['title'] for call in event_card.call_args_list],
+                             ['Подтверждённое судебное событие'])
+            event_card.reset_mock()
+            kind_filter = next(select for select in app.selectbox if select.label == 'Тип публикации')
+            kind_filter.set_value('media').run()
+            self.assertFalse(app.exception)
+            self.assertEqual([call.args[0]['title'] for call in event_card.call_args_list],
+                             ['Подтверждённое упоминание в журнале'])
+
+            app.radio(key='nav_page').set_value('Черновики').run()
+            self.assertFalse(app.exception)
+            groups = app.radio(key='draft_group_' + app.session_state['draft_editor']['epoch'])
+            self.assertIn('Арбитражные дела · 1', groups.options)
+            self.assertIn('Упоминания в СМИ · 1', groups.options)
+            self.assertFalse(any(item['event_id'] == 13 for item in app.session_state['draft_editor']['base']['items']))
+            groups.set_value('arbitration').run()
+            self.assertFalse(app.exception)
+            self.assertEqual(next(field for field in app.text_input if field.label == 'Заголовок').value,
+                             'Подтверждённое судебное событие')
+            groups = app.radio(key='draft_group_' + app.session_state['draft_editor']['epoch'])
+            groups.set_value('media').run()
+            self.assertFalse(app.exception)
+            self.assertEqual(next(field for field in app.text_input if field.label == 'Заголовок').value,
+                             'Подтверждённое упоминание в журнале')
+
     def test_loads_latest_snapshot_only_from_active_import(self):
         manifest, parts = parts_fixture()
         with patch('cloud.arbitration.NeonHTTP') as client:

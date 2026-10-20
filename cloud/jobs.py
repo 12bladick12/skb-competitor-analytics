@@ -110,14 +110,44 @@ class JobStore(DraftStore):
         body = sql.SQL('''DECLARE j skb_analytics.jobs; data jsonb := {data}::jsonb; expected jsonb;
         BEGIN
           SELECT * INTO j FROM skb_analytics.jobs WHERE id={id} AND token={token}
-             AND status='running' AND lease_until>now() FOR UPDATE;
+             AND status='running' AND lease_until>now()
+             AND EXISTS (SELECT 1 FROM skb_analytics.state s
+                         WHERE s.key='active' AND s.import_id=skb_analytics.jobs.import_id)
+             FOR UPDATE;
           IF NOT FOUND THEN RAISE EXCEPTION 'Lease lost'; END IF;
           IF j.kind='export' THEN
             FOR expected IN SELECT value FROM jsonb_array_elements(j.payload->'items') LOOP
-              IF NOT EXISTS(SELECT 1 FROM skb_analytics.records r WHERE r.import_id=j.import_id
-                AND r.kind='event' AND r.key=expected->>'event_id'
-                AND r.payload->>'version'=expected->>'version' AND r.payload->>'status'='confirmed')
-              THEN RAISE EXCEPTION 'Source changed before release'; END IF;
+              IF expected->'source' ? 'research_item_id' THEN
+                IF NOT EXISTS(SELECT 1 FROM skb_analytics.records r
+                  JOIN skb_analytics.assets a ON a.import_id=r.import_id
+                    AND a.id=r.payload->'evidence'->>'snapshot_sha256'
+                  WHERE r.import_id=j.import_id AND r.kind='research_item'
+                    AND r.key=expected->'source'->>'research_item_id'
+                    AND r.payload->>'version'=expected->>'version'
+                    AND expected->'source'->>'version'=expected->>'version'
+                    AND r.payload->>'status'='verified'
+                    AND r.payload->>'period'=j.period
+                    AND NOT (r.payload ? 'superseded_by')
+                    AND r.payload->>'category'=expected->'source'->>'kind'
+                    AND expected->'source'->>'status'='confirmed'
+                    AND jsonb_typeof(expected->'source'->'evidence_ids')='array'
+                    AND jsonb_array_length(expected->'source'->'evidence_ids')=1
+                    AND expected->'source'->'evidence_ids'->>0=a.id)
+                THEN RAISE EXCEPTION 'Research source changed before release'; END IF;
+              ELSE
+                IF NOT EXISTS(SELECT 1 FROM skb_analytics.records r WHERE r.import_id=j.import_id
+                  AND r.kind='event' AND r.key=expected->>'event_id'
+                  AND r.payload->>'version'=expected->>'version' AND r.payload->>'status'='confirmed')
+                THEN RAISE EXCEPTION 'Source changed before release'; END IF;
+              END IF;
+            END LOOP;
+            FOR expected IN SELECT value FROM jsonb_array_elements(data->'records') LOOP
+              IF expected->>'kind'='report' AND NOT EXISTS (
+                  SELECT 1 FROM skb_analytics.records r WHERE r.import_id=j.import_id
+                    AND r.kind='report' AND r.key=expected->>'key')
+                  AND expected->'payload'->'snapshot' IS DISTINCT FROM j.payload THEN
+                RAISE EXCEPTION 'Report snapshot differs from queued revision';
+              END IF;
             END LOOP;
           END IF;
           INSERT INTO skb_analytics.assets(import_id,id,payload)

@@ -16,7 +16,9 @@ from .editor import render_editor, navigation_guard
 from .coverage import monitored, outside_scope
 
 
-KINDS = {"news": "Новости сайтов", "telegram": "Telegram", "products": "Продукция и предложения"}
+KINDS = {"news": "Новости сайтов", "telegram": "Telegram", "products": "Продукция и предложения",
+         "arbitration": "Арбитражные дела", "media": "Упоминания в СМИ"}
+OFFICIAL_KINDS = ('news', 'telegram', 'products')
 SOURCE_KINDS = {**KINDS, "promotions": "Акции", "website": "Сайт"}
 STATUS = {"success": "Проверен", "partial": "Сбор неполный", "error": "Ошибка",
           "not_configured": "Канал не подтверждён", "running": "Выполнялся при переносе",
@@ -260,25 +262,26 @@ def render_library(library, access, settings, identity):
     checks = library['period'].get(period,{}).get('checks',[])
 
     if page == "Обзор":
+        official_events = [event for event in events if event['kind'] in OFFICIAL_KINDS]
         st.subheader("Обзор · " + period_label(period))
         st.caption("Публикации конкурентов и состояние источников за выбранный период")
         with st.container(key='metrics'):
             cols = st.columns(4)
-            cols[0].metric("Подтверждённые материалы", len(events))
-            for col, (kind, label) in zip(cols[1:], KINDS.items()):
-                col.metric(label, sum(e['kind'] == kind for e in events))
-        if not events:
-            st.info("Подтверждённых материалов за этот период нет. " +
+            cols[0].metric("Материалы официальных источников", len(official_events))
+            for col, kind in zip(cols[1:], OFFICIAL_KINDS):
+                col.metric(KINDS[kind], sum(e['kind'] == kind for e in official_events))
+        if not official_events:
+            st.info("Подтверждённых материалов официальных источников за этот период нет. " +
                     ("Полнота проверки источников показана ниже." if checks else
                      "Проверки официальных источников за этот месяц не сохранены."))
         feed, arbitration, media = st.columns([1.4, 1, 1], gap='medium')
         with feed:
             with st.container(key='overview-feed'):
-                section_heading("Материалы периода", f"Всего {len(events)}")
-                for event in events[:3]:
+                section_heading("Материалы периода", f"Всего {len(official_events)}")
+                for event in official_events[:3]:
                     event_card(event, KINDS.get(event['kind'], event['kind']), compact=True)
-                if not events:
-                    st.caption("Здесь появятся подтверждённые публикации выбранного периода.")
+                if not official_events:
+                    st.caption("Здесь появятся подтверждённые материалы официальных источников выбранного периода.")
                 st.button("Все публикации →", key='overview_publications', on_click=navigate,
                           args=('Публикации',), width='stretch')
         with arbitration:
@@ -287,6 +290,8 @@ def render_library(library, access, settings, identity):
         with media:
             with st.container(key='overview-media'):
                 research_panel(library, period, 'media')
+        st.caption('Карточки исследования со статусом «Требует проверки» не включаются в публикации и записку. '
+                   'После подтверждения даты, первоисточника и сохранения доказательства материал появится в редакторе.')
         coverage_column, competitors_column = st.columns(2, gap='medium')
         with coverage_column:
             with st.container(key='overview-coverage'):
@@ -298,7 +303,7 @@ def render_library(library, access, settings, identity):
         with competitors_column:
             with st.container(key='overview-competitors'):
                 section_heading("Публикации по конкурентам", "Топ-5 за период")
-                competitor_bars(events, library['competitor'])
+                competitor_bars(official_events, library['competitor'])
         undated_research(library)
         with st.expander("Полнота проверки источников · подробная таблица"):
             coverage_table(checks,diagnostic=access.role=='admin')
@@ -313,6 +318,8 @@ def render_library(library, access, settings, identity):
         if 'pub_query' not in st.session_state:
             st.session_state['pub_query']=st.query_params.get('q','')
         st.caption(period_label(period) + " · Подтверждённые материалы с сохранёнными первоисточниками")
+        st.caption('Кандидаты из исследования арбитражных дел и СМИ появятся здесь после проверки даты, '
+                   'первоисточника и сохранения доказательства.')
         with st.container(key='filters'):
             search, left, right = st.columns([1.4, 1, 1])
             query = search.text_input("Поиск по заголовку и тексту", key='pub_query', placeholder='Название, продукт или тема…')

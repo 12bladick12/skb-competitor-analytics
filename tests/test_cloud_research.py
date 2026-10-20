@@ -4,7 +4,9 @@ import copy
 import unittest
 from unittest.mock import MagicMock, patch
 
-from cloud.library import Repository
+from cloud.library import Repository, period_events, read_asset
+from cloud.draft_rules import DraftConflict, create_payload, issues, refresh_payload, save_payload, snapshot
+from cloud.drive_store import StorageError
 from cloud.neon_http import MigrationConnection
 from cloud.research import ResearchStore, validate_bundle
 
@@ -37,6 +39,131 @@ def bundle():
 
 
 class ResearchTests(unittest.TestCase):
+    def test_verified_research_is_editable_event_with_evidence_and_stable_id(self):
+        records = validate_bundle(bundle(), {"example": {"name": "Конкурент"}})
+        item = records[-1]['payload']
+        library = {'event': {}, 'period': {'2026-09': {'event_ids': [], 'checks': []}},
+                   'competitor': {'example': {'name': 'Конкурент'}},
+                   'research_item': {item['id']: item},
+                   'research_run': {records[0]['key']: records[0]['payload']}}
+        event = period_events(library, '2026-09')[0]
+        self.assertEqual(event['kind'], 'arbitration')
+        self.assertEqual(event['competitor_name'], 'Конкурент')
+        self.assertEqual(event['date_label'], '15.09.2026')
+        self.assertEqual(event['evidence_ids'], [item['evidence']['snapshot_sha256']])
+        self.assertLess(event['id'], 2**53)
+        self.assertGreater(event['id'], 0)
+        self.assertNotIn('snapshot_html', event['evidence'])
+        self.assertEqual(library['event'], {})
+        draft = {'id': 'd'*32, 'period': '2026-09', 'revision': 1,
+                 **create_payload(library, '2026-09', set(event['evidence_ids']))}
+        self.assertEqual(draft['items'][0]['event_id'], event['id'])
+        saved = save_payload(draft, library, 'Выводы', [{'event_id': event['id'],
+                            'included': True, 'title': 'Ручной заголовок',
+                            'description': 'Ручное описание'}], set(event['evidence_ids']))
+        self.assertEqual(snapshot({**draft, **saved}, library, set(event['evidence_ids']))['items'][0]['title'],
+                         'Ручной заголовок')
+
+    def test_candidates_unknown_date_correction_and_frozen_release(self):
+        data = bundle()
+        first = validate_bundle(data, {'example': {'name': 'Конкурент'}})
+        item = first[-1]['payload']
+        library = {'event': {}, 'period': {'2026-09': {'event_ids': [], 'checks': []}},
+                   'competitor': {'example': {'name': 'Конкурент'}},
+                   'research_item': {item['id']: item},
+                   'research_run': {first[0]['key']: first[0]['payload']}}
+        assets = {item['evidence']['snapshot_sha256']}
+        draft = {'id': 'd'*32, 'period': '2026-09', 'revision': 1,
+                 **create_payload(library, '2026-09', assets)}
+        released = snapshot(draft, library, assets)
+        self.assertTrue(released['incomplete'])
+        self.assertEqual(released['research_coverage'][0]['limitations'], ['Другие реестры не проверены'])
+        correction = copy.deepcopy(data)
+        correction['items'][0]['summary'] = 'Исправлено описание'
+        corrected = validate_bundle(correction, {'example': {} })[-1]['payload']
+        self.assertEqual(corrected['id'], item['id'])
+        library['research_item'][item['id']] = corrected
+        self.assertTrue(issues(draft, library, assets)[0]['can_accept'])
+        with self.assertRaises(DraftConflict):
+            snapshot(draft, library, assets)
+        self.assertEqual(released['items'][0]['source']['version'], item['version'])
+        self.assertEqual(released['items'][0]['source']['description'], item['summary'])
+        refreshed = refresh_payload(draft, library, assets)
+        self.assertEqual(len(refreshed['items']), 1)
+        candidate = copy.deepcopy(item)
+        candidate['id'] = 'f'*64
+        candidate['status'] = 'candidate'
+        library['research_item'][candidate['id']] = candidate
+        unknown = copy.deepcopy(item)
+        unknown['id'] = 'e'*64
+        unknown['period'] = None
+        unknown['published_precision'] = 'unknown'
+        unknown['published_at'] = None
+        library['research_item'][unknown['id']] = unknown
+        self.assertEqual(len(period_events(library, '2026-09')), 1)
+
+    def test_inline_evidence_is_sha_checked_without_drive(self):
+        item = validate_bundle(bundle(), {'example': {}})[-1]['payload']
+        html = item['evidence']['snapshot_html']
+        digest = item['evidence']['snapshot_sha256']
+        repository, drive = MagicMock(), MagicMock()
+        repository.asset.return_value = {'inline_html': html, 'bytes': len(html.encode('utf-8'))}
+        self.assertEqual(read_asset(repository, drive, 'a'*64, digest), html.encode('utf-8'))
+        drive.download.assert_not_called()
+        repository.asset.return_value['inline_html'] = html + '<p>tampered</p>'
+        repository.asset.return_value['bytes'] = len(repository.asset.return_value['inline_html'].encode('utf-8'))
+        with self.assertRaises(StorageError):
+            read_asset(repository, drive, 'a'*64, digest)
+
+    def test_snapshot_uses_latest_actual_research_time_and_marks_missing_category(self):
+        records = validate_bundle(bundle(), {'example': {'name': 'Конкурент'}})
+        item = records[-1]['payload']
+        old = {**records[0]['payload'], 'id': 'a'*64,
+               'finished_at': '2026-10-20T10:05:00+05:00', 'status': 'partial'}
+        newer = {**old, 'id': 'b'*64, 'finished_at': '2026-10-20T06:00:00+00:00',
+                 'status': 'success', 'limitations': []}
+        library = {'event': {}, 'period': {'2026-09': {'event_ids': [], 'checks': []}},
+                   'competitor': {'example': {'name': 'Конкурент'}},
+                   'research_item': {item['id']: item},
+                   'research_run': {old['id']: old, newer['id']: newer}}
+        draft = {'id': 'd'*32, 'period': '2026-09', 'revision': 1,
+                 **create_payload(library, '2026-09')}
+        result = snapshot(draft, library)
+        self.assertEqual(result['research_coverage'][0]['id'], newer['id'])
+        self.assertTrue(result['incomplete'])  # No media run exists.
+
+    def test_media_research_deduplicates_exact_official_article_url_only(self):
+        data = bundle()
+        data['run']['category'] = 'media'
+        data['items'][0]['category'] = 'media'
+        data['items'][0].pop('event_key')
+        data['items'][0]['source_url'] = 'https://court.example/case/123?story=1'
+        data['items'][0]['evidence']['url'] = data['items'][0]['source_url']
+        item = validate_bundle(data, {'example': {'name': 'Конкурент'}})[-1]['payload']
+        official = {'id': 1, 'kind': 'news', 'status': 'confirmed',
+                    'competitor_code': 'example', 'title': 'Та же статья',
+                    'description': 'Первичный сбор', 'version': '1'*64,
+                    'original_text': 'Первичный сбор', 'evidence_ids': ['a'*64],
+                    'url': 'https://court.example/case/123?story=2',
+                    'provenance': {'article_url':
+                                   'https://COURT.EXAMPLE:443/case/123?story=1#section'}}
+        library = {'event': {'1': official},
+                   'period': {'2026-09': {'event_ids': [1], 'checks': []}},
+                   'competitor': {'example': {'name': 'Конкурент'}},
+                   'research_item': {item['id']: item}}
+        self.assertEqual([event['id'] for event in period_events(library, '2026-09')], [1])
+        self.assertIn(item['id'], library['research_item'])
+        self.assertEqual([draft['event_id'] for draft in create_payload(library, '2026-09')['items']], [1])
+        official['competitor_code'] = 'other-company'
+        self.assertEqual(len(period_events(library, '2026-09')), 2)
+        self.assertEqual(len(create_payload(library, '2026-09')['items']), 2)
+        official['competitor_code'] = 'example'
+        official['provenance']['article_url'] = 'https://COURT.EXAMPLE/case/123?story=2'
+        self.assertEqual(len(period_events(library, '2026-09')), 2)
+        official['provenance']['article_url'] = data['items'][0]['source_url']
+        official['status'] = 'rejected'
+        self.assertEqual([event['kind'] for event in period_events(library, '2026-09')], ['media'])
+
     def test_active_library_exposes_research_without_promoting_to_news(self):
         data = validate_bundle(bundle(), {"example": {}})
         with patch("cloud.library.NeonHTTP") as client:
@@ -66,6 +193,10 @@ class ResearchTests(unittest.TestCase):
         unknown["items"][0]["period"] = "2026-09"
         with self.assertRaisesRegex(ValueError, "Неизвестную дату"):
             validate_bundle(unknown, {"example": {}})
+        wrong_month = bundle()
+        wrong_month['run']['period'] = '2026-08'
+        with self.assertRaisesRegex(ValueError, 'периоду исследования'):
+            validate_bundle(wrong_month, {'example': {}})
 
     def test_same_article_or_case_has_stable_id_and_new_immutable_version(self):
         first = bundle()

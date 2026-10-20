@@ -190,6 +190,8 @@ def validate_bundle(bundle, competitors, existing_items=None):
         if competitor not in competitors:
             raise ValueError("Конкурент отсутствует в активном реестре.")
         published, item_period = _date(item)
+        if item_period is not None and item_period != period:
+            raise ValueError("Дата материала не относится к периоду исследования.")
         source_url = _url(item.get("source_url"), "source_url")
         proof = item.get("evidence")
         if not isinstance(proof, dict):
@@ -321,9 +323,18 @@ class ResearchStore:
         if not library:
             raise StorageError("Активная библиотека не найдена.")
         records = validate_bundle(bundle, library["competitor"], library.get("research_item", {}))
+        inline_assets = []
+        for record in records:
+            if record['kind'] != 'research_item' or record['payload']['status'] != 'verified':
+                continue
+            proof = record['payload']['evidence']
+            html = proof['snapshot_html']
+            inline_assets.append({'id': proof['snapshot_sha256'],
+                                  'payload': {'inline_html': html, 'bytes': len(html.encode('utf-8'))}})
         from psycopg import sql
         from psycopg.types.json import Jsonb
-        body = sql.SQL("""DECLARE active_id text; data jsonb := {records}; link jsonb;
+        body = sql.SQL("""DECLARE active_id text; data jsonb := {records}; assets_json jsonb := {assets};
+          period_key text := {period}; link jsonb;
           previous jsonb; promoted jsonb; replay_versions jsonb;
         BEGIN
           PERFORM pg_advisory_xact_lock(847263918);
@@ -336,6 +347,15 @@ class ResearchStore:
               AND v.kind='research_item_version' AND v.key IN (
                 SELECT r.key FROM jsonb_to_recordset(data)
                   AS r(kind text,key text,payload jsonb) WHERE r.kind='research_item_version');
+          INSERT INTO skb_analytics.records(import_id,kind,key,payload)
+            VALUES (active_id,'period',period_key,
+              jsonb_build_object('key',period_key,'event_ids','[]'::jsonb,
+                                 'checks','[]'::jsonb,'links','{{}}'::jsonb))
+            ON CONFLICT (import_id,kind,key) DO NOTHING;
+          INSERT INTO skb_analytics.assets(import_id,id,payload)
+            SELECT active_id,a.id,a.payload FROM jsonb_to_recordset(assets_json)
+              AS a(id text,payload jsonb)
+            ON CONFLICT (import_id,id) DO NOTHING;
           INSERT INTO skb_analytics.records(import_id,kind,key,payload)
             SELECT active_id,r.kind,r.key,r.payload
             FROM jsonb_to_recordset(data) AS r(kind text,key text,payload jsonb)
@@ -390,6 +410,8 @@ class ResearchStore:
                 AND NOT (payload ? 'superseded_by');
           END LOOP;
         END;""").format(records=sql.Literal(Jsonb(records, dumps=canonical)),
+                         assets=sql.Literal(Jsonb(inline_assets, dumps=canonical)),
+                         period=sql.Literal(records[0]['payload']['period']),
                          import_id=sql.Literal(library["id"]))
         try:
             with self.repository.write_connect(**self.repository.params) as conn:
